@@ -55,7 +55,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         :param evt: A TANGO_CHANGE event on Subarray healthState.
         :return: None
         """
-        #TODO: add admin mode
+        unknown_device = False
         if evt.err is False:
             try:
                 if ("state" == evt.attr_value.name) or ("State" == evt.attr_value.name):
@@ -67,10 +67,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                         self._pst_state = evt.attr_value.value
                     else:
                         # should NOT happen!
-                        log_msg = "Received health state change for unknown device " + \
-                                  str(evt.attr_name)
-                        self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-                        return
+                        unknown_device = True    
                 if "healthstate" in evt.attr_name:
                     if self.CspMidCbf in evt.attr_name:
                         self._cbf_health_state = evt.attr_value.value
@@ -80,19 +77,50 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                         self._pst_health_state = evt.attr_value.value
                     else:
                         # should NOT happen!
-                        log_msg = "Received health state change for unknown device " + \
+                        unknown_device = True    
+                if "adminmode" in evt.attr_name: 
+                    if self.CspMidCbf in evt.attr_name:
+                        self._cbf_admin_mode = evt.attr_value.value
+                    elif self.CspMidPss in evt.attr_name:
+                        self._pss_admin_mode = evt.attr_value.value
+                    elif self.CspMidPst in evt.attr_name:
+                        self._pst_admin_mode = evt.attr_value.value
+                    else:
+                        # should NOT happen!
+                        unknown_device = True    
+
+                if unknown_device == True:
+                    log_msg = "Unexpected change event for attribute: " + \
                                   str(evt.attr_name)
-                        self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-                        return
+                    self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+                    return
+
                 log_msg = "New value for " + str(evt.attr_name) + " is " + \
                           str(evt.attr_value.value) 
-                self.dev_logging(log_msg, tango.LogLevel.LOG_DEBUG)
+                self.dev_logging(log_msg, tango.LogLevel.LOG_INFO)
                 # update CSP global state
                 self.__set_csp_state()
             except Exception as except_occurred:
-                self.dev_logging(str(except_occurred), tango.LogLevel.LOG_DEBUG)
+                self.dev_logging(str(except_occurred), tango.LogLevel.LOG_ERR)
         else: 
             for item in evt.errors: 
+                # API_EventTimeout: if sub-element device not reachable it transits 
+                # to UNKNOWN state.
+                if item.reason == "API_EventTimeout":
+                    # CBF sub-element
+                    if self.CspMidCbf in evt.attr_name:
+                        self._cbf_state = tango.DevState.UNKNOWN
+                        self._cbf_health_state = HealthState.UNKNOWN.value
+                    # PSS sub-element
+                    if self.CspMidPss in evt.attr_name:
+                        self._pss_state = tango.DevState.UNKNOWN
+                        self._pss_health_state = HealthState.UNKNOWN.value
+                    # PST sub-element
+                    if self.CspMidPst in evt.attr_name:
+                        self._pst_state = tango.DevState.UNKNOWN
+                        self._pst_health_state = HealthState.UNKNOWN.value
+                    # update the State and healthState of the CSP Element
+                    self.__set_csp_state()
                 log_msg = item.reason + ": on attribute " + str(evt.attr_name)
                 self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
 
@@ -322,7 +350,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         polling_period=3000,
         abs_change=1,
         doc="Report the administration mode of the timing beams as an array \
-             of unisgned short. Fo ex:\n[0,0,0,...2..]",
+             of unisgned short. For ex:\n[0,0,0,...2..]",
     )
 
     reportVLBIBeamState = attribute(
@@ -350,7 +378,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         polling_period=3000,
         abs_change=1,
         doc="Report the administration mode of the VLBI beams as an array \
-             of unisgned short. Fo ex:\n[0,0,0,...2..]",
+             of unisgned short. For ex:\n[0,0,0,...2..]",
     )
 
     # ---------------
@@ -366,16 +394,19 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         self._progress_command = 0;
 
         # sub-element State and healthState initialization
-        self._cbf_state = tango.DevState.UNKNOWN
+        self._cbf_state        = tango.DevState.UNKNOWN
         self._cbf_health_state = HealthState.UNKNOWN.value
-        self._pss_state = tango.DevState.UNKNOWN
+        self._cbf_admin_mode   = AdminMode.ONLINE.value
+        self._pss_state        = tango.DevState.UNKNOWN
         self._pss_health_state = HealthState.UNKNOWN.value 
-        self._pst_state = tango.DevState.UNKNOWN
+        self._pss_admin_mode   = AdminMode.ONLINE.value
+        self._pst_state        = tango.DevState.UNKNOWN
         self._pst_health_state = HealthState.UNKNOWN.value
+        self._pst_admin_mode   = AdminMode.ONLINE.value
 
-        # set storage logging level to DEBUG
+        # set storage logging level to INFO 
         self._storage_logging_level = int(tango.LogLevel.LOG_INFO)
-        # set element logging level to DEBUG
+        # set element logging level to INFO  
         self._element_logging_level = int(tango.LogLevel.LOG_INFO)
 
         # evaluate the CSP element global State and healthState
@@ -390,40 +421,40 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
         # initialize the dictionary with sub-element proxies
         self._se_proxies = {}
-        # dictionary with timeout counts
-        self._se_timeout_evts = {}
-
-        # initialize the list with the subscribed event IDs
-        self._event_id = []
+        # dictionary with list of event ids/sub-element. Need to store the event
+        # ids for each sub-element to un-subscribe them at sub-element disconnection.
+        self._se_event_id = {}
 
         # Try connection with each sub-element
-        for nelem in range(0,len(self._se_fqdn)):
+        for fqdn in self._se_fqdn:
+            # initialize the list for each dictionary key-name
+            self._se_event_id[fqdn] = []
             try:
-                log_msg = "Trying connection to" + str(self._se_fqdn[nelem]) + " device"
+                log_msg = "Trying connection to" + str(fqdn) + " device"
                 self.dev_logging(log_msg, int(tango.LogLevel.LOG_INFO))
-                device_proxy = DeviceProxy(self._se_fqdn[nelem])
+                device_proxy = DeviceProxy(fqdn)
                 device_proxy.ping()
 
                 # store the sub-element proxies 
-                self._se_proxies[self._se_fqdn[nelem]] = device_proxy
+                self._se_proxies[fqdn] = device_proxy
 
-                # initialize the timeout events
-                self._se_timeout_evts[self._se_fqdn[nelem]] = 0
-
-                # Subscription of sub-element attributes: State and healthState 
+                # Subscription of the sub-element State,healthState and adminMode
                 ev_id = device_proxy.subscribe_event("State", EventType.CHANGE_EVENT,
                         self.seSCMCallback, stateless=True)
-                self._event_id.append(ev_id)
+                self._se_event_id[fqdn].append(ev_id)
 
                 ev_id = device_proxy.subscribe_event("healthState", EventType.CHANGE_EVENT,
                         self.seSCMCallback, stateless=True)
-                self._event_id.append(ev_id)
+                self._se_event_id[fqdn].append(ev_id)
+
+                ev_id = device_proxy.subscribe_event("adminMode", EventType.CHANGE_EVENT,
+                        self.seSCMCallback, stateless=True)
+                self._se_event_id[fqdn].append(ev_id)
             except tango.DevFailed as df:
                 for item in df.args:
-                    log_msg = "Failure in connection to " + str(self._se_fqdn[nelem]) + \
+                    log_msg = "Failure in connection to " + str(fqdn) + \
                             " device: " + str(item.reason)
                     self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
-
         # PROTECTED REGION END #    //  CspMaster.init_device
 
     def always_executed_hook(self):
@@ -558,6 +589,22 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     # Commands
     # --------
 
+    def is_On_allowed(self):
+        """
+        Command On is allowed when:
+        - state is STANDBY and adminMode = MAINTENACE or ONLINE (end state = ON)
+        - state is STANDBY and adminMode = OFFLINE, NOTFITTED   (end state = DISABLE)
+        - state is DISABLE and adminMode = MAINTENACE or ONLINE (end state = ON)
+        """
+        # PROTECTED REGION ID(CspMaster.is_On_allowed) ENABLED START #
+        if self.get_state() not in [tango.DevState.STANDBY, tango.DevState.DISABLE]:
+            return False
+        if self.get_state() == tango.DevState.DISABLE:
+            if self._admin_mode.name not in [AdminMode.OFFLINE.name, 
+                                          AdminMode.NOTFITTED.name]:
+                return False
+        return True
+        # PROTECTED REGION END #    //  CspMaster.is_On_allowed
     @command(
         dtype_in=('str',), 
         doc_in="If the array length is 0, the command applies to the whole\nCSP Element.\n\
@@ -567,37 +614,47 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     @DebugIt()
     def On(self, argin):
         # PROTECTED REGION ID(CspMaster.On) ENABLED START #
-        device_list = []        # list of FQDNs
-        err_msg = []            # list of messages to log
-        max_nelem = len(argin)
-        if max_nelem == 0:      # no input argument -> switch on all sub-elements
-            max_nelem = len(self._se_fqdn)
+        device_list = []    
+        num_of_devices = len(argin) 
+        if num_of_devices == 0:      # no input argument -> switch on all sub-elements
+            num_of_devices = len(self._se_fqdn)
             device_list = self._se_fqdn
         else:
+            if num_of_devices > len(self._se_fqdn):
+                # too many devices specified-> log the warning but go on
+                # with command execution
+                self.dev_logging("Too many input parameters", int(tango.LogLevel.LOG_WARN))
             device_list = argin
-
-        # loop on sub-elements and issue the On command 
-        nerr = 0                # number of exception
-        for nelem in range(0, max_nelem):
-            device_name = device_list[nelem]
+        nkey_err = 0            
+        for device_name in device_list:
             try:
-                # retrieve the sub_element proxy from the device name
                 device_proxy = self._se_proxies[device_name]
                 device_proxy.command_inout("On", "")
             except KeyError as error:
-                err_msg.append("No proxy for device: " + str(error))
-                nerr += 1
+                # throw an exception only if:
+                # - no proxy found for the only specified input device
+                # - or no proxy found for CBF.
+                # In all other cases log the error message
+                err_msg = "No proxy for device" + str(error)
+                self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
+                nkey_err += 1
             except tango.DevFailed as df:
-                err_msg.append("Command failure for device " + device_name + ": " + \
-                        str(df.args[0].desc))
-                nerr += 1
-        # throw exception 
-        if nerr > 0:
-            except_msg = ' '
-            for item in err_msg:
-               except_msg += item + "\n"
-               self.dev_logging(item, int(tango.LogLevel.LOG_ERROR))
-            tango.Except.throw_exception("Command failed", except_msg,
+                # the command fails if:
+                # - cbf command fails
+                # - or the only specified device fails executing the command.
+                # In all other cases the error messages are logged.
+                if ("cbf" in device_name) or num_of_devices == 1:
+                   tango.Except.throw_exception("Command failed", str(df.args[0].desc),
+                                         "On command execution", tango.ErrSeverity.ERR)
+                else:
+                   self.dev_logging(str(df.args[0].desc), int(tango.LogLevel.LOG_ERROR))
+
+        # throw an exception if ALL the specified devices have no associated proxy
+        if nkey_err == num_of_devices:
+            err_msg = 'No proxy found for devices:'
+            for item in device_list:
+                err_msg += item + ' '
+            tango.Except.throw_exception("Command failed", err_msg,
                                          "On command execution", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.On
 
@@ -632,7 +689,15 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     @DebugIt()
     def SetCbfAdminMode(self, argin):
         # PROTECTED REGION ID(CspMaster.SetCbfAdminMode) ENABLED START #
-        pass
+        try:
+            cbf_proxy = self._se_proxies[self.CspMidCbf]
+            cbf_proxy.adminMode = argin
+        except KeyError as key_err:
+            err_msg = "No proxy for device" + str(error)
+            self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
+        except tango.DevFailed as df: 
+            tango.Except.throw_exception("Command failed", str(df.args[0].desc),
+                                         "Set cbf admin mode", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.SetCbfAdminMode
 
     @command(
