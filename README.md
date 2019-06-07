@@ -73,6 +73,9 @@ For example, the procedure to configure the `CbfTestMaster` device is as follow:
 
 The same sequence of operations has to be repeated for the CspMaster, otherwise no TANGO client is able to subscribe and receive `events` for that device.
 
+A dedicated script (based on the work done by the NCRA team) has been written to perform this procedure in automatic way (see [configurePollingAndEvents.py](csplmc/configurePollingAndEvents.py). 
+Run this script after the start of the CSP prototype devices.
+
 ## How to run in Docker containers
 
 The CSP.LMC prototype can run also in a containerised environment: the YAML configuration file `docker-compose.yml` includes the stages to run the the CSP.LMC TANGO devices inside separate docker containers.

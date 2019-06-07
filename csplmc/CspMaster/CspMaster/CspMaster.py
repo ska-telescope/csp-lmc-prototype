@@ -21,7 +21,7 @@ from future.utils import with_metaclass
 
 # tango imports
 import tango
-from tango import DebugIt, EventType, DeviceProxy
+from tango import DebugIt, EventType, DeviceProxy, AttrWriteType
 from tango.server import run, DeviceMeta, attribute, command, device_property
 
 # add the path to import global_enum package.
@@ -79,6 +79,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                         # should NOT happen!
                         unknown_device = True    
                 if "adminmode" in evt.attr_name: 
+                    print("{} new value: {}".format(evt.attr_value.name, evt.attr_value.value))
                     if self.CspMidCbf in evt.attr_name:
                         self._cbf_admin_mode = evt.attr_value.value
                     elif self.CspMidPss in evt.attr_name:
@@ -100,6 +101,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 self.dev_logging(log_msg, tango.LogLevel.LOG_INFO)
                 # update CSP global state
                 self.__set_csp_state()
+            except tango.DevFailed as df:
+                self.dev_logging(str(df.args[0].desc), tango.LogLevel.LOG_ERR)
             except Exception as except_occurred:
                 self.dev_logging(str(except_occurred), tango.LogLevel.LOG_ERR)
         else: 
@@ -159,6 +162,37 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             self._health_state = HealthState.FAILED.value
         else:
             self._health_state = HealthState.DEGRADED.value
+
+    def __get_num_of_capabilities(self):
+        """
+        Retrieve the number of Csp capabilities for each capability type.
+        Default values are:
+        - Subarrays     16
+        - PSS         1500
+        - PST           16
+        - VLBI          20
+        """
+        if self._max_capabilities:
+            try:
+                self._search_beam_num = self._max_capabilities["SearchBeam"]
+            except KeyError:  # not found in DB
+                self._search_beam_num = 1500
+            try:
+                self._timing_beam_num = self._max_capabilities["TimingBeam"]
+            except KeyError:  # not found in DB
+                self._timing_beam_num = 16
+            try:
+                self._vlbi_beam_num = self._max_capabilities["VlbiBeam"]
+            except KeyError:  # not found in DB
+                self._vlbi_beam_num = 20
+            try:
+                self._subarray_num = self._max_capabilities["Subarray"]
+            except KeyError:  # not found in DB
+                self._search_beam_num = 16
+        else:
+                self.dev_logging("MaxCapabilities device property not defined", 
+                                                       tango.LogLevel.LOG_WARN)
+
     # PROTECTED REGION END #    //  CspMaster.class_variable
 
     # -----------------
@@ -177,9 +211,37 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         dtype='str', default_value="mid_csp_pst/sub_elt/master"
     )
 
+    CspSubarrays = device_property(
+        dtype=('str',),
+    )
+
+    SearchBeams = device_property(
+        dtype=('str',),
+    )
+
+    TimingBeams = device_property(
+        dtype=('str',),
+    )
+
+    VlbiBeams = device_property(
+        dtype=('str',),
+    )
+
+
     # ----------
     # Attributes
     # ----------
+
+    # NB: To overide the write method of the adminMode attribute, we need to enable the
+    #     "overload attribute" check button in POGO. 
+    adminMode = attribute(
+        dtype='DevEnum',
+        access=AttrWriteType.READ_WRITE,
+        memorized=True,
+        doc="The admin mode reported for this device. It may interpret the current device condition \n\
+             and condition of all managed devices to set this. Most possibly an aggregate attribute.",
+        enum_labels=["ON-LINE", "OFF-LINE", "MAINTENANCE", "NOT-FITTED", "RESERVED", ],
+    )
 
     commandProgress = attribute(
         dtype='uint16',
@@ -242,66 +304,52 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         doc="The PST sub-element health status.",
     )
 
-    reportVCCState = attribute(
-        dtype=('DevState',),
-        max_dim_x=197,
-        label="VCC state",
-        polling_period=3000,
-        doc="Report he state of the VCC capabilities as an array of DevState",
+    cbfMasterAddress = attribute(
+        dtype='str',
+        doc="The CBF Master FQDN",
     )
 
-    reportVCCHealthState = attribute(
-        dtype=('uint16',),
-        max_dim_x=197,
-        label="VCC health status",
+    pssMasterAddress = attribute(
+        dtype='str',
+        doc="The Pss Master FQDN",
+    )
+
+    pstMasterAddress = attribute(
+        dtype='str',
+        doc="The PST Master FQDN",
+    )
+
+    cbfAdminMode = attribute(
+        dtype='DevEnum',
+        access=AttrWriteType.WRITE,
+        label="CBF administrative Mode",
         polling_period=3000,
         abs_change=1,
-        doc="Report the health status of VCC capabilities as an array \
-             of unsigned short.\nEx:\n[0,0,0,2,0...3]",
+        enum_labels=["ON-LINE", "OFF-LINE", "MAINTENANCE", "NOT-FITTED", "RESERVED", ],
     )
 
-    reportVCCAdminMode = attribute(
-        dtype=('uint16',),
-        max_dim_x=197,
-        label="VCC admin mode",
+    pssAdminMode = attribute(
+        dtype='DevEnum',
+        access=AttrWriteType.READ_WRITE,
+        label="PSS administrative mode",
         polling_period=3000,
         abs_change=1,
-        doc="Report the administration mode of the VCC capabilities as an array \
-             of unisgned short.\nFor ex.:\n[0,0,0,...1,2]",
+        enum_labels=["ON-LINE", "OFF-LINE", "MAINTENANCE", "NOT-FITTED", "RESERVED", ],
     )
 
-    reportFSPState = attribute(
-        dtype=('DevState',),
-        max_dim_x=27,
-        label="FSP state",
-        polling_period=3000,
-        doc="Report the state of the FSP capabilities.",
-    )
-
-    reportFSPHealthState = attribute(
-        dtype=('uint16',),
-        max_dim_x=27,
-        label="FSP health status",
+    pstAdminMode = attribute(
+        dtype='DevEnum',
+        access=AttrWriteType.READ_WRITE,
+        label="PST administrative mode",
         polling_period=3000,
         abs_change=1,
-        doc="Report the health status of the FSP capabilities.",
-    )
-
-    reportFSPAdminMode = attribute(
-        dtype=('uint16',),
-        max_dim_x=27,
-        label="FSP admin mode",
-        polling_period=3000,
-        abs_change=1,
-        doc="Report the administration mode of the FSP capabilities as an array \
-             of unisgned short.\nfor ex:\n[0,0,2,..]",
+        enum_labels=["ON-LINE", "OFF-LINE", "MAINTENANCE", "NOT-FITTED", "RESERVED", ],
     )
 
     reportSearchBeamState = attribute(
         dtype=('DevState',),
         max_dim_x=1500,
         label="Search Beams state",
-        polling_period=3000,
         doc="Report the state of the search beams as an array of DevState.",
     )
 
@@ -309,8 +357,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         dtype=('uint16',),
         max_dim_x=1500,
         label="Search Beams health status",
-        polling_period=3000,
-        abs_change=1,
         doc="Report the health status of the search beams as an array \
              of unsigned short. For ex:\n[0,0,...,1..]",
     )
@@ -319,8 +365,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         dtype=('uint16',),
         max_dim_x=1500,
         label="Search beams admin mode",
-        polling_period=3000,
-        abs_change=1,
         doc="Report the administration mode of the search beams as an array \
              of unisgned short. Fo ex:\n[0,0,0,...2..]",
     )
@@ -329,7 +373,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         dtype=('DevState',),
         max_dim_x=16,
         label="Timing Beams state",
-        polling_period=3000,
         doc="Report the state of the timing beams as an array of DevState.",
     )
 
@@ -337,8 +380,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         dtype=('uint16',),
         max_dim_x=16,
         label="Timing Beams health status",
-        polling_period=3000,
-        abs_change=1,
         doc="Report the health status of the timing beams as an array \
              of unsigned short. For ex:\n[0,0,...,1..]",
     )
@@ -347,8 +388,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         dtype=('uint16',),
         max_dim_x=16,
         label="Timing beams admin mode",
-        polling_period=3000,
-        abs_change=1,
         doc="Report the administration mode of the timing beams as an array \
              of unisgned short. For ex:\n[0,0,0,...2..]",
     )
@@ -357,7 +396,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         dtype=('DevState',),
         max_dim_x=20,
         label="VLBI Beams state",
-        polling_period=3000,
         doc="Report the state of the VLBI beams as an array of DevState.",
     )
 
@@ -365,8 +403,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         dtype=('uint16',),
         max_dim_x=20,
         label="VLBI Beams health status",
-        polling_period=3000,
-        abs_change=1,
         doc="Report the health status of the VLBI beams as an array \
              of unsigned short. For ex:\n[0,0,...,1..]",
     )
@@ -375,10 +411,94 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         dtype=('uint16',),
         max_dim_x=16,
         label="VLBI beams admin mode",
-        polling_period=3000,
-        abs_change=1,
         doc="Report the administration mode of the VLBI beams as an array \
              of unisgned short. For ex:\n[0,0,0,...2..]",
+    )
+
+    cspSubarrayAddress = attribute(
+        dtype=('str',),
+        max_dim_x=16,
+        doc="CSPSubarrays FQDN",
+    )
+
+    searchBeamCapAddress = attribute(
+        dtype=('str',),
+        max_dim_x=1500,
+        label="SearchBeamCapabilities FQDNs",
+        doc="SearchBeam Capabilities FQDNs",
+    )
+
+    timingBeamCapAddress = attribute(
+        dtype=('str',),
+        max_dim_x=16,
+        label="TimingBeam Caapbilities FQDN",
+        doc="TimingBeam Capabilities FQDNs.",
+    )
+
+    vlbiCapAddress = attribute(
+        dtype=('str',),
+        max_dim_x=20,
+        label="VLBIBeam Capabilities FQDNs",
+        doc="VLBIBeam Capablities FQDNs",
+    )
+
+    receptorMembership = attribute(
+        dtype=('uint16',),
+        max_dim_x=197,
+        label="Receptor Memebership",
+        doc="The receptors affiliation to CSPsub-arrays.",
+    )
+
+    searchBeamMembership = attribute(
+        dtype=('uint16',),
+        max_dim_x=1500,
+        label="SearchBeam Memebership",
+        doc="The CSP sub-array affiliation of earch beams",
+    )
+
+    timingBeamMembership = attribute(
+        dtype=('uint16',),
+        max_dim_x=16,
+        label="TimingBeam Membership",
+        doc="The CSPSubarray affiliation of timing beams.",
+    )
+
+    vlbiBeamMembership = attribute(
+        dtype=('uint16',),
+        max_dim_x=20,
+        label="VLBI Beam membership",
+        doc="The CSPsub-rray affiliation of VLBI beams.",
+    )
+
+    vccCapabilityAddress = attribute(name = "vccCapabilityAddress", label="vccCapabilityAddress",
+        forwarded=True
+    )
+    fspCapabilityAddress = attribute(name= "fspCapabilityAddress", label="fspCapabilityAddress",
+        forwarded=True
+    )
+    reportVCCState = attribute(name="reportVCCState", label="reportVCCState",
+        forwarded=True
+    )
+    reportVCCHealthState = attribute(name="reportVCCHealthState", label="reportVCCHealthState",
+        forwarded=True
+    )
+    reportVCCAdminMode = attribute(name="reportVCCAdminMode", label="reportVCCAdminMode",
+        forwarded=True
+    )
+    reportFSPState = attribute(name="reportFSPState", label="reportFSPState",
+        forwarded=True
+    )
+    reportFSPHealthState = attribute(name="reportFSPHealthState", label="reportFSPHealthState",
+        forwarded=True
+    )
+    reportFSPAdminMode = attribute(name="reportFSPAdminMode", label="reportFSPAdminMode",
+        forwarded=True
+    )
+    fspMembership = attribute(name="fspMembership", label="fspMembership",
+        forwarded=True
+    )
+    vccMembership = attribute(name="vccMembership", label="vccMembership",
+        forwarded=True
     )
 
     # ---------------
@@ -390,6 +510,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION ID(CspMaster.init_device) ENABLED START #
         self.set_state(tango.DevState.INIT)
 
+        print("Max capability:", self._max_capabilities)
         # initialize attribute values
         self._progress_command = 0;
 
@@ -404,13 +525,19 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         self._pst_health_state = HealthState.UNKNOWN.value
         self._pst_admin_mode   = AdminMode.ONLINE.value
 
-        # set storage logging level to INFO 
+        # get the number of capabilities for each Csp capability 
+        # type
+        self.__get_num_of_capabilities()
+        self._report_search_beam_state = [tango.DevState.UNKNOWN for i in range(self._search_beam_num)]
+        self._report_timing_beam_state = [tango.DevState.UNKNOWN for i in range(self._timing_beam_num)]
+        self._report_vlbi_beam_state = [tango.DevState.UNKNOWN for i in range(self._vlbi_beam_num)]
+
+        # set storage and element logging level 
         self._storage_logging_level = int(tango.LogLevel.LOG_INFO)
-        # set element logging level to INFO  
         self._element_logging_level = int(tango.LogLevel.LOG_INFO)
 
         # evaluate the CSP element global State and healthState
-        self.__set_csp_state()
+        #self.__set_csp_state()
 
         # initialize list with CSP sub-element FQDNs
         self._se_fqdn = []
@@ -424,6 +551,12 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # dictionary with list of event ids/sub-element. Need to store the event
         # ids for each sub-element to un-subscribe them at sub-element disconnection.
         self._se_event_id = {}
+        # initialize the list with the CSP Subarray FQDNs
+        self._subarrays_fqdn = []
+        if self.CspSubarrays:
+            for sub_fqdn in self.CspSubarrays:
+                print(sub_fqdn)
+                self._subarrays_fqdn.append(sub_fqdn)
 
         # Try connection with each sub-element
         for fqdn in self._se_fqdn:
@@ -474,6 +607,27 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     # Attributes methods
     # ------------------
 
+    def write_adminMode(self, value):
+        """
+        Set the administration mode for the whole CSP element.
+        The admin mode value is forwarded to all the sub-elements
+        """
+        # PROTECTED REGION ID(CspMaster.adminMode_write) ENABLED START #
+        for fqdn in self._se_fqdn: 
+            try:
+                device_proxy = self._se_proxies[fqdn]
+                device_proxy.adminMode = value
+            except KeyError as kerr:
+                log_msg = "No proxy to device " + str(kerr)
+                self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
+            except tango.DevFailed as df:
+                log_msg = "Failure in setting adminMode for device " + str(fqdn) + \
+                        ": " + str(df.args[0].reason)
+                self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
+        #TODO: what happens if one sub-element fails? 
+        self._admin_mode = value
+        # PROTECTED REGION END #    //  CspMaster.adminMode_write
+
     def read_commandProgress(self):
         # PROTECTED REGION ID(CspMaster.commandProgress_read) ENABLED START #
         return self._progress_command
@@ -509,38 +663,81 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         return self._pst_health_state
         # PROTECTED REGION END #    //  CspMaster.cspPstHealthState_read
 
-    def read_reportVCCState(self):
-        # PROTECTED REGION ID(CspMaster.reportVCCState_read) ENABLED START #
-        return [tango.DevState.UNKNOWN]
-        # PROTECTED REGION END #    //  CspMaster.reportVCCState_read
+    def read_cbfMasterAddress(self):
+        # PROTECTED REGION ID(CspMaster.cbfMasterAddress_read) ENABLED START #
+        return self.CspMidCbf
+        # PROTECTED REGION END #    //  CspMaster.cbfMasterAddress_read
 
-    def read_reportVCCHealthState(self):
-        # PROTECTED REGION ID(CspMaster.reportVCCHealthState_read) ENABLED START #
-        return [0]
-        # PROTECTED REGION END #    //  CspMaster.reportVCCHealthState_read
+    def read_pssMasterAddress(self):
+        # PROTECTED REGION ID(CspMaster.pssMasterAddress_read) ENABLED START #
+        return self.CspMidPss
+        # PROTECTED REGION END #    //  CspMaster.pssMasterAddress_read
 
-    def read_reportVCCAdminMode(self):
-        # PROTECTED REGION ID(CspMaster.reportVCCAdminMode_read) ENABLED START #
-        return [0]
-        # PROTECTED REGION END #    //  CspMaster.reportVCCAdminMode_read
+    def read_pstMasterAddress(self):
+        # PROTECTED REGION ID(CspMaster.pstMasterAddress_read) ENABLED START #
+        return self.CspMidPst
+        # PROTECTED REGION END #    //  CspMaster.pstMasterAddress_read
 
-    def read_reportFSPState(self):
-        # PROTECTED REGION ID(CspMaster.reportFSPState_read) ENABLED START #
-        return [tango.DevState.UNKNOWN]
-        # PROTECTED REGION END #    //  CspMaster.reportFSPState_read
+    def read_cbfAdminMode(self):
+        # PROTECTED REGION ID(CspMaster.pssAdminMode_read) ENABLED START #
+        return self._cbf_admin_mode
+        # PROTECTED REGION END #    //  CspMaster.pssAdminMode_read
 
-    def read_reportFSPHealthState(self):
-        # PROTECTED REGION ID(CspMaster.reportFSPHealthState_read) ENABLED START #
-        return [0]
-        # PROTECTED REGION END #    //  CspMaster.reportFSPHealthState_read
+    def write_cbfAdminMode(self, value):
+        # PROTECTED REGION ID(CspMaster.cbfAdminMode_write) ENABLED START #
+        print("Set Cbf admin mode to:", value)
+        try:
+            cbf_proxy = self._se_proxies[self.CspMidCbf]
+            cbf_proxy.adminMode = value
+        except KeyError as key_err:
+            err_msg = "No proxy for device" + str(error)
+            self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
+        except tango.DevFailed as df: 
+            tango.Except.throw_exception("Command failed", str(df.args[0].desc),
+                                         "Set cbf admin mode", tango.ErrSeverity.ERR)
+        # PROTECTED REGION END #    //  CspMaster.cbfAdminMode_write
 
-    def read_reportFSPAdminMode(self):
-        # PROTECTED REGION ID(CspMaster.reportFSPAdminMode_read) ENABLED START #
-        return [0]
-        # PROTECTED REGION END #    //  CspMaster.reportFSPAdminMode_read
+    def read_pssAdminMode(self):
+        # PROTECTED REGION ID(CspMaster.pssAdminMode_read) ENABLED START #
+        return self._pss_admin_mode
+        # PROTECTED REGION END #    //  CspMaster.pssAdminMode_read
+
+    def write_pssAdminMode(self, value):
+        # PROTECTED REGION ID(CspMaster.pssAdminMode_write) ENABLED START #
+        print("Set Pss admin mode to:", value)
+        try:
+            pss_proxy = self._se_proxies[self.CspMidPss]
+            pss_proxy.adminMode = value
+        except KeyError as key_err:
+            err_msg = "No proxy for device" + str(error)
+            self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
+        except tango.DevFailed as df: 
+            tango.Except.throw_exception("Command failed", str(df.args[0].desc),
+                                         "Set pss admin mode", tango.ErrSeverity.ERR)
+        # PROTECTED REGION END #    //  CspMaster.pssAdminMode_write
+
+    def read_pstAdminMode(self):
+        # PROTECTED REGION ID(CspMaster.pstAdminMode_read) ENABLED START #
+        return self._pst_admin_mode
+        # PROTECTED REGION END #    //  CspMaster.pstAdminMode_read
+
+    def write_pstAdminMode(self, value):
+        # PROTECTED REGION ID(CspMaster.pstAdminMode_write) ENABLED START #
+        print("Set Pst admin mode to:", value)
+        try:
+            pst_proxy = self._se_proxies[self.CspMidPst]
+            pst_proxy.adminMode = value
+        except KeyError as key_err:
+            err_msg = "No proxy for device" + str(error)
+            self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
+        except tango.DevFailed as df: 
+            tango.Except.throw_exception("Command failed", str(df.args[0].desc),
+                                         "Set pst admin mode", tango.ErrSeverity.ERR)
+        # PROTECTED REGION END #    //  CspMaster.pstAdminMode_write
 
     def read_reportSearchBeamState(self):
         # PROTECTED REGION ID(CspMaster.reportSearchBeamState_read) ENABLED START #
+        print("read_reportSearchBeamState")
         return [tango.DevState.UNKNOWN]
         # PROTECTED REGION END #    //  CspMaster.reportSearchBeamState_read
 
@@ -583,7 +780,46 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION ID(CspMaster.reportVLBIBeamAdminMode_read) ENABLED START #
         return [0]
         # PROTECTED REGION END #    //  CspMaster.reportVLBIBeamAdminMode_read
+    
+    def read_cspSubarrayAddress(self):
+        # PROTECTED REGION ID(CspMaster.cspSubarrayAddress_read) ENABLED START #
+        return ['']
+        # PROTECTED REGION END #    //  CspMaster.cspSubarrayAddress_read
 
+    def read_searchBeamCapAddress(self):
+        # PROTECTED REGION ID(CspMaster.searchBeamCapAddress_read) ENABLED START #
+        return ['']
+        # PROTECTED REGION END #    //  CspMaster.searchBeamCapAddress_read
+
+    def read_timingBeamCapAddress(self):
+        # PROTECTED REGION ID(CspMaster.timingBeamCapAddress_read) ENABLED START #
+        return ['']
+        # PROTECTED REGION END #    //  CspMaster.timingBeamCapAddress_read
+
+    def read_vlbiCapAddress(self):
+        # PROTECTED REGION ID(CspMaster.vlbiCapAddress_read) ENABLED START #
+        return ['']
+        # PROTECTED REGION END #    //  CspMaster.vlbiCapAddress_read
+
+    def read_receptorMembership(self):
+        # PROTECTED REGION ID(CspMaster.receptorMembership_read) ENABLED START #
+        return [0]
+        # PROTECTED REGION END #    //  CspMaster.receptorMembership_read
+
+    def read_searchBeamMembership(self):
+        # PROTECTED REGION ID(CspMaster.searchBeamMembership_read) ENABLED START #
+        return [0]
+        # PROTECTED REGION END #    //  CspMaster.searchBeamMembership_read
+
+    def read_timingBeamMembership(self):
+        # PROTECTED REGION ID(CspMaster.timingBeamMembership_read) ENABLED START #
+        return [0]
+        # PROTECTED REGION END #    //  CspMaster.timingBeamMembership_read
+
+    def read_vlbiBeamMembership(self):
+        # PROTECTED REGION ID(CspMaster.vlbiBeamMembership_read) ENABLED START #
+        return [0]
+        # PROTECTED REGION END #    //  CspMaster.vlbiBeamMembership_read
 
     # --------
     # Commands
@@ -670,6 +906,15 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         pass
         # PROTECTED REGION END #    //  CspMaster.Off
 
+    def is_Standby_allowed(self):
+        """
+        Command Standby is allowed when state is ON, DISABLE, ALARM
+        """
+        # PROTECTED REGION ID(CspMaster.is_On_allowed) ENABLED START #
+        if self.get_state() not in [tango.DevState.ON, tango.DevState.DISABLE, 
+                                    tango.DevState.ALARM]:
+            return False
+        return True
     @command(
         dtype_in=('str',), 
         doc_in="If the array length is 0, the command applies to the whole\nCSP Element.\n\
@@ -679,46 +924,49 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     @DebugIt()
     def Standby(self,argin):
         # PROTECTED REGION ID(CspMaster.Standby) ENABLED START #
-        pass
+        device_list = []    
+        num_of_devices = len(argin) 
+        if num_of_devices == 0:      # no input argument -> switch on all sub-elements
+            num_of_devices = len(self._se_fqdn)
+            device_list = self._se_fqdn
+        else:
+            if num_of_devices > len(self._se_fqdn):
+                # too many devices specified-> log the warning but go on
+                # with command execution
+                self.dev_logging("Too many input parameters", int(tango.LogLevel.LOG_WARN))
+            device_list = argin
+        nkey_err = 0            
+        for device_name in device_list:
+            try:
+                device_proxy = self._se_proxies[device_name]
+                device_proxy.command_inout("Standby", "")
+            except KeyError as error:
+                # throw an exception only if:
+                # - no proxy found for the only specified input device
+                # - or no proxy found for CBF.
+                # In all other cases log the error message
+                err_msg = "No proxy for device" + str(error)
+                self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
+                nkey_err += 1
+            except tango.DevFailed as df:
+                # the command fails if:
+                # - cbf command fails
+                # - or the only specified device fails executing the command.
+                # In all other cases the error messages are logged.
+                if ("cbf" in device_name) or num_of_devices == 1:
+                   tango.Except.throw_exception("Command failed", str(df.args[0].desc),
+                                    "Standby command execution", tango.ErrSeverity.ERR)
+                else:
+                   self.dev_logging(str(df.args[0].desc), int(tango.LogLevel.LOG_ERROR))
+
+        # throw an exception if ALL the specified devices have no associated proxy
+        if nkey_err == num_of_devices:
+            err_msg = 'No proxy found for devices:'
+            for item in device_list:
+                err_msg += item + ' '
+            tango.Except.throw_exception("Command failed", err_msg,
+                                         "Standby command execution", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.Standby
-
-    @command(
-        dtype_in='DevEnum', 
-        doc_in="adminMode", 
-    )
-    @DebugIt()
-    def SetCbfAdminMode(self, argin):
-        # PROTECTED REGION ID(CspMaster.SetCbfAdminMode) ENABLED START #
-        try:
-            cbf_proxy = self._se_proxies[self.CspMidCbf]
-            cbf_proxy.adminMode = argin
-        except KeyError as key_err:
-            err_msg = "No proxy for device" + str(error)
-            self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
-        except tango.DevFailed as df: 
-            tango.Except.throw_exception("Command failed", str(df.args[0].desc),
-                                         "Set cbf admin mode", tango.ErrSeverity.ERR)
-        # PROTECTED REGION END #    //  CspMaster.SetCbfAdminMode
-
-    @command(
-        dtype_in='DevEnum', 
-        doc_in="adminMode", 
-    )
-    @DebugIt()
-    def SetPssAdminMode(self, argin):
-        # PROTECTED REGION ID(CspMaster.SetPssAdminMode) ENABLED START #
-        pass
-        # PROTECTED REGION END #    //  CspMaster.SetPssAdminMode
-
-    @command(
-        dtype_in='DevEnum', 
-        doc_in="adminMode", 
-    )
-    @DebugIt()
-    def SetPstAdminMode(self, argin):
-        # PROTECTED REGION ID(CspMaster.SetPstAdminMode) ENABLED START #
-        pass
-        # PROTECTED REGION END #    //  CspMaster.SetPstAdminMode
 
 # ----------
 # Run server

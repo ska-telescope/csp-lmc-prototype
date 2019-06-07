@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ASCII"?>
 <pogoDsl:PogoSystem xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:pogoDsl="http://www.esrf.fr/tango/pogo/PogoDsl">
   <classes name="CspMaster" pogoRevision="9.4">
-    <description description="CSPMaster TANGO device class for the CSPMaster prototype" title="CspMaster Tango device prototype" sourcePath="/home/softir/src/ska-git/csp-lmc-prototype/csplmc/CspMaster/CspMaster" language="PythonHL" filestogenerate="XMI   file" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="true" hasAbstractCommand="false" hasAbstractAttribute="false">
+    <description description="CSPMaster TANGO device class for the CSPMaster prototype" title="CspMaster Tango device prototype" sourcePath="/home/softir/src/ska-git/csp-lmc-prototype/csplmc/CspMaster/CspMaster" language="PythonHL" filestogenerate="XMI   file,Code files,Protected Regions" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="true" hasAbstractCommand="false" hasAbstractAttribute="false">
       <inheritances classname="Device_Impl" sourcePath=""/>
       <inheritances classname="SKABaseDevice" sourcePath="../../../../lmc-base-classes/skabase/SKABaseDevice"/>
       <inheritances classname="SKAMaster" sourcePath="/home/softir/src/tango/lmc-base-classes/skabase/SKAMaster"/>
@@ -56,6 +56,22 @@
       <type xsi:type="pogoDsl:StringType"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
       <DefaultPropValue>mid_csp_pst/sub_elt/master</DefaultPropValue>
+    </deviceProperties>
+    <deviceProperties name="CspSubarrays" description="The FQDNs of the CSP sub-arrays">
+      <type xsi:type="pogoDsl:StringVectorType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </deviceProperties>
+    <deviceProperties name="SearchBeams" description="The FQDNs of the CSP SearchBeam Capabilites">
+      <type xsi:type="pogoDsl:StringVectorType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </deviceProperties>
+    <deviceProperties name="TimingBeams" description="The FQDNs of the CSP TimingBeams Capabilities">
+      <type xsi:type="pogoDsl:StringVectorType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </deviceProperties>
+    <deviceProperties name="VlbiBeams" description="The FQDNs of the VlbiBeam CSP Capabilities.">
+      <type xsi:type="pogoDsl:StringVectorType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
     </deviceProperties>
     <commands name="State" description="This command gets the device state (stored in its device_state data member) and returns it to the caller." execMethod="dev_state" displayLevel="OPERATOR" polledPeriod="0">
       <argin description="none">
@@ -123,33 +139,6 @@
     <commands name="Standby" description="Transit CSP or one or more CSP SubElements from ON/OFF to &#xA;STANDBY." execMethod="standby" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
       <argin description="If the array length is 0, the command applies to the whole&#xA;CSP Element.&#xA;If the array length is > 1, each array element specifies the FQDN of the&#xA;CSP SubElement to put in STANDBY mode.">
         <type xsi:type="pogoDsl:StringArrayType"/>
-      </argin>
-      <argout description="">
-        <type xsi:type="pogoDsl:VoidType"/>
-      </argout>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-    </commands>
-    <commands name="SetCbfAdminMode" description="Set the administration mode of the CBF sub-element." execMethod="set_cbf_admin_mode" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
-      <argin description="adminMode">
-        <type xsi:type="pogoDsl:EnumType"/>
-      </argin>
-      <argout description="">
-        <type xsi:type="pogoDsl:VoidType"/>
-      </argout>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-    </commands>
-    <commands name="SetPssAdminMode" description="Set the administration mode of the PSS sub-element." execMethod="set_pss_admin_mode" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
-      <argin description="adminMode">
-        <type xsi:type="pogoDsl:EnumType"/>
-      </argin>
-      <argout description="">
-        <type xsi:type="pogoDsl:VoidType"/>
-      </argout>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-    </commands>
-    <commands name="SetPstAdminMode" description="Set the administration mode of the PST sub-element." execMethod="set_pst_admin_mode" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
-      <argin description="adminMode">
-        <type xsi:type="pogoDsl:EnumType"/>
       </argin>
       <argout description="">
         <type xsi:type="pogoDsl:VoidType"/>
@@ -230,7 +219,7 @@
       <dataType xsi:type="pogoDsl:EnumType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
-      <status abstract="false" inherited="true" concrete="true"/>
+      <status abstract="false" inherited="true" concrete="true" concreteHere="true"/>
       <properties description="The admin mode reported for this device. It may interpret the current device condition &#xA;and condition of all managed devices to set this. Most possibly an aggregate attribute." label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
     </attributes>
     <attributes name="controlMode" attType="Scalar" rwType="READ_WRITE" displayLevel="OPERATOR" polledPeriod="1000" maxX="" maxY="" memorized="true" allocReadMember="true">
@@ -328,6 +317,57 @@
       <enumLabels>FAILED</enumLabels>
       <enumLabels>UNKNOWN</enumLabels>
     </attributes>
+    <attributes name="cbfMasterAddress" attType="Scalar" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:StringType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="The CBF Master FQDN" label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="pssMasterAddress" attType="Scalar" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:StringType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="The Pss Master FQDN" label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="pstMasterAddress" attType="Scalar" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:StringType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="The PST Master FQDN" label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="cbfAdminMode" attType="Scalar" rwType="WRITE" displayLevel="OPERATOR" polledPeriod="3000" maxX="" maxY="" allocReadMember="false" isDynamic="false">
+      <dataType xsi:type="pogoDsl:EnumType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="" label="CBF administrative Mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+      <eventCriteria relChange="" absChange="1" period=""/>
+    </attributes>
+    <attributes name="pssAdminMode" attType="Scalar" rwType="READ_WRITE" displayLevel="OPERATOR" polledPeriod="3000" maxX="" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:EnumType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="" label="PSS administrative mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+      <eventCriteria relChange="" absChange="1" period=""/>
+    </attributes>
+    <attributes name="pstAdminMode" attType="Scalar" rwType="READ_WRITE" displayLevel="OPERATOR" polledPeriod="3000" maxX="" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:EnumType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="" label="PST administrative mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+      <eventCriteria relChange="" absChange="1" period=""/>
+    </attributes>
     <attributes name="maxCapabilities" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="1000" maxX="20" maxY="" allocReadMember="true">
       <dataType xsi:type="pogoDsl:StringType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
@@ -342,59 +382,7 @@
       <status abstract="false" inherited="true" concrete="true"/>
       <properties description="A list of available number of instances of each capability type, e.g. 'CORRELATOR:512', 'PSS-BEAMS:4'." label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
     </attributes>
-    <attributes name="reportVCCState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="197" maxY="" allocReadMember="true" isDynamic="false">
-      <dataType xsi:type="pogoDsl:StateType"/>
-      <changeEvent fire="false" libCheckCriteria="false"/>
-      <archiveEvent fire="false" libCheckCriteria="false"/>
-      <dataReadyEvent fire="false" libCheckCriteria="true"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <properties description="Report he state of the VCC capabilities as an array of DevState" label="VCC state" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
-    </attributes>
-    <attributes name="reportVCCHealthState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="197" maxY="" allocReadMember="true" isDynamic="false">
-      <dataType xsi:type="pogoDsl:UShortType"/>
-      <changeEvent fire="false" libCheckCriteria="false"/>
-      <archiveEvent fire="false" libCheckCriteria="false"/>
-      <dataReadyEvent fire="false" libCheckCriteria="true"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <properties description="Report the health status of VCC capabilities as an array of unsigned short.&#xA;Ex:&#xA;[0,0,0,2,0...3]" label="VCC health status" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
-      <eventCriteria relChange="" absChange="1" period=""/>
-    </attributes>
-    <attributes name="reportVCCAdminMode" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="197" maxY="" allocReadMember="true" isDynamic="false">
-      <dataType xsi:type="pogoDsl:UShortType"/>
-      <changeEvent fire="false" libCheckCriteria="false"/>
-      <archiveEvent fire="false" libCheckCriteria="false"/>
-      <dataReadyEvent fire="false" libCheckCriteria="true"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <properties description="Report the administration mode of the VCC capabilities as an array of unisgned short.&#xA;For ex.:&#xA;[0,0,0,...1,2]" label="VCC admin mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
-      <eventCriteria relChange="" absChange="1" period=""/>
-    </attributes>
-    <attributes name="reportFSPState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="27" maxY="" allocReadMember="true" isDynamic="false">
-      <dataType xsi:type="pogoDsl:StateType"/>
-      <changeEvent fire="true" libCheckCriteria="false"/>
-      <archiveEvent fire="false" libCheckCriteria="false"/>
-      <dataReadyEvent fire="false" libCheckCriteria="true"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <properties description="Report the state of the FSP capabilities." label="FSP state" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
-    </attributes>
-    <attributes name="reportFSPHealthState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="27" maxY="" allocReadMember="true" isDynamic="false">
-      <dataType xsi:type="pogoDsl:UShortType"/>
-      <changeEvent fire="false" libCheckCriteria="false"/>
-      <archiveEvent fire="false" libCheckCriteria="false"/>
-      <dataReadyEvent fire="false" libCheckCriteria="true"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <properties description="Report the health status of the FSP capabilities." label="FSP health status" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
-      <eventCriteria relChange="" absChange="1" period=""/>
-    </attributes>
-    <attributes name="reportFSPAdminMode" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="27" maxY="" allocReadMember="true" isDynamic="false">
-      <dataType xsi:type="pogoDsl:UShortType"/>
-      <changeEvent fire="false" libCheckCriteria="false"/>
-      <archiveEvent fire="false" libCheckCriteria="false"/>
-      <dataReadyEvent fire="false" libCheckCriteria="true"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <properties description="Report the administration mode of the FSP capabilities as an array of unisgned short.&#xA;for ex:&#xA;[0,0,2,..]" label="FSP admin mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
-      <eventCriteria relChange="" absChange="1" period=""/>
-    </attributes>
-    <attributes name="reportSearchBeamState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="1500" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportSearchBeamState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="1500" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:StateType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
@@ -402,7 +390,7 @@
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
       <properties description="Report the state of the search beams as an array of DevState." label="Search Beams state" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
     </attributes>
-    <attributes name="reportSearchBeamHealthState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="1500" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportSearchBeamHealthState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="1500" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:UShortType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
@@ -411,16 +399,16 @@
       <properties description="Report the health status of the search beams as an array of unsigned short. For ex:&#xA;[0,0,...,1..]" label="Search Beams health status" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
       <eventCriteria relChange="" absChange="1" period=""/>
     </attributes>
-    <attributes name="reportSearchBeamAdminMode" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="1500" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportSearchBeamAdminMode" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="1500" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:UShortType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
       <dataReadyEvent fire="false" libCheckCriteria="true"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <properties description="Report the administration mode of the search beams as an array of unisgned short. For ex:&#xA;[0,0,0,...2..]" label="Search beams admin mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+      <properties description="Report the administration mode of the search beams as an array of unsigned short. For ex:&#xA;[0,0,0,...2..]" label="Search beams admin mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
       <eventCriteria relChange="" absChange="1" period=""/>
     </attributes>
-    <attributes name="reportTimingBeamState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportTimingBeamState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:StateType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
@@ -428,7 +416,7 @@
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
       <properties description="Report the state of the timing beams as an array of DevState." label="Timing Beams state" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
     </attributes>
-    <attributes name="reportTimingBeamHealthState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportTimingBeamHealthState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:UShortType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
@@ -437,16 +425,16 @@
       <properties description="Report the health status of the timing beams as an array of unsigned short. For ex:&#xA;[0,0,...,1..]" label="Timing Beams health status" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
       <eventCriteria relChange="" absChange="1" period=""/>
     </attributes>
-    <attributes name="reportTimingBeamAdminMode" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportTimingBeamAdminMode" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:UShortType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
       <dataReadyEvent fire="false" libCheckCriteria="true"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <properties description="Report the administration mode of the timing beams as an array of unisgned short. For ex:&#xA;[0,0,0,...2..]" label="Timing beams admin mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+      <properties description="Report the administration mode of the timing beams as an array of unsigned short. For ex:&#xA;[0,0,0,...2..]" label="Timing beams admin mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
       <eventCriteria relChange="" absChange="1" period=""/>
     </attributes>
-    <attributes name="reportVLBIBeamState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportVLBIBeamState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:StateType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
@@ -454,7 +442,7 @@
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
       <properties description="Report the state of the VLBI beams as an array of DevState." label="VLBI Beams state" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
     </attributes>
-    <attributes name="reportVLBIBeamHealthState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportVLBIBeamHealthState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:UShortType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
@@ -463,15 +451,109 @@
       <properties description="Report the health status of the VLBI beams as an array of unsigned short. For ex:&#xA;[0,0,...,1..]" label="VLBI Beams health status" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
       <eventCriteria relChange="" absChange="1" period=""/>
     </attributes>
-    <attributes name="reportVLBIBeamAdminMode" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="3000" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportVLBIBeamAdminMode" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:UShortType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
       <dataReadyEvent fire="false" libCheckCriteria="true"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <properties description="Report the administration mode of the VLBI beams as an array of unisgned short. For ex:&#xA;[0,0,0,...2..]" label="VLBI beams admin mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+      <properties description="Report the administration mode of the VLBI beams as an array of unsigned short. For ex:&#xA;[0,0,0,...2..]" label="VLBI beams admin mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
       <eventCriteria relChange="" absChange="1" period=""/>
     </attributes>
+    <attributes name="cspSubarrayAddress" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:StringType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="CSPSubarrays FQDN" label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="searchBeamCapAddress" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="1500" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:StringType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="SearchBeam Capabilities FQDNs" label="SearchBeamCapabilities FQDNs" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="timingBeamCapAddress" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:StringType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="TimingBeam Capabilities FQDNs." label="TimingBeam Caapbilities FQDN" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="vlbiCapAddress" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:StringType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="VLBIBeam Capablities FQDNs" label="VLBIBeam Capabilities FQDNs" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="receptorMembership" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="197" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:UShortType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="The receptors affiliation to CSPsub-arrays." label="Receptor Memebership" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="searchBeamMembership" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="1500" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:UShortType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="The CSP sub-array affiliation of earch beams" label="SearchBeam Memebership" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="timingBeamMembership" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:UShortType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="The CSPSubarray affiliation of timing beams." label="TimingBeam Membership" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <attributes name="vlbiBeamMembership" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
+      <dataType xsi:type="pogoDsl:UShortType"/>
+      <changeEvent fire="false" libCheckCriteria="false"/>
+      <archiveEvent fire="false" libCheckCriteria="false"/>
+      <dataReadyEvent fire="false" libCheckCriteria="true"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <properties description="The CSPsub-rray affiliation of VLBI beams." label="VLBI Beam membership" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
+    </attributes>
+    <forwardedAttributes name="vccCapabilityAddress" label="vccCapabilityAddress">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
+    <forwardedAttributes name="fspCapabilityAddress" label="fspCapabilityAddress">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
+    <forwardedAttributes name="reportVCCState" label="reportVCCState">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
+    <forwardedAttributes name="reportVCCHealthState" label="reportVCCHealthState">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
+    <forwardedAttributes name="reportVCCAdminMode" label="reportVCCAdminMode">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
+    <forwardedAttributes name="reportFSPState" label="reportFSPState">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
+    <forwardedAttributes name="reportFSPHealthState" label="reportFSPHealthState">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
+    <forwardedAttributes name="reportFSPAdminMode" label="reportFSPAdminMode">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
+    <forwardedAttributes name="fspMembership" label="fspMembership">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
+    <forwardedAttributes name="vccMembership" label="vccMembership">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
     <states name="ON" description="This state could have been called OK or OPERATIONAL. It means that the device is in its operational state. (E.g. the power supply is giving its nominal current, th motor is ON and ready to move, the instrument is operating). This state is modified by the Attribute alarm checking of the DeviceImpl:dev_state method. i.e. if the State is ON and one attribute has its quality factor to ATTR_WARNING or ATTR_ALARM, then the State is modified to ALARM.">
       <status abstract="false" inherited="true" concrete="true"/>
     </states>
