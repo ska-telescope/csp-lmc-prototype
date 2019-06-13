@@ -341,7 +341,7 @@
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
       <properties description="The PST Master FQDN" label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
     </attributes>
-    <attributes name="cbfAdminMode" attType="Scalar" rwType="WRITE" displayLevel="OPERATOR" polledPeriod="3000" maxX="" maxY="" allocReadMember="false" isDynamic="false">
+    <attributes name="cbfAdminMode" attType="Scalar" rwType="READ_WRITE" displayLevel="OPERATOR" polledPeriod="3000" maxX="" maxY="" allocReadMember="false" isDynamic="false">
       <dataType xsi:type="pogoDsl:EnumType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
@@ -434,7 +434,7 @@
       <properties description="Report the administration mode of the timing beams as an array of unsigned short. For ex:&#xA;[0,0,0,...2..]" label="Timing beams admin mode" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
       <eventCriteria relChange="" absChange="1" period=""/>
     </attributes>
-    <attributes name="reportVLBIBeamState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportVlbiBeamState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:StateType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
@@ -442,7 +442,7 @@
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
       <properties description="Report the state of the VLBI beams as an array of DevState." label="VLBI Beams state" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
     </attributes>
-    <attributes name="reportVLBIBeamHealthState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportVlbiBeamHealthState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:UShortType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
@@ -451,7 +451,7 @@
       <properties description="Report the health status of the VLBI beams as an array of unsigned short. For ex:&#xA;[0,0,...,1..]" label="VLBI Beams health status" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
       <eventCriteria relChange="" absChange="1" period=""/>
     </attributes>
-    <attributes name="reportVLBIBeamAdminMode" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="16" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="reportVlbiBeamAdminMode" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:UShortType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
