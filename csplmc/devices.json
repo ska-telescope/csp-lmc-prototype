@@ -3,7 +3,17 @@
     "class": "CspMaster",
     "serverName": "CspMaster/csp",
     "devName": "mid_csp/elt/master",
-    "deviceProperties": [],
+    "deviceProperties": [
+      {
+       "devPropName":"MaxCapabilities",
+       "devPropValue":["SearchBeam:1500", "TimingBeam:16",
+	               "VlbiBeam:20", "Subarray:16"]
+      },
+      {
+       "devPropName": "CspSubarrays",
+       "devPropValue":["mid_csp/elt/subarray_1", "mid_csp/elt/subarray_2"]
+      }
+    ],
     "attributeProperties": [
       {
         "attributeName": "adminMode",
@@ -25,6 +35,83 @@
         "attrPropValue": "",
         "pollingPeriod": 1000,
         "changeEventAbs": "1"
+      },
+      {
+        "attributeName": "cspCbfState",
+        "attrPropName": "",
+        "attrPropValue": "",
+        "pollingPeriod": 1000,
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "cspPssState",
+        "attrPropName": "",
+        "attrPropValue": "",
+        "pollingPeriod": 1000,
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "cspPstState",
+        "attrPropName": "",
+        "attrPropValue": "",
+        "pollingPeriod": 1000,
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "reportVCCState",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/master/reportVCCState",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "reportVCCHealthState",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/master/reportVCCHealthState",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "reportVCCAdminMode",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/master/reportVCCAdminMode",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "reportFSPState",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/master/reportFSPState",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "reportFSPHealthState",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/master/reportFSPHealthState",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "reportFSPAdminMode",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/master/reportFSPAdminMode",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "fspMembership",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/master/fspMembership",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "vccMembership",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/master/vccMembership",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
       }
     ]
   },

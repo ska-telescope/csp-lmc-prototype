@@ -67,6 +67,55 @@ class CbfTestMaster(with_metaclass(DeviceMeta,SKAMaster)):
         doc="Percentage progress implemented for commands that  result in state/mode transitions for a large \nnumber of components and/or are executed in stages (e.g power up, power down)",
     )
 
+    vccCapabilityAddress = attribute(
+        dtype=('str',),
+        max_dim_x=197,
+    )
+
+    fspCapabilityAddress = attribute(
+        dtype=('str',),
+        max_dim_x=27,
+    )
+
+    reportVCCState = attribute(
+        dtype=('DevState',),
+        max_dim_x=197,
+    )
+
+    reportVccHealthState = attribute(
+        dtype=('uint16',),
+        max_dim_x=197,
+    )
+
+    reportVCCAdminMode = attribute(
+        dtype=('uint16',),
+        max_dim_x=197,
+    )
+
+    reportFSPState = attribute(
+        dtype=('DevState',),
+        max_dim_x=27,
+    )
+
+    reportFSPHealthState = attribute(
+        dtype=('uint16',),
+        max_dim_x=27,
+    )
+
+    reportFSPAdminMode = attribute(
+        dtype=('uint16',),
+        max_dim_x=27,
+    )
+
+    fspMembership = attribute(
+        dtype=('uint16',),
+        max_dim_x=27,
+    )
+
+    vccMembership = attribute(
+        dtype=('uint16',),
+        max_dim_x=197,
+    )
 
     # ---------------
     # General methods
@@ -131,6 +180,55 @@ class CbfTestMaster(with_metaclass(DeviceMeta,SKAMaster)):
         return 0
         # PROTECTED REGION END #    //  CbfTestMaster.commandProgress_read
 
+    def read_vccCapabilityAddress(self):
+        # PROTECTED REGION ID(CbfTestMaster.vccCapabilityAddress_read) ENABLED START #
+        return ['']
+        # PROTECTED REGION END #    //  CbfTestMaster.vccCapabilityAddress_read
+
+    def read_fspCapabilityAddress(self):
+        # PROTECTED REGION ID(CbfTestMaster.fspCapabilityAddress_read) ENABLED START #
+        return ['']
+        # PROTECTED REGION END #    //  CbfTestMaster.fspCapabilityAddress_read
+
+    def read_reportVCCState(self):
+        # PROTECTED REGION ID(CbfTestMaster.reportVCCState_read) ENABLED START #
+        return [tango.DevState.UNKNOWN]
+        # PROTECTED REGION END #    //  CbfTestMaster.reportVCCState_read
+
+    def read_reportVccHealthState(self):
+        # PROTECTED REGION ID(CbfTestMaster.reportVccHealthState_read) ENABLED START #
+        return [0]
+        # PROTECTED REGION END #    //  CbfTestMaster.reportVccHealthState_read
+
+    def read_reportVCCAdminMode(self):
+        # PROTECTED REGION ID(CbfTestMaster.reportVCCAdminMode_read) ENABLED START #
+        return [0]
+        # PROTECTED REGION END #    //  CbfTestMaster.reportVCCAdminMode_read
+
+    def read_reportFSPState(self):
+        # PROTECTED REGION ID(CbfTestMaster.reportFSPState_read) ENABLED START #
+        return [tango.DevState.UNKNOWN]
+        # PROTECTED REGION END #    //  CbfTestMaster.reportFSPState_read
+
+    def read_reportFSPHealthState(self):
+        # PROTECTED REGION ID(CbfTestMaster.reportFSPHealthState_read) ENABLED START #
+        return [0]
+        # PROTECTED REGION END #    //  CbfTestMaster.reportFSPHealthState_read
+
+    def read_reportFSPAdminMode(self):
+        # PROTECTED REGION ID(CbfTestMaster.reportFSPAdminMode_read) ENABLED START #
+        return [0]
+        # PROTECTED REGION END #    //  CbfTestMaster.reportFSPAdminMode_read
+
+    def read_fspMembership(self):
+        # PROTECTED REGION ID(CbfTestMaster.fspMembership_read) ENABLED START #
+        return [0]
+        # PROTECTED REGION END #    //  CbfTestMaster.fspMembership_read
+
+    def read_vccMembership(self):
+        # PROTECTED REGION ID(CbfTestMaster.vccMembership_read) ENABLED START #
+        return [0]
+        # PROTECTED REGION END #    //  CbfTestMaster.vccMembership_read
 
     # --------
     # Commands
@@ -154,7 +252,7 @@ class CbfTestMaster(with_metaclass(DeviceMeta,SKAMaster)):
     @DebugIt()
     def Off(self, argin):
         # PROTECTED REGION ID(CbfTestMaster.Off) ENABLED START #
-        thread = threading.Timer(2, self.off_subelement)
+        thread = threading.Timer(1, self.off_subelement)
         thread.start()
         # PROTECTED REGION END #    //  CbfTestMaster.Off
 

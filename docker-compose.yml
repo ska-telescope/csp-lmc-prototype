@@ -53,9 +53,7 @@ services:
   conf-polling-events:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
     depends_on:
-    - cbftestmaster
     - cspmaster
-
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}conf-polling-events
     environment:
@@ -76,7 +74,8 @@ services:
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
              tango_admin --check-device mid_csp_cbf/sub_elt/master ||\
-             tango_admin --add-server CbfTestMaster/test CbfTestMaster mid_csp_cbf/sub_elt/master &&\
+             tango_admin  --add-server CbfTestMaster/test CbfTestMaster mid_csp_cbf/sub_elt/master &&\
+             /venv/bin/python /app/csplmc/addDevicesAndProperties.py &&\
              /venv/bin/python /app/csplmc/CbfTestMaster/CbfTestMaster.py test"
     volumes_from:
       - rsyslog-csplmc:rw
