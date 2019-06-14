@@ -1,3 +1,4 @@
+[![Documentation Status](https://readthedocs.org/projects/csp-lmc-prototype/badge/?version=latest)](https://developer.skatelescope.org/projects/csp-lmc-prototype/en/latest/?badge=latest)
 ## Table of contents
 * [Description](#description)
 * [Getting started](#getting-started)
