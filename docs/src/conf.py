@@ -14,8 +14,13 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../csplmc/CspMaster/CspMaster'))
+sys.path.insert(0, os.path.abspath('../../'))
+sys.path.append(0, os.path.abspath('../../csplmc/CspMaster/CspMaster'))
 
+import sphinx_rtd_theme
+
+def setup(app):
+    app.add_stylesheet('css/custom.css')
 
 # -- Project information -----------------------------------------------------
 
@@ -65,7 +70,7 @@ master_doc = 'index'
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = 'En-en' 
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -94,7 +99,9 @@ html_context = {
     'logo': 'img/logo.jpg',
     'theme_logo_only' : True,
     'display_github': True, # Integrate GitHub
-    'conf_py_path': '/src/', # Path in the checkout to the docs root
+    'github_repo': 'csp-lmc-prototype' #Repository name
+    'github_version': 'master'  #Version
+    'conf_py_path': '/docs/src/', # Path in the checkout to the docs root
 
 }
 
