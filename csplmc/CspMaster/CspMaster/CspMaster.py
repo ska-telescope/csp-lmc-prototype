@@ -50,9 +50,12 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     # ---------------
     def seSCMCallback(self, evt):
         """
+        Class private method.
         Retrieve the values of the sub-element SCM attributes subscribed for change
         event at device initialization.
-        :param evt: A TANGO_CHANGE event on Subarray healthState.
+
+        :param evt: The event data
+
         :return: None
         """
         unknown_device = False
@@ -137,10 +140,14 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     # ---------------
     def __set_csp_state(self):
         """
-        Retrieve the iState attribute of the CSP sub-element and aggregate them to build 
-        up the CSP global state
-        """
+        Class private method.
+        Retrieve the State attribute of the CSP sub-elements and aggregate them to build 
+        up the CSP global state.
 
+        :param: None
+
+        :return: None
+        """
         self.__set_csp_health_state()
         # CSP state reflects the status of CBF. Only if CBF is present CSP can work.
         # The state of PSS and PST sub-elements only contributes to determine the CSP
@@ -149,8 +156,13 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def __set_csp_health_state(self):
         """
+        Class private method.
         Retrieve the healthState attribute of the CSP sub-elements and aggregate them
         to build up the CSP health state
+
+        :param: None
+
+        :return: None
         """
 
         if (self._cbf_health_state == HealthState.OK.value) and \
@@ -166,12 +178,18 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def __get_maxnum_of_capabilities(self):
         """
-        Retrieve the max number of Csp capabilities for each capability type.
-        Default values are:
-        - Subarrays     16
-        - PSS         1500
-        - PST           16
-        - VLBI          20
+        Class private method.
+
+        Retrieve the max number of CSP Capabilities for each capability type.\n
+        The couple [CapabilityType: num] is specified as TANGO Device Property.
+        Default values for Mid CSP are:\n
+        - Subarray      16 \n
+        - SearchBeam  1500 \n
+        - TimingBeam    16 \n
+        - VlbiBeam      20 \n
+        :param: None
+
+        :return: None
         """
         self._search_beams_num = 0
         self._timing_beams_num = 0
@@ -200,7 +218,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def __init_capabilities(self):
         """
-        Initialize the CSP capabilities State and Modes attributes
+        Class private method.
+        Initialize the CSP capabilities State and Modes attributes.
         """
         self._search_beams_state = [tango.DevState.UNKNOWN for i in range(self._search_beams_num)]
         self._timing_beams_state = [tango.DevState.UNKNOWN for i in range(self._timing_beams_num)]
@@ -214,7 +233,16 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def __connect_to_subelements(self):
         """
+        Class private method.
         Establish connection with each CSP sub-element.
+        If connection succeeds, the CspMaster device subscribes the State, healthState 
+        and adminMode attributes of each CSP Sub-element and registers a callback function
+        to handle the events (see seSCMCallback()).
+        Exceptions are logged.
+        Args:
+            None
+        Returns:
+            None
         """
         for fqdn in self._se_fqdn:
             # initialize the list for each dictionary key-name
@@ -249,6 +277,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def __create_search_beam_group(self):
         """
+        Class private method.
         Create a TANGO GROUP to get CSP SearchBeams Capabilities 
         information
         """
@@ -256,6 +285,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def __create_timing_beam_group(self):
         """
+        Class private method.
         Create a TANGO GROUP to get CSP TimingBeams Capabilities 
         information
         """
@@ -263,6 +293,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def __create_vlbi_beam_group(self):
         """
+        Class private method.
         Create a TANGO GROUP to get CSP Vlbi Beams Capabilities 
         information
         """
@@ -276,34 +307,39 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     # -----------------
 
     CspMidCbf = device_property(
-        dtype='str', default_value="mid_csp_cbf/sub_elt/master"
+        dtype='str', default_value="mid_csp_cbf/sub_elt/master",
+        doc="TANGO Device property.\n\n The Mid CBF sub-element address\n\n *type*: string",
     )
 
     CspMidPss = device_property(
-        dtype='str', default_value="mid_csp_pss/sub_elt/master"
+        dtype='str', default_value="mid_csp_pss/sub_elt/master",
+        doc="TANGO Device property.\n\n The Mid Pss sub-element address\n\n *type*: string",
     )
 
     CspMidPst = device_property(
-        dtype='str', default_value="mid_csp_pst/sub_elt/master"
+        dtype='str', default_value="mid_csp_pst/sub_elt/master",
+        doc="TANGO Device property.\n\n The Mid Pst sub-element address\n\n *type*: string",
     )
 
     CspSubarrays = device_property(
         dtype=('str',),
+        doc="TANGO Device property.\n\n The Mid Subarrays addresses\n\n *type*: array of string",
     )
 
     SearchBeams = device_property(
         dtype=('str',),
-        doc="The SearchBeams Capabilities addresses (FQDN)",
+        doc="TANGO Device property.\n\n The Mid SearchBeams Capabilities addresses\n\n *type*: array of string",
     )
 
     TimingBeams = device_property(
         dtype=('str',),
+        doc="TANGO Device property.\n\n The Mid TiminingBeam Capabilities addresses\n\n *type*: array of string",
     )
 
     VlbiBeams = device_property(
         dtype=('str',),
+        doc="TANGO Device property.\n\n The Mid VlbiBeam Capabilities addresses\n\n *type*: array of string",
     )
-
 
     # ----------
     # Attributes
@@ -315,8 +351,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         dtype='DevEnum',
         access=AttrWriteType.READ_WRITE,
         memorized=True,
-        doc="The admin mode reported for this device. It may interpret the current device condition \n\
-             and condition of all managed devices to set this. Most possibly an aggregate attribute.",
+        doc="The admin mode reported for this device. It may interpret the current device \n\
+             condition of all managed devices to set this. Most possibly an aggregate attribute.",
         enum_labels=["ON-LINE", "OFF-LINE", "MAINTENANCE", "NOT-FITTED", "RESERVED", ],
     )
 
@@ -328,30 +364,31 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         polling_period=3000,
         abs_change=5,
         rel_change=2,
-        doc="Percentage progress implemented for commands that  result in state/mode \
-             transitions for a large \nnumber of components and/or are executed in \
-             stages (e.g power up, power down)",
+        doc="Tango Device attribute.\n\nPercentage progress implemented for commands that\
+             result in state/mode \
+             transitions for a large number of components and/or are executed in \
+             stages (e.g power up, power down)\n\ntype: uint16",
     )
 
     cspCbfState = attribute(
         dtype='DevState',
         label="CBF status",
         polling_period=3000,
-        doc="The CBF sub-element status.",
+        doc="The CBF sub-element State.",
     )
 
     cspPssState = attribute(
         dtype='DevState',
         label="PSS status",
         polling_period=3000,
-        doc="The PSS sub-element status.",
+        doc="The PSS sub-element State.",
     )
 
     cspPstState = attribute(
         dtype='DevState',
         label="PST status",
         polling_period=3000,
-        doc="The PST sub-element status",
+        doc="The PST sub-element State",
     )
 
     cspCbfHealthState = attribute(
@@ -383,17 +420,17 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     cbfMasterAddress = attribute(
         dtype='str',
-        doc="The CBF Master FQDN",
+        doc="The Mid CbfMaster TANGO device FQDN",
     )
 
     pssMasterAddress = attribute(
         dtype='str',
-        doc="The Pss Master FQDN",
+        doc="The Mid PssMaster TANGO device FQDN",
     )
 
     pstMasterAddress = attribute(
         dtype='str',
-        doc="The PST Master FQDN",
+        doc="The Mid PstMaster TANGO device FQDN",
     )
 
     cbfAdminMode = attribute(
@@ -403,6 +440,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         polling_period=3000,
         abs_change=1,
         enum_labels=["ON-LINE", "OFF-LINE", "MAINTENANCE", "NOT-FITTED", "RESERVED", ],
+        doc="The CbfMaster TANGO Device administration mode",
     )
 
     pssAdminMode = attribute(
@@ -412,6 +450,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         polling_period=3000,
         abs_change=1,
         enum_labels=["ON-LINE", "OFF-LINE", "MAINTENANCE", "NOT-FITTED", "RESERVED", ],
+        doc="The PssMaster TANGO Device administration mode",
     )
 
     pstAdminMode = attribute(
@@ -421,21 +460,22 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         polling_period=3000,
         abs_change=1,
         enum_labels=["ON-LINE", "OFF-LINE", "MAINTENANCE", "NOT-FITTED", "RESERVED", ],
+        doc="The PstMaster TANGO Device administration mode",
     )
 
     reportSearchBeamState = attribute(
         dtype=('DevState',),
         max_dim_x=1500,
         label="Search Beams state",
-        doc="Report the state of the search beams as an array of DevState.",
+        doc="The State value of CSP SearchBeam Capabilities. Reported as an array of DevState.",
     )
 
     reportSearchBeamHealthState = attribute(
         dtype=('uint16',),
         max_dim_x=1500,
         label="Search Beams health status",
-        doc="Report the health status of the search beams as an array \
-             of unsigned short. For ex:\n[0,0,...,1..]",
+        doc="The healthState of the CSP SearchBeam Capabilities. Reported as an array \
+             of ushort. For ex:\n[0,0,...,1..]",
     )
 
     reportSearchBeamAdminMode = attribute(
@@ -457,8 +497,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         dtype=('uint16',),
         max_dim_x=16,
         label="Timing Beams health status",
-        doc="Report the health status of the timing beams as an array \
-             of unsigned short. For ex:\n[0,0,...,1..]",
+        doc="*TANGO Attribute*: healhState of the TimingBeam Capabilities as an array \
+             of UShort.",
     )
 
     reportTimingBeamAdminMode = attribute(
@@ -557,27 +597,91 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     reportVCCState = attribute(name="reportVCCState", label="reportVCCState",
         forwarded=True
     )
+    """
+    *TANGO Forwarded attribute*.
+
+    Report the State of the Mid CBF Very Coarse Channel TANGO Devices as an array of DevState.
+
+    *__root_att*: /mid_csp_cbf/sub_elt/master/reportVCCState
+    """
+
     reportVCCHealthState = attribute(name="reportVCCHealthState", label="reportVCCHealthState",
         forwarded=True
     )
+    """
+    *TANGO Forwarded attribute*.
+
+    Report the healthState of the Mid CBF Very Coarse Channel TANGO Devices as an array of UShort.
+
+    *__root_att*: /mid_csp_cbf/sub_elt/master/reportVCCHealthState
+    """
+
     reportVCCAdminMode = attribute(name="reportVCCAdminMode", label="reportVCCAdminMode",
         forwarded=True
     )
+    """
+    *TANGO Forwarded attribute*.
+
+    Report the adminMode of the Mid CBF Very Coarse Channel TANGO devices as an array of UShort.
+
+    *__root_att*: /mid_csp_cbf/sub_elt/master/reportVccAdminMode  
+    """
+
     reportFSPState = attribute(name="reportFSPState", label="reportFSPState",
         forwarded=True
     )
+    """
+    *TANGO Forwarded attribute*.
+
+    Report the State of the Mid CBF Frequency Slice Processor TANGO devices as an array of DevState.
+
+    *__root_att*: /mid_csp_cbf/sub_elt/master/reportFSPHealthState
+    """
+
     reportFSPHealthState = attribute(name="reportFSPHealthState", label="reportFSPHealthState",
         forwarded=True
     )
+    """
+    *TANGO Forwarded attribute*.
+
+    Report the healthState of the Mid CBF Frequency Slice Processor devices as an array of UShort.
+
+    *__root_att*: /mid_csp_cbf/sub_elt/master/reportFSPHealthState
+    """
+
     reportFSPAdminMode = attribute(name="reportFSPAdminMode", label="reportFSPAdminMode",
         forwarded=True
     )
+    """
+    *TANGO Forwarded attribute*.
+
+    Report the adminMode of the Mid CBF Frequency Slice Processors TANGO Device as \
+    an array of UShort.
+
+    *__root_att*: /mid_csp_cbf/sub_elt/master/reportFSPAdminMode
+    """
+
     fspMembership = attribute(name="fspMembership", label="fspMembership",
         forwarded=True
     )
+    """
+    *TANGO Forwarded attribute*.
+
+    Report the Mid CBF Frequency Slice Processor TANGO Devices subarray affilitation.
+
+    *__root_att*: /mid_csp_cbf/sub_elt/master/fspMembership
+    """
+
     vccMembership = attribute(name="vccMembership", label="vccMembership",
         forwarded=True
     )
+    """
+    *TANGO Forwarded attribute*.
+
+    Report the Mid CBF Very Coarse Channel TANGO Devices  subarray affilitation.
+
+    *__root_att*: /mid_csp_cbf/sub_elt/master/fspMembership
+    """
 
     # ---------------
     # General methods
@@ -662,8 +766,14 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def write_adminMode(self, value):
         """
+        Class method.
         Set the administration mode for the whole CSP element.
-        The admin mode value is forwarded to all the sub-elements
+
+        Args:  
+            value: one of the administration mode value (ON-LINE,\
+            OFF-LInE, MAINTENANCE, NOT-FITTED).
+        Returns: 
+            None
         """
         # PROTECTED REGION ID(CspMaster.adminMode_write) ENABLED START #
         for fqdn in self._se_fqdn: 
@@ -682,62 +792,139 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.adminMode_write
 
     def read_commandProgress(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the commandProgress attribute value.           
+        """
         # PROTECTED REGION ID(CspMaster.commandProgress_read) ENABLED START #
         return self._progress_command
         # PROTECTED REGION END #    //  CspMaster.commandProgress_read
 
     def read_cspCbfState(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the CBF Sub-element State.           
+        """
         # PROTECTED REGION ID(CspMaster.cspCbfState_read) ENABLED START #
         return self._cbf_state
         # PROTECTED REGION END #    //  CspMaster.cspCbfState_read
 
     def read_cspPssState(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the Pss Sub-element State.           
+        """
         # PROTECTED REGION ID(CspMaster.cspPssState_read) ENABLED START #
         return self._pss_state
         # PROTECTED REGION END #    //  CspMaster.cspPssState_read
 
     def read_cspPstState(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the Pst Sub-element State.           
+        """
         # PROTECTED REGION ID(CspMaster.cspPstState_read) ENABLED START #
         return self._pst_state
         # PROTECTED REGION END #    //  CspMaster.cspPstState_read
 
     def read_cspCbfHealthState(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the Cbf Sub-element HealthState.           
+        """
         # PROTECTED REGION ID(CspMaster.cspCbfHealthState_read) ENABLED START #
         return self._cbf_health_state
         # PROTECTED REGION END #    //  CspMaster.cspCbfHealthState_read
 
     def read_cspPssHealthState(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the Pss Sub-element HealthState.           
+        """
         # PROTECTED REGION ID(CspMaster.cspPssHealthState_read) ENABLED START #
         return self._pss_health_state
         # PROTECTED REGION END #    //  CspMaster.cspPssHealthState_read
 
     def read_cspPstHealthState(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the Pst Sub-element HealthState.           
+        """
         # PROTECTED REGION ID(CspMaster.cspPstHealthState_read) ENABLED START #
         return self._pst_health_state
         # PROTECTED REGION END #    //  CspMaster.cspPstHealthState_read
 
     def read_cbfMasterAddress(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the CbfMaster TANGO Device address.
+        """
         # PROTECTED REGION ID(CspMaster.cbfMasterAddress_read) ENABLED START #
         return self.CspMidCbf
         # PROTECTED REGION END #    //  CspMaster.cbfMasterAddress_read
 
     def read_pssMasterAddress(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the PssMaster TANGO Device address.
+        """
         # PROTECTED REGION ID(CspMaster.pssMasterAddress_read) ENABLED START #
         return self.CspMidPss
         # PROTECTED REGION END #    //  CspMaster.pssMasterAddress_read
 
     def read_pstMasterAddress(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the PstMaster TANGO Device address.
+        """
         # PROTECTED REGION ID(CspMaster.pstMasterAddress_read) ENABLED START #
         return self.CspMidPst
         # PROTECTED REGION END #    //  CspMaster.pstMasterAddress_read
 
     def read_cbfAdminMode(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the CbfMaster administration mode.
+        """
         # PROTECTED REGION ID(CspMaster.pssAdminMode_read) ENABLED START #
         return self._cbf_admin_mode
         # PROTECTED REGION END #    //  CspMaster.cbfAdminMode_read
 
     def write_cbfAdminMode(self, value):
         # PROTECTED REGION ID(CspMaster.cbfAdminMode_write) ENABLED START #
+        """
+        Class method.
+        Set the CBF sub-element administration mode.
+
+        Args:  
+            value: one of the administration mode value (ON-LINE,\
+            OFF-LInE, MAINTENANCE, NOT-FITTED).
+
+        Returns: 
+            None
+        """
         try:
             cbf_proxy = self._se_proxies[self.CspMidCbf]
             cbf_proxy.adminMode = value
@@ -752,11 +939,28 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.cbfAdminMode_write
 
     def read_pssAdminMode(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the PssMaster administration mode.
+        """
         # PROTECTED REGION ID(CspMaster.pssAdminMode_read) ENABLED START #
         return self._pss_admin_mode
         # PROTECTED REGION END #    //  CspMaster.pssAdminMode_read
 
     def write_pssAdminMode(self, value):
+        """
+        Class method.
+        Set the PSS sub-element administration mode.
+
+        Args:  
+            value: one of the administration mode value (ON-LINE,\
+            OFF-LInE, MAINTENANCE, NOT-FITTED).
+
+        Returns: 
+            None
+        """
         # PROTECTED REGION ID(CspMaster.pssAdminMode_write) ENABLED START #
         try:
             pss_proxy = self._se_proxies[self.CspMidPss]
@@ -772,11 +976,28 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.pssAdminMode_write
 
     def read_pstAdminMode(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the PstMaster administration mode.
+        """
         # PROTECTED REGION ID(CspMaster.pstAdminMode_read) ENABLED START #
         return self._pst_admin_mode
         # PROTECTED REGION END #    //  CspMaster.pstAdminMode_read
 
     def write_pstAdminMode(self, value):
+        """
+        Class method.
+        Set the PST sub-element administration mode.
+
+        Args:  
+            value: one of the administration mode value (ON-LINE,\
+            OFF-LInE, MAINTENANCE, NOT-FITTED).
+
+        Returns: 
+            None
+        """
         # PROTECTED REGION ID(CspMaster.pstAdminMode_write) ENABLED START #
         try:
             pst_proxy = self._se_proxies[self.CspMidPst]
@@ -792,16 +1013,36 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.pstAdminMode_write
 
     def read_reportSearchBeamState(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the State of the CSP SearchBeam Capabilities as an array of DevState.
+        """
         # PROTECTED REGION ID(CspMaster.reportSearchBeamState_read) ENABLED START #
         return self._search_beams_state
         # PROTECTED REGION END #    //  CspMaster.reportSearchBeamState_read
 
     def read_reportSearchBeamHealthState(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the healthState of the CSP SearchBeam Capabilities as an array of UShort.
+            (It's not possible to allocate an array of DevEnum)
+        """
         # PROTECTED REGION ID(CspMaster.reportSearchBeamHealthState_read) ENABLED START #
         return self._search_beams_health_state
         # PROTECTED REGION END #    //  CspMaster.reportSearchBeamHealthState_read
 
     def read_reportSearchBeamAdminMode(self):
+        """
+        Class method.
+
+        Returns: 
+            Return the adminMode of the CSP SearchBeam Capabilities as an array of UShort.
+            (It's not possible to allocate an array of DevEnum)
+        """
         # PROTECTED REGION ID(CspMaster.reportSearchBeamAdminMode_read) ENABLED START #
         return self._search_beams_admin
         # PROTECTED REGION END #    //  CspMaster.reportSearchBeamAdminMode_read
@@ -812,6 +1053,13 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.reportTimingBeamState_read
 
     def read_reportTimingBeamHealthState(self):
+        """
+        Class method
+
+        Returns:
+            The healthState of the CSP TimingBeam Capabilities as an array \
+             of UShort.
+        """
         # PROTECTED REGION ID(CspMaster.reportTimingBeamHealthState_read) ENABLED START #
         return self._timing_beams_health_state
         # PROTECTED REGION END #    //  CspMaster.reportTimingBeamHealthState_read
