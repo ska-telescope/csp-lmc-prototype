@@ -113,19 +113,19 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                     if self.CspMidCbf in evt.attr_name:
                         self._cbf_state = tango.DevState.UNKNOWN
                         self._cbf_health_state = HealthState.UNKNOWN.value
-                        if self._se_to_switch_off[self.CspMidCbf] == 1:
+                        if self._se_to_switch_off[self.CspMidCbf] == True:
                             self._cbf_state = tango.DevState.OFF
                     # PSS sub-element
                     if self.CspMidPss in evt.attr_name:
                         self._pss_state = tango.DevState.UNKNOWN
                         self._pss_health_state = HealthState.UNKNOWN.value
-                        if self._se_to_switch_off[self.CspMidPss] == 1:
+                        if self._se_to_switch_off[self.CspMidPss] == True:
                             self._cbf_state = tango.DevState.OFF
                     # PST sub-element
                     if self.CspMidPst in evt.attr_name:
                         self._pst_state = tango.DevState.UNKNOWN
                         self._pst_health_state = HealthState.UNKNOWN.value
-                        if self._se_to_switch_off[self.CspMidPst] == 1:
+                        if self._se_to_switch_off[self.CspMidPst] == True:
                             self._cbf_state = tango.DevState.OFF
                     # update the State and healthState of the CSP Element
                     self.__set_csp_state()
@@ -139,8 +139,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         """
         Retrieve the iState attribute of the CSP sub-element and aggregate them to build 
         up the CSP global state
-        :param  None
-        :return None
         """
 
         self.__set_csp_health_state()
@@ -153,8 +151,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         """
         Retrieve the healthState attribute of the CSP sub-elements and aggregate them
         to build up the CSP health state
-        :param  None
-        :return None
         """
 
         if (self._cbf_health_state == HealthState.OK.value) and \
@@ -224,6 +220,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             # initialize the list for each dictionary key-name
             self._se_event_id[fqdn] = []
             try:
+                self._se_to_switch_off[fqdn] = False
                 log_msg = "Trying connection to" + str(fqdn) + " device"
                 self.dev_logging(log_msg, int(tango.LogLevel.LOG_INFO))
                 device_proxy = DeviceProxy(fqdn)
@@ -296,6 +293,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     SearchBeams = device_property(
         dtype=('str',),
+        doc="The SearchBeams Capabilities addresses (FQDN)",
     )
 
     TimingBeams = device_property(
@@ -549,6 +547,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         doc="The CSPsub-rray affiliation of VLBI beams.",
     )
 
+    # TODO: understand why device crashes if these forwarded attributes are declared
     #vccCapabilityAddress = attribute(name="vccCapabilityAddress", label="vccCapabilityAddress",
     #    forwarded=True
     #)
@@ -627,9 +626,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         self._se_fqdn.append(self.CspMidPss)
         self._se_fqdn.append(self.CspMidPst)
 
+        # flag to signal sub-element switch-off request
         self._se_to_switch_off = {}
         for device_name in self._se_fqdn:
-            self._se_to_switch_off[device_name] = 0
+            self._se_to_switch_off[device_name] = False
         # initialize the dictionary with sub-element proxies
         self._se_proxies = {}
         # dictionary with list of event ids/sub-element. Need to store the event
@@ -980,14 +980,25 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     @command(
         dtype_in=('str',), 
-        doc_in="If the array length is 0, the command applies to the whole\nCSP Element.\n\
-                If the array length is > 1, each array element specifies the FQDN of the\n\
-                CSP SubElement to switch OFF.", 
+        doc_in="If the array length is 0, the command applies to the whole\ CSP Element.\
+If the array length is > 1, each array element specifies the FQDN of the\
+ CSP SubElement to switch OFF."
+
     )
     @DebugIt()
     def Off(self, argin):
+        """
+
+        Switch off the CSP Element or a single CSP Sub-element\n
+        :param argin: The list of sub-elements to switch-off \ 
+        If the array length is 0, the command applies to the whole CSP Element.\
+If the array length is > 1, each array element specifies the FQDN of the\
+ CSP SubElement to switch OFF \n
+
+        :return: None
+
+        """
         # PROTECTED REGION ID(CspMaster.Off) ENABLED START #
-        print("Off")
         device_list = []    
         num_of_devices = len(argin) 
         if num_of_devices == 0:      # no input argument -> switch on all sub-elements
@@ -1003,7 +1014,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             try:
                 device_proxy = self._se_proxies[device_name]
                 device_proxy.command_inout("Off", "")
-                self._se_to_switch_off[device_name] = 1
+                self._se_to_switch_off[device_name] = True
             except KeyError as error:
                 err_msg = "No proxy for device" + str(error)
                 self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
@@ -1031,6 +1042,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     @DebugIt()
     def Standby(self,argin):
         # PROTECTED REGION ID(CspMaster.Standby) ENABLED START #
+        """
+        :param argin: listof devices
+        :return: None
+        """
         device_list = []    
         num_of_devices = len(argin) 
         if num_of_devices == 0:      # no input argument -> switch on all sub-elements

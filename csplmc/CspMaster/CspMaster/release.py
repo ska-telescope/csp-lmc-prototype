@@ -10,7 +10,7 @@
 """Release information for Python Package"""
 
 name = """tangods-cspmaster"""
-version = "0.0.1"
+version = "1.0.0"
 version_info = version.split(".")
 description = """SKA Csp Master TANGO Device Server"""
 author = "E.G"
