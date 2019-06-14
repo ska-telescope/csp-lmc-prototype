@@ -1,11 +1,7 @@
-CspMaster package
+CspMaster Class Documentation 
 =================
-
-Module contents
----------------
-
 .. automodule:: CspMaster
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :member-order: 
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :member-order: 
