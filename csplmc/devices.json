@@ -102,14 +102,14 @@
       {
         "attributeName": "fspMembership",
         "attrPropName": "__root_att",
-        "attrPropValue": "mid_csp_cbf/sub_elt/master/fspMembership",
+        "attrPropValue": "mid_csp_cbf/sub_elt/master/reportFSPSubarrayMembership",
         "pollingPeriod": "",
         "changeEventAbs": ""
       },
       {
         "attributeName": "vccMembership",
         "attrPropName": "__root_att",
-        "attrPropValue": "mid_csp_cbf/sub_elt/master/vccMembership",
+        "attrPropValue": "mid_csp_cbf/sub_elt/master/reportFSPSubarrayMembership",
         "pollingPeriod": "",
         "changeEventAbs": ""
       }
@@ -120,6 +120,80 @@
     "serverName": "CbfTestMaster/test",
     "devName": "mid_csp_cbf/sub_elt/master",
     "deviceProperties": [],
+    "attributeProperties": [
+      {
+        "attributeName": "adminMode",
+        "attrPropName": "",
+        "attrPropValue": "",
+        "pollingPeriod": 1000,
+        "changeEventAbs": "1"
+      },
+      {
+        "attributeName": "healthState",
+        "attrPropName": "",
+        "attrPropValue": "",
+        "pollingPeriod": 1000,
+        "changeEventAbs": "1"
+      },
+      {
+        "attributeName": "State",
+        "attrPropName": "",
+        "attrPropValue": "",
+        "pollingPeriod": 1000,
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "vccState",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/vccState",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "vccHealthState",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/vccHealthState",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "fspState",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/fspState",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "fspHealthState",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/fspHealthState",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      }
+    ]
+  },
+  {
+    "class": "CspSubarray",
+    "serverName": "CspSubarray/sub1",
+    "devName": "mid_csp/elt/subarray_01",
+    "deviceProperties": [
+      {
+       "devPropName":"CbfSubarray",
+       "devPropValue":"mid_csp_cbf/sub_elt/subarray_01"
+      },
+      {
+       "devPropName":"PssSubarray",
+       "devPropValue":"mid_csp_pss/sub_elt/subarray_01"
+      },
+      {
+       "devPropName":"PstSubarray",
+       "devPropValue":"mid_csp_pst/sub_elt/subarray_01"
+      },
+      {
+       "devPropName": "SubID",
+       "devPropValue":"1"
+      }
+    ],
     "attributeProperties": [
       {
         "attributeName": "adminMode",

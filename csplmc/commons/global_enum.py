@@ -20,3 +20,24 @@ class ControlMode(IntEnum):
     REMOTE = 0
     LOCAL  = 1
 
+@unique
+class ObsMode(IntEnum):
+    IDLE             = 0
+    IMAGING          = 1
+    PULSARSEARCH     = 2
+    PULSARTIMING     = 3
+    DYNAMICSPECTRUM  = 4
+    TRANSIENTSEARCH  = 5
+    VLBI             = 6
+    CALIBRATION      = 7
+
+@unique
+class ObsState(IntEnum):
+    IDLE        = 0
+    CONFIGURING = 1
+    READY       = 2
+    SCANNING    = 3
+    PAUSED      = 4
+    ABORTED     = 5
+    FAULT       = 6
+
