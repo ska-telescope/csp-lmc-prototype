@@ -3,14 +3,14 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-CSP LMC Prototype's documentation!
+CSP LMC Prototype's documentation
 =============================================
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
    
-   CspMaster
+   CspMaster<CspMaster>
 
 Indices and tables
 ==================

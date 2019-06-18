@@ -1,5 +1,5 @@
 CspMaster Class Documentation 
-=================
+================================
 .. automodule:: CspMaster
    :members:
    :undoc-members:

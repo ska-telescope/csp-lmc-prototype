@@ -14,8 +14,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../'))
-sys.path.append(0, os.path.abspath('../../csplmc/CspMaster/CspMaster'))
+sys.path.insert(0, os.path.abspath('../../csplmc/CspMaster/CspMaster'))
 
 import sphinx_rtd_theme
 
@@ -99,8 +98,8 @@ html_context = {
     'logo': 'img/logo.jpg',
     'theme_logo_only' : True,
     'display_github': True, # Integrate GitHub
-    'github_repo': 'csp-lmc-prototype' #Repository name
-    'github_version': 'master'  #Version
+    'github_repo': 'csp-lmc-prototype', #Repository name
+    'github_version': 'master',  #Version
     'conf_py_path': '/docs/src/', # Path in the checkout to the docs root
 
 }
