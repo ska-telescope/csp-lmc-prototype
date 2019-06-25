@@ -61,18 +61,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         unknown_device = False
         if evt.err is False:
             try:
-                print("evt.attr_value.name:", evt.attr_value.name)
-                print("evt.attr_name:", evt.attr_name)
-                if "state" == evt.attr_name:
-                    if self.CspMidCbf in evt.attr_name:
-                        self._cbf_state = evt.attr_value.value
-                    elif self.CspMidPss in evt.attr_name:
-                        self._pss_state = evt.attr_value.value
-                    elif self.CspMidPst in evt.attr_name:
-                        self._pst_state = evt.attr_value.value
-                    else:
-                        # should NOT happen!
-                        unknown_device = True    
                 if "healthstate" in evt.attr_name:
                     if self.CspMidCbf in evt.attr_name:
                         self._cbf_health_state = evt.attr_value.value
@@ -83,16 +71,30 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                     else:
                         # should NOT happen!
                         unknown_device = True    
-                if "adminmode" in evt.attr_name: 
+                elif "state" in evt.attr_name:
                     if self.CspMidCbf in evt.attr_name:
-                        self._cbf_admin_mode = evt.attr_value.value
+                        self._cbf_state = evt.attr_value.value
                     elif self.CspMidPss in evt.attr_name:
-                        self._pss_admin_mode = evt.attr_value.value
+                        self._pss_state = evt.attr_value.value
                     elif self.CspMidPst in evt.attr_name:
-                        self._pst_admin_mode = evt.attr_value.value
+                        self._pst_state = evt.attr_value.value
                     else:
                         # should NOT happen!
                         unknown_device = True    
+
+                elif "adminmode" in evt.attr_name: 
+                    if self.CspMidCbf in evt.attr_name:
+                        self._cbf_admin_mode = evt.attr_value.value
+                    elif self.CspMidPss in evt.attr_name:
+                            self._pss_admin_mode = evt.attr_value.value
+                    elif self.CspMidPst in evt.attr_name:
+                            self._pst_admin_mode = evt.attr_value.value
+                    else:
+                        # should NOT happen!
+                        unknown_device = True    
+                else: 
+                    log_msg = "Attribute {} not still handled".format(evt.attr_name)
+                    self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
 
                 if unknown_device == True:
                     log_msg = "Unexpected change event for attribute: " + \
