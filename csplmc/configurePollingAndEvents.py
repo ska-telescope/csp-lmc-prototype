@@ -17,8 +17,6 @@ for device in json_devices:
             if attributeProperty["attrPropName"] == "__root_att":
                 continue
             attributeProxy = AttributeProxy(deviceName + "/" + attributeProperty["attributeName"])
-            print("Device: ", deviceName, " Attribute: ", attributeProperty["attributeName"])
-            print("Polling Period: ", attributeProperty["pollingPeriod"])
             if(attributeProperty["pollingPeriod"] != ""):
                 attributeProxy.poll(attributeProperty["pollingPeriod"])
             else:

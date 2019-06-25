@@ -11,7 +11,7 @@
       },
       {
        "devPropName": "CspSubarrays",
-       "devPropValue":["mid_csp/elt/subarray_1", "mid_csp/elt/subarray_2"]
+       "devPropValue":["mid_csp/elt/subarray_01", "mid_csp/elt/subarray_02"]
       }
     ],
     "attributeProperties": [
