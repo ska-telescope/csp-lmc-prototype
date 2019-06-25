@@ -109,64 +109,7 @@
       {
         "attributeName": "vccMembership",
         "attrPropName": "__root_att",
-        "attrPropValue": "mid_csp_cbf/sub_elt/master/reportFSPSubarrayMembership",
-        "pollingPeriod": "",
-        "changeEventAbs": ""
-      }
-    ]
-  },
-  {
-    "class": "CbfTestMaster",
-    "serverName": "CbfTestMaster/test",
-    "devName": "mid_csp_cbf/sub_elt/master",
-    "deviceProperties": [],
-    "attributeProperties": [
-      {
-        "attributeName": "adminMode",
-        "attrPropName": "",
-        "attrPropValue": "",
-        "pollingPeriod": 1000,
-        "changeEventAbs": "1"
-      },
-      {
-        "attributeName": "healthState",
-        "attrPropName": "",
-        "attrPropValue": "",
-        "pollingPeriod": 1000,
-        "changeEventAbs": "1"
-      },
-      {
-        "attributeName": "State",
-        "attrPropName": "",
-        "attrPropValue": "",
-        "pollingPeriod": 1000,
-        "changeEventAbs": ""
-      },
-      {
-        "attributeName": "vccState",
-        "attrPropName": "__root_att",
-        "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/vccState",
-        "pollingPeriod": "",
-        "changeEventAbs": ""
-      },
-      {
-        "attributeName": "vccHealthState",
-        "attrPropName": "__root_att",
-        "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/vccHealthState",
-        "pollingPeriod": "",
-        "changeEventAbs": ""
-      },
-      {
-        "attributeName": "fspState",
-        "attrPropName": "__root_att",
-        "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/fspState",
-        "pollingPeriod": "",
-        "changeEventAbs": ""
-      },
-      {
-        "attributeName": "fspHealthState",
-        "attrPropName": "__root_att",
-        "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/fspHealthState",
+        "attrPropValue": "mid_csp_cbf/sub_elt/master/reportVCCSubarrayMembership",
         "pollingPeriod": "",
         "changeEventAbs": ""
       }
@@ -214,6 +157,20 @@
         "attrPropName": "",
         "attrPropValue": "",
         "pollingPeriod": 1000,
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "vccState",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/vccState",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "vccHealthState",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/vccHealthState",
+        "pollingPeriod": "",
         "changeEventAbs": ""
       }
     ]
