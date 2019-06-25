@@ -1178,10 +1178,11 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION ID(CspMaster.is_On_allowed) ENABLED START #
         if self.get_state() not in [tango.DevState.STANDBY, tango.DevState.DISABLE]:
             return False
-        if self.get_state() == tango.DevState.DISABLE:
-            if self._admin_mode.name not in [AdminMode.OFFLINE.name, 
-                                          AdminMode.NOTFITTED.name]:
+        if self._admin_mode in [AdminMode.OFFLINE.value, AdminMode.NOTFITTED.value]:
+            if self.get_state() == tango.DevState.DISABLE: 
                 return False
+            if self.get_state() == tango.DevState.STANDBY: 
+                return True
         return True
         # PROTECTED REGION END #    //  CspMaster.is_On_allowed
     @command(
@@ -1214,7 +1215,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 # - no proxy found for the only specified input device
                 # - or no proxy found for CBF.
                 # In all other cases log the error message
-                err_msg = "No proxy for device" + str(error)
+                err_msg = "No proxy for device: " + str(error)
                 self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
                 nkey_err += 1
             except tango.DevFailed as df:
