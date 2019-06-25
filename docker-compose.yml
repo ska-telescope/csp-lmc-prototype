@@ -53,7 +53,7 @@ services:
   conf-polling-events:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
     depends_on:
-    - cspmaster
+    - cspsubarray01
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}conf-polling-events
     environment:
@@ -62,21 +62,33 @@ services:
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
              /venv/bin/python /app/csplmc/configurePollingAndEvents.py"
 
-  cbftestmaster:
+  add-devs-and-props:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
-    network_mode: ${NETWORK_MODE}
-    container_name: ${CONTAINER_NAME_PREFIX}cbftestmaster
     depends_on:
       - databaseds
-      - rsyslog-csplmc
+    network_mode: ${NETWORK_MODE}
+    container_name: ${CONTAINER_NAME_PREFIX}add-devs-and-props
     environment:
       - TANGO_HOST=${TANGO_HOST}
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
-             tango_admin --check-device mid_csp_cbf/sub_elt/master ||\
-             tango_admin  --add-server CbfTestMaster/test CbfTestMaster mid_csp_cbf/sub_elt/master &&\
-             /venv/bin/python /app/csplmc/addDevicesAndProperties.py &&\
-             /venv/bin/python /app/csplmc/CbfTestMaster/CbfTestMaster.py test"
+             /venv/bin/python /app/csplmc/addDevicesAndProperties.py"
+
+  cspsubarray01:
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
+    network_mode: ${NETWORK_MODE}
+    container_name: ${CONTAINER_NAME_PREFIX}cspsubarray01
+    depends_on:
+      - databaseds
+      - rsyslog-csplmc
+      - cspmaster
+    environment:
+      - TANGO_HOST=${TANGO_HOST}
+    command: >
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
+             tango_admin --check-device mid_csp/elt/subarray_01 ||\
+             tango_admin  --add-server CspSubarray/sub1 CspSubarray mid_csp/elt/subarray_01 &&\
+             /venv/bin/python /app/csplmc/CspSubarray/CspSubarray/CspSubarray.py sub1"
     volumes_from:
       - rsyslog-csplmc:rw
 
@@ -86,7 +98,6 @@ services:
     container_name: ${CONTAINER_NAME_PREFIX}cspmaster
     depends_on:
       - databaseds
-      - cbftestmaster
       - rsyslog-csplmc
     environment:
       - TANGO_HOST=${TANGO_HOST}
@@ -94,7 +105,6 @@ services:
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
              tango_admin --check-device mid_csp/elt/master ||\
              tango_admin --add-server CspMaster/csp CspMaster mid_csp/elt/master &&\
-             tango_admin --ping-device mid_csp_cbf/sub_elt/master 10 &&\
              /venv/bin/python /app/csplmc/CspMaster/CspMaster/CspMaster.py csp"
     volumes_from:
       - rsyslog-csplmc:rw

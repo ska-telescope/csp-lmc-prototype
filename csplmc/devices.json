@@ -160,6 +160,13 @@
         "changeEventAbs": ""
       },
       {
+        "attributeName": "obsState",
+        "attrPropName": "",
+        "attrPropValue": "",
+        "pollingPeriod": 1000,
+        "changeEventAbs": "1"
+      },
+      {
         "attributeName": "vccState",
         "attrPropName": "__root_att",
         "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/vccState",
