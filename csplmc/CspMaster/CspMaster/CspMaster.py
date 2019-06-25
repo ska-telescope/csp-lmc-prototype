@@ -61,7 +61,9 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         unknown_device = False
         if evt.err is False:
             try:
-                if ("state" == evt.attr_value.name) or ("State" == evt.attr_value.name):
+                print("evt.attr_value.name:", evt.attr_value.name)
+                print("evt.attr_name:", evt.attr_name)
+                if "state" == evt.attr_name:
                     if self.CspMidCbf in evt.attr_name:
                         self._cbf_state = evt.attr_value.value
                     elif self.CspMidPss in evt.attr_name:
@@ -102,7 +104,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                           str(evt.attr_value.value) 
                 self.dev_logging(log_msg, tango.LogLevel.LOG_INFO)
                 # update CSP global state
-                self.__set_csp_state()
+                if "state" in evt.attr_name:
+                    self.__set_csp_state()
             except tango.DevFailed as df:
                 self.dev_logging(str(df.args[0].desc), tango.LogLevel.LOG_ERR)
             except Exception as except_occurred:
@@ -702,10 +705,12 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         self._cbf_admin_mode   = AdminMode.ONLINE.value
         self._pss_state        = tango.DevState.UNKNOWN
         self._pss_health_state = HealthState.UNKNOWN.value 
-        self._pss_admin_mode   = AdminMode.ONLINE.value
+        # PssMaster not present: set it adminMode to OFFLINE
+        self._pss_admin_mode   = AdminMode.OFFLINE.value
         self._pst_state        = tango.DevState.UNKNOWN
         self._pst_health_state = HealthState.UNKNOWN.value
-        self._pst_admin_mode   = AdminMode.ONLINE.value
+        # PstMaster not present: set it adminMode to OFFLINE
+        self._pst_admin_mode   = AdminMode.OFFLINE.value
 
         # set storage and element logging level 
         self._storage_logging_level = int(tango.LogLevel.LOG_INFO)
@@ -1126,6 +1131,19 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_receptorMembership(self):
         # PROTECTED REGION ID(CspMaster.receptorMembership_read) ENABLED START #
+        try:
+           proxy = self._se_proxies[self.CspMidCbf]
+           proxy.ping()
+           vcc_membership = proxy.reportVccSubarrayMembership
+           vcc_to_receptor = proxy.vccToReceptor
+           vcc_to_receptor_map = dict([int(ID) for ID in pair.split(":")] for pair in vcc_to_receptor)
+           for vcc_id in range(len(vcc_membership)):
+               receptorID = vcc_to_receptor_map[vcc_id + 1]
+               self._receptorsMembership[receptorID - 1] = vcc_membership[vcc_id]
+        except tango.DevFailed as df:
+            tango.Except.re_throw_exception(df, "CommandFailed",
+                                                "read_receptorsMembership failed", 
+                                                "Command()")
         return self._receptorsMembership
         # PROTECTED REGION END #    //  CspMaster.receptorMembership_read
 

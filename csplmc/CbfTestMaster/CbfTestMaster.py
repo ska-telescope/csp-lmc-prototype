@@ -107,12 +107,12 @@ class CbfTestMaster(with_metaclass(DeviceMeta,SKAMaster)):
         max_dim_x=27,
     )
 
-    fspMembership = attribute(
+    reportFSPSubarrayMembership = attribute(
         dtype=('uint16',),
         max_dim_x=27,
     )
 
-    vccMembership = attribute(
+    reportVCCSubarrayMembership = attribute(
         dtype=('uint16',),
         max_dim_x=197,
     )
@@ -220,12 +220,12 @@ class CbfTestMaster(with_metaclass(DeviceMeta,SKAMaster)):
         return [0]
         # PROTECTED REGION END #    //  CbfTestMaster.reportFSPAdminMode_read
 
-    def read_fspMembership(self):
+    def read_reportFSPSubarrayMembership(self):
         # PROTECTED REGION ID(CbfTestMaster.fspMembership_read) ENABLED START #
         return [0]
         # PROTECTED REGION END #    //  CbfTestMaster.fspMembership_read
 
-    def read_vccMembership(self):
+    def read_reportVCCSubarrayMembership(self):
         # PROTECTED REGION ID(CbfTestMaster.vccMembership_read) ENABLED START #
         return [0]
         # PROTECTED REGION END #    //  CbfTestMaster.vccMembership_read

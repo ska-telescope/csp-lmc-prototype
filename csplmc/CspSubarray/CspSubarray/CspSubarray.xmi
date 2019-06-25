@@ -37,20 +37,22 @@
       <type xsi:type="pogoDsl:StringType"/>
       <status abstract="false" inherited="true" concrete="true"/>
     </deviceProperties>
+    <deviceProperties name="CspMaster" description="The TANGO address of the CspMaster.">
+      <type xsi:type="pogoDsl:StringType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>mid_csp/elt/master</DefaultPropValue>
+    </deviceProperties>
     <deviceProperties name="CbfSubarray" description="The TANGO address of the CsbSubarray.">
       <type xsi:type="pogoDsl:StringType"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <DefaultPropValue>mid_csp_cbf/sub_elt/subarray</DefaultPropValue>
     </deviceProperties>
     <deviceProperties name="PssSubarray" description="The PSS Subarray TANGO address.">
       <type xsi:type="pogoDsl:StringType"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <DefaultPropValue>mid_csp_pss/sub_elt/subarray</DefaultPropValue>
     </deviceProperties>
     <deviceProperties name="PstSubarray" description="The PstSubarray TANGO address.">
       <type xsi:type="pogoDsl:StringType"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <DefaultPropValue>mid_csp_pst/sub_elt/subarray</DefaultPropValue>
     </deviceProperties>
     <commands name="Abort" description="Change obsState to ABORTED." execMethod="abort" displayLevel="OPERATOR" polledPeriod="0">
       <argin description="">
