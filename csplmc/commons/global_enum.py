@@ -41,3 +41,10 @@ class ObsState(IntEnum):
     ABORTED     = 5
     FAULT       = 6
 
+#define some SKA1 MID constant
+NUM_OF_RECEPTORS    =  197
+NUM_OF_SEARCH_BEAMS = 1500
+NUM_OF_TIMING_BEAMS =   16
+NUM_OF_VLBI_BEAMS   =   20
+NUM_OF_SUBARRAYS    =   16
+

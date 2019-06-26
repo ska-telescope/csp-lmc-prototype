@@ -32,8 +32,11 @@ sys.path.insert(0, commons_pkg_path)
 # Additional import
 # PROTECTED REGION ID(CspMaster.additionnal_import) ENABLED START #
 #
+import global_enum as const
 from global_enum import HealthState, AdminMode
 from skabase.SKAMaster.SKAMaster import SKAMaster
+from skabase.auxiliary import utils
+import release
 # PROTECTED REGION END #    //  CspMaster.additionnal_import
 
 
@@ -196,45 +199,73 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
         :return: None
         """
-        self._search_beams_num = 0
-        self._timing_beams_num = 0
-        self._vlbi_beams_num = 0
-        self._subarrays_num = 0
+        self._search_beams_maxnum =  const.NUM_OF_SEARCH_BEAMS
+        self._timing_beams_maxnum =  const.NUM_OF_TIMING_BEAMS
+        self._vlbi_beams_maxnum   =  const.NUM_OF_VLBI_BEAMS
+        self._subarrays_maxnum    =  const.NUM_OF_SUBARRAYS
+        self._available_search_beams_num =  const.NUM_OF_SEARCH_BEAMS
+        self._available_timing_beams_num =  const.NUM_OF_TIMING_BEAMS
+        self._available_vlbi_beams_num   =  const.NUM_OF_VLBI_BEAMS
+        self._available_subarrays_num    =  const.NUM_OF_SUBARRAYS
         if self._max_capabilities:
             try:
-                self._search_beams_num = self._max_capabilities["SearchBeam"]
+                self._search_beams_maxnum = self._max_capabilities["SearchBeam"]
             except KeyError:  # not found in DB
-                self._search_beams_num = 1500
+                self._search_beams_maxnum = const.NUM_OF_SEARCH_BEAMS
             try:
-                self._timing_beams_num = self._max_capabilities["TimingBeam"]
+                self._timing_beams_maxnum = self._max_capabilities["TimingBeam"]
             except KeyError:  # not found in DB
-                self._timing_beams_num = 16
+                self._timing_beams_maxnum = const.NUM_OF_TIMING_BEAMS
             try:
-                self._vlbi_beams_num = self._max_capabilities["VlbiBeam"]
+                self._vlbi_beams_maxnum = self._max_capabilities["VlbiBeam"]
             except KeyError:  # not found in DB
-                self._vlbi_beams_num = 20
+                self._vlbi_beams_maxnum = const.NUM_OF_VLBI_BEAMS
             try:
-                self._subarrays_num = self._max_capabilities["Subarray"]
+                self._subarrays_maxnum = self._max_capabilities["Subarray"]
             except KeyError:  # not found in DB
-                self._subarrays_num = 16
+                self._subarrays_maxnum = const.NUM_OF_SUBARRAYS
         else:
-                self.dev_logging("MaxCapabilities device property not defined", 
-                                                       tango.LogLevel.LOG_WARN)
+            self.dev_logging("MaxCapabilities device property not defined. \
+                              Use defaul values", tango.LogLevel.LOG_WARN)
+
+    def __get_maxnum_of_receptors(self):
+
+        self._receptors_maxnum = const.NUM_OF_RECEPTORS
+        capability_dict = {}
+        try:
+            proxy = self._se_proxies[self.CspMidCbf]
+            proxy.ping()
+            vcc_to_receptor = proxy.vccToReceptor
+            self._vcc_to_receptor_map = dict([int(ID) for ID in pair.split(":")] for pair in vcc_to_receptor)
+            cbf_max_capabilities = proxy.maxCapabilities
+            for capability in cbf_max_capabilities:
+                cap_type, cap_num = capability.split(':')
+                capability_dict[cap_type] = int(cap_num)
+            self._receptors_maxnum = capability_dict["VCC"]
+            self._receptorsMembership = [0]* self._receptors_maxnum
+        except KeyError as key_err:
+            log_msg = "Error: no key found for " + str(key_err)
+            self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
+
+        except tango.DevFailed as df:
+            log_msg = "Error: " + str(df.args[0].reason)
+            self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
 
     def __init_capabilities(self):
         """
         Class private method.
         Initialize the CSP capabilities State and Modes attributes.
         """
-        self._search_beams_state = [tango.DevState.UNKNOWN for i in range(self._search_beams_num)]
-        self._timing_beams_state = [tango.DevState.UNKNOWN for i in range(self._timing_beams_num)]
-        self._vlbi_beams_state = [tango.DevState.UNKNOWN for i in range(self._vlbi_beams_num)]
-        self._search_beams_health_state = [HealthState.UNKNOWN for i in range(self._search_beams_num)]
-        self._timing_beams_health_state = [HealthState.UNKNOWN for i in range(self._timing_beams_num)]
-        self._vlbi_beams_health_state = [HealthState.UNKNOWN for i in range(self._vlbi_beams_num)]
-        self._search_beams_admin = [AdminMode.ONLINE for i in range(self._search_beams_num)]
-        self._timing_beams_admin = [AdminMode.ONLINE for i in range(self._timing_beams_num)]
-        self._vlbi_beams_admin = [AdminMode.ONLINE for i in range(self._vlbi_beams_num)]
+        self._search_beams_state = [tango.DevState.UNKNOWN for i in range(self._search_beams_maxnum)]
+        self._timing_beams_state = [tango.DevState.UNKNOWN for i in range(self._timing_beams_maxnum)]
+        self._vlbi_beams_state = [tango.DevState.UNKNOWN for i in range(self._vlbi_beams_maxnum)]
+        self._search_beams_health_state = [HealthState.UNKNOWN for i in range(self._search_beams_maxnum)]
+        self._timing_beams_health_state = [HealthState.UNKNOWN for i in range(self._timing_beams_maxnum)]
+        self._vlbi_beams_health_state = [HealthState.UNKNOWN for i in range(self._vlbi_beams_maxnum)]
+        self._search_beams_admin = [AdminMode.ONLINE for i in range(self._search_beams_maxnum)]
+        self._timing_beams_admin = [AdminMode.ONLINE for i in range(self._timing_beams_maxnum)]
+        self._vlbi_beams_admin = [AdminMode.ONLINE for i in range(self._vlbi_beams_maxnum)]
+
 
     def __connect_to_subelements(self):
         """
@@ -468,6 +499,12 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         doc="The PstMaster TANGO Device administration mode",
     )
 
+    availableCapabilities = attribute(
+        dtype=('str',),
+        max_dim_x=20,
+        doc="A list of available number of instances of each capability type, e.g. `CORRELATOR:512`, `PSS-BEAMS:4`.",
+    )
+
     reportSearchBeamState = attribute(
         dtype=('DevState',),
         max_dim_x=1500,
@@ -592,6 +629,13 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         doc="The CSPsub-rray affiliation of VLBI beams.",
     )
 
+    availableReceptorIDs = attribute(
+        dtype=('uint16',),
+        max_dim_x=197,
+        label="Available receptors IDs",
+        doc="The list of available receptors IDs.",
+    )
+
     # TODO: understand why device crashes if these forwarded attributes are declared
     #vccCapabilityAddress = attribute(name="vccCapabilityAddress", label="vccCapabilityAddress",
     #    forwarded=True
@@ -694,6 +738,9 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def init_device(self):
         SKAMaster.init_device(self)
+        self._build_state = '{}, {}, {}'.format(release.name, release.version,
+                                                release.description)
+        self._version_id = release.version
         # PROTECTED REGION ID(CspMaster.init_device) ENABLED START #
         self.set_state(tango.DevState.INIT)
         self._health_state = HealthState.UNKNOWN.value
@@ -726,10 +773,9 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         #initialize the CSP Capabilities State, healthState and adminMode
         self.__init_capabilities()
         #initialize Csp capabilities subarray membership
-        self._receptorsMembership = [0]* 197
-        self._searchBeamsMembership = [0] * self._search_beams_num
-        self._timingBeamsMembership = [0] * self._timing_beams_num
-        self._vlbiBeamsMembership = [0] * self._vlbi_beams_num
+        self._searchBeamsMembership = [0] * self._search_beams_maxnum
+        self._timingBeamsMembership = [0] * self._timing_beams_maxnum
+        self._vlbiBeamsMembership   = [0] * self._vlbi_beams_maxnum
 
         # initialize list with CSP sub-element FQDNs
         self._se_fqdn = []
@@ -748,6 +794,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         self._se_event_id = {}
         # Try connection with sub-elements
         self.__connect_to_subelements()
+        self.__get_maxnum_of_receptors()
         # create TANGO Groups to handle SearchBeams, TimingBeams and VlbiBeams
         self.__create_search_beam_group()
         self.__create_timing_beam_group()
@@ -1018,11 +1065,37 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             tango.Except.throw_exception("Command failed", str(df.args[0].desc),
                                          "Set pst admin mode", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.pstAdminMode_write
+        
+    def read_availableCapabilities(self):
+        """
+        Override method.
+
+        Argin: None
+        Returns:
+            A list of strings with the number of available resources for each
+            capability/resource type.
+            Es: ["Receptors:95","SearchBeam:1000", "TimingBeam:16", "VlbiBeam:20"]
+        """
+        # PROTECTED REGION ID(CspMaster.availableCapabilities_read) ENABLED START #
+        self._available_capabilities = {}
+        try:
+            proxy = tango.DeviceProxy(self.get_name())
+            available_receptors = proxy.availableReceptorIDs
+            self._available_capabilities["Receptors"] = len(available_receptors)
+            #TODO: update when also PSS and PST will be available
+            self._available_capabilities["SearchBeam"] = const.NUM_OF_SEARCH_BEAMS
+            self._available_capabilities["TimingBeam"] = const.NUM_OF_TIMING_BEAMS
+            self._available_capabilities["VlbiBeam"] = const.NUM_OF_VLBI_BEAMS
+        except tango.DevFailed as df:
+            print(df.args[0].desc)
+        return utils.convert_dict_to_list(self._available_capabilities)
+        # PROTECTED REGION END #    //  CspMaster.availableCapabilities_read
 
     def read_reportSearchBeamState(self):
         """
         Class method.
 
+        Argin: None  
         Returns: 
             Return the State of the CSP SearchBeam Capabilities as an array of DevState.
         """
@@ -1034,6 +1107,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         """
         Class method.
 
+        Argin: None  
         Returns: 
             Return the healthState of the CSP SearchBeam Capabilities as an array of UShort.
             (It's not possible to allocate an array of DevEnum)
@@ -1046,6 +1120,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         """
         Class method.
 
+        Argin: None  
         Returns: 
             Return the adminMode of the CSP SearchBeam Capabilities as an array of UShort.
             (It's not possible to allocate an array of DevEnum)
@@ -1063,6 +1138,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         """
         Class method
 
+        Argin: None  
         Returns:
             The healthState of the CSP TimingBeam Capabilities as an array \
              of UShort.
@@ -1072,21 +1148,53 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.reportTimingBeamHealthState_read
 
     def read_reportTimingBeamAdminMode(self):
+        """
+        Class method
+
+        Argin: None  
+        Returns:
+            The adminMode of the CSP TimingBeam Capabilities as an array \
+             of UShort.
+        """
         # PROTECTED REGION ID(CspMaster.reportTimingBeamAdminMode_read) ENABLED START #
         return self._timing_beams_admin 
         # PROTECTED REGION END #    //  CspMaster.reportTimingBeamAdminMode_read
 
     def read_reportVlbiBeamState(self):
+        """
+        Class method
+
+        Argin: None  
+        Returns:
+            The State of the CSP VlbiBeam Capabilities as an array 
+            of DevState.
+        """
         # PROTECTED REGION ID(CspMaster.reportVlbiBeamState_read) ENABLED START #
         return self._vlbi_beams_state
         # PROTECTED REGION END #    //  CspMaster.reportVlbiBeamState_read
 
     def read_reportVlbiBeamHealthState(self):
+        """
+        Class method
+
+        Argin: None  
+        Returns:
+            The healthState of the CSP VlbiBeam Capabilities as an array 
+            of UShort.
+        """
         # PROTECTED REGION ID(CspMaster.reportVlbiBeamHealthState_read) ENABLED START #
         return self._vlbi_beams_health_state
         # PROTECTED REGION END #    //  CspMaster.reportVlbiBeamHealthState_read
 
     def read_reportVlbiBeamAdminMode(self):
+        """
+        Class method
+
+        Argin: None  
+        Returns:
+            The adminMode of the CSP VlbiBeam Capabilities as an array \
+             of UShort.
+        """
         # PROTECTED REGION ID(CspMaster.reportVlbiBeamAdminMode_read) ENABLED START #
         return self._vlbi_beams_admin
         # PROTECTED REGION END #    //  CspMaster.reportVlbiBeamAdminMode_read
@@ -1137,10 +1245,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
            proxy = self._se_proxies[self.CspMidCbf]
            proxy.ping()
            vcc_membership = proxy.reportVccSubarrayMembership
-           vcc_to_receptor = proxy.vccToReceptor
-           vcc_to_receptor_map = dict([int(ID) for ID in pair.split(":")] for pair in vcc_to_receptor)
            for vcc_id in range(len(vcc_membership)):
-               receptorID = vcc_to_receptor_map[vcc_id + 1]
+               receptorID = self._vcc_to_receptor_map[vcc_id + 1]
                self._receptorsMembership[receptorID - 1] = vcc_membership[vcc_id]
         except tango.DevFailed as df:
             tango.Except.re_throw_exception(df, "CommandFailed",
@@ -1162,6 +1268,29 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     def read_vlbiBeamMembership(self):
         # PROTECTED REGION ID(CspMaster.vlbiBeamMembership_read) ENABLED START #
         return self._vlbiBeamsMembership
+        # PROTECTED REGION END #    //  CspMaster.vlbiBeamMembership_read
+
+    def read_availableReceptorIDs(self):
+        # PROTECTED REGION ID(CspMaster.availableReceptorIDs_read) ENABLED START #
+        self._available_receptorIDs = []
+        try:
+            proxy = self._se_proxies[self.CspMidCbf]
+            proxy.ping()
+            vcc_state = proxy.reportVCCState
+            # TODO: get the state of the receptor-vcc link!
+            #receptor_link_state = proxy.receptorLinkState
+            for vcc_id in range(self._receptors_maxnum):
+                if vcc_state[vcc_id] not in [tango.DevState.UNKNOWN]:
+                    #OSS: receptorID is in [1,197] range
+                    #index of receptor_link_state is in [0,196]
+                    receptorID = self._vcc_to_receptor_map[vcc_id + 1]
+                    # TODO: check the receptor_link_state of the receptor
+                    #if receptor_link_state[receptorID - 1] not in [tango.DevState.UNKNOWN]: 
+                    self._available_receptorIDs.append(receptorID)
+        except tango.DevFailed as df:
+            log_msg = "Error in read_availableReceptorIDs: " + df.args[0].reason
+            self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
+        return self._available_receptorIDs
         # PROTECTED REGION END #    //  CspMaster.vlbiBeamMembership_read
 
     # --------
@@ -1187,8 +1316,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.is_On_allowed
     @command(
         dtype_in=('str',), 
-        doc_in="If the array length is 0, the command applies to the whole\nCSP Element.\n\
-                If the array length is > 1, each array element specifies the FQDN of the\n\
+        doc_in="If the array length is 0, the command applies to the whole CSP Element.\
+                If the array length is > 1, each array element specifies the FQDN of the\
                 CSP SubElement to switch ON.", 
     )
     @DebugIt()
@@ -1257,12 +1386,11 @@ If the array length is > 1, each array element specifies the FQDN of the\
     @DebugIt()
     def Off(self, argin):
         """
-
-        Switch off the CSP Element or a single CSP Sub-element\n
-        :param argin: The list of sub-elements to switch-off \ 
-        If the array length is 0, the command applies to the whole CSP Element.\
-If the array length is > 1, each array element specifies the FQDN of the\
- CSP SubElement to switch OFF \n
+        Switch off the CSP Element or a single CSP Sub-element.\n
+        :param argin: The list of sub-elements to switch-off. If the array\
+        length is 0, the command applies to the whole CSP Element.\
+        If the array length is > 1, each array element specifies the FQDN of the\
+        CSP SubElement to switch OFF \n
 
         :return: None
 
