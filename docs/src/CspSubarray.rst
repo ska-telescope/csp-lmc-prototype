@@ -1,7 +1,7 @@
 CspMaster Class Documentation 
 ================================
 
-.. automodule:: csplmc.CspMaster.CspMaster
+.. automodule:: csplmc.CspSubarray.CspSubarray
    :members:
    :undoc-members:
    :show-inheritance:

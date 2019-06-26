@@ -7,10 +7,11 @@ CSP LMC Prototype's documentation
 =============================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
    
    CspMaster<CspMaster>
+   CspSubarray<CspSubarray>
 
 Indices and tables
 ==================

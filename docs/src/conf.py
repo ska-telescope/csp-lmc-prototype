@@ -14,7 +14,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../csplmc/CspMaster/CspMaster'))
+sys.path.insert(0, os.path.abspath('../../'))
 
 import sphinx_rtd_theme
 
@@ -24,8 +24,8 @@ def setup(app):
 # -- Project information -----------------------------------------------------
 
 project = 'CSP LMC Prototype'
-copyright = '2019, NCRA Canada'
-author = 'NCRA Canada'
+copyright = '2019, SKA Organization'
+author = 'E.Giani'
 
 # The short X.Y version
 version = ''
@@ -151,7 +151,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'CSPLMCPrototype.tex', 'CSP LMC Prototype Documentation',
-     'NCRA Canada', 'manual'),
+     'SKA Organization', 'manual'),
 ]
 
 
