@@ -16,6 +16,7 @@ from __future__ import absolute_import
 import sys
 import os
 from future.utils import with_metaclass
+import json
 # PROTECTED REGION END# //CspMaster.standardlibray_import
 
 # tango imports
@@ -543,7 +544,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     def read_scanID(self):
         # PROTECTED REGION ID(CspSubarray.scanID_read) ENABLED START #
-        return 0
+        return self._scan_ID 
         # PROTECTED REGION END #    //  CspSubarray.scanID_read
 
     def write_scanID(self, value):
@@ -823,14 +824,164 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
         # PROTECTED REGION END #    //  CspSubarray.RemoveAllReceptors
 
+    def is_ConfigureScan_allowed(self):
+        """
+        Check the subarray obsState and State values.A scan configuration can be performed 
+        only if:
+        - obsMode = IDLE and State = ON or 
+        - obsMode = READY
+
+        Returns:
+            True if the command can be executed, otherwise False
+        """
+
+        if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
+            return False
+        if self._obs_state == ObsState.IDLE.value:
+            if self.get_state() != tango.DevState.ON:
+                return False
+        return True
+
     @command(
     dtype_in='str', 
     doc_in="A Json-encoded string with the scan configuration.", 
     )
     @DebugIt()
     def ConfigureScan(self, argin):
+        """
+        Configure a scan for the subarray.
+        Argin:
+            a JSON-encoded string with the parameters to configure a scan.
+        Returns:
+            None
+        Raises:
+            tango.DevFailed exception if the configuration is not valid.
+
+        **Note**: Part of this code (the input string parsing) comes from the CBF project 
+        developed by J.Jjang (NRC-Canada)
+
+        """
+
         # PROTECTED REGION ID(CspSubarray.ConfigureScan) ENABLED START #
-        pass
+        try:
+            argin = json.loads(argin)
+        except json.JSONDecodeError:  # argument not a valid JSON object
+            # this is a fatal error
+            msg = "Scan configuration object is not a valid JSON object. Aborting configuration."
+            self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.throw_exception("Command failed", msg, "ConfigureScan execution",
+                                           tango.ErrSeverity.ERR)
+        # Validate scanID.
+        # If not given, abort the scan configuration.
+        # If malformed, abort the scan configuration.
+        if "scanID" in argin:
+            if int(argin["scanID"]) <= 0:  # scanID not positive
+                msg = "'scanID' must be positive (received {}). "\
+                    "Aborting configuration.".format(int(argin["scanID"]))
+                # this is a fatal error
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.throw_exception("Command failed", msg, "ConfigureScan execution",
+                                               tango.ErrSeverity.ERR)
+            elif any(map(lambda i: i == int(argin["scanID"]),
+                         self._proxy_csp_master.subarrayScanID)):  # scanID already taken
+                msg = "'scanID' must be unique (received {}). "\
+                    "Aborting configuration.".format(int(argin["scanID"]))
+                # this is a fatal error
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.throw_exception("Command failed", msg, "ConfigureScan execution",
+                                               tango.ErrSeverity.ERR)
+            else:  # scanID is valid
+                self._scan_ID = int(argin["scanID"])
+        else:  # scanID not given
+            msg = "'scanID' must be given. Aborting configuration."
+            # this is a fatal error
+            self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.throw_exception("Command failed", msg, "ConfigureScan execution",
+                                           tango.ErrSeverity.ERR)
+
+        # Validate frequencyBand.
+        # If not given, abort the scan configuration.
+        # If malformed, abort the scan configuration.
+        frequency_band = 0
+        if "frequencyBand" in argin:
+            frequency_bands = ["1", "2", "3", "4", "5a", "5b"]
+            if argin["frequencyBand"] in frequency_bands:
+                frequency_band = frequency_bands.index(argin["frequencyBand"])
+            else:
+                msg = "'frequencyBand' must be one of {} (received {}). "\
+                    "Aborting configuration.".format(frequency_bands, argin["frequency_band"])
+                # this is a fatal error
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.throw_exception("Command failed", msg, "ConfigureScan execution",
+                                               tango.ErrSeverity.ERR)
+        else:  # frequencyBand not given
+            msg = "'frequencyBand' must be given. Aborting configuration."
+            # this is a fatal error
+            self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.throw_exception("Command failed", msg, "ConfigureScan execution",
+                                           tango.ErrSeverity.ERR)
+
+        # ======================================================================= #
+        # At this point, self._scan_ID, self._receptors, and self._frequency_band #
+        # are guaranteed to be properly configured.                               #
+        # ======================================================================= #
+
+        # Validate band5Tuning, if frequencyBand is 5a or 5b.
+        # If not given, abort the scan configuration.
+        # If malformed, abort the scan configuration.
+        if frequency_band in [4, 5]:  # frequency band is 5a or 5b
+            if "band5Tuning" in argin:
+                # check if streamTuning is an array of length 2
+                try:
+                    assert len(argin["band5Tuning"]) == 2
+                except (TypeError, AssertionError):
+                    msg = "'band5Tuning' must be an array of length 2. Aborting configuration."
+                    # this is a fatal error
+                    self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                    tango.Except.throw_exception("Command failed", msg, "ConfigureScan execution",
+                                                   tango.ErrSeverity.ERR)
+
+                stream_tuning = [*map(float, argin["band5Tuning"])]
+                if frequency_band == 4:
+                    if not all([5.85 <= stream_tuning[i] <= 7.25 for i in [0, 1]]):
+                        msg = "Elements in 'band5Tuning must be floats between 5.85 and 7.25 "\
+                            "(received {} and {}) for a 'frequencyBand' of 5a. "\
+                            "Aborting configuration.".format(stream_tuning[0], stream_tuning[1])
+                        # this is a fatal error
+                        self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                        tango.Except.throw_exception("Command failed", msg,
+                                                       "ConfigureScan execution",
+                                                       tango.ErrSeverity.ERR)
+                else:  # self._frequency_band == 5
+                    if not all([9.55 <= stream_tuning[i] <= 14.05 for i in [0, 1]]):
+                        msg = "Elements in 'band5Tuning must be floats between 9.55 and 14.05 "\
+                            "(received {} and {}) for a 'frequencyBand' of 5b. "\
+                            "Aborting configuration.".format(stream_tuning[0], stream_tuning[1])
+                        # this is a fatal error
+                        self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                        tango.Except.throw_exception("Command failed", msg,
+                                                       "ConfigureScan execution",
+                                                       tango.ErrSeverity.ERR)
+            else:
+                msg = "'band5Tuning' must be given for a 'frequencyBand' of {}. "\
+                    "Aborting configuration".format(["5a", "5b"][frequency_band - 4])
+                # this is a fatal error
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.throw_exception("Command failed", msg, "ConfigureScan execution",
+                                               tango.ErrSeverity.ERR)
+
+        # Forward the ConfigureScan command to CbfSubarray.
+        try:
+            proxy = self._se_subarrays_proxies[self.CbfSubarray]
+            proxy.ping()
+            proxy.comman_inout("ConfigureScan", argin) 
+            self._obs_state = ObsState.CONFIGURING.value
+            self._obs_mode = proxy.obsMode
+        except tango.DevFailed as df:
+            self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.re_throw_eception(df, "Command failed", 
+                    "CspSubarray ConfigureScan command failed", 
+                    "Command()", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.ConfigureScan
 
     @command(
