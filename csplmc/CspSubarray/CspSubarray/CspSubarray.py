@@ -16,7 +16,6 @@ from __future__ import absolute_import
 import sys
 import os
 from future.utils import with_metaclass
-import json
 # PROTECTED REGION END# //CspMaster.standardlibray_import
 
 # tango imports
@@ -32,8 +31,10 @@ sys.path.insert(0, commons_pkg_path)
 # Additional import
 # PROTECTED REGION ID(CspMaster.additionnal_import) ENABLED START #
 #
+import global_enum as const
 from global_enum import HealthState, AdminMode, ObsState, ObsMode
 from skabase.  SKASubarray import SKASubarray
+import json
 # PROTECTED REGION END #    //  CspMaster.additionnal_import
 
 __all__ = ["CspSubarray", "main"]
@@ -57,7 +58,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
         :return: None
         """
-        unknown_device = False
         if evt.err is False:
             try:
                 if "healthstate" in evt.attr_name:
@@ -95,7 +95,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         Exceptions are logged.
         Args:
             None
-        Returns:)
+        Returns:
             None
         """
         for fqdn in self._se_subarrays_fqdn:
@@ -135,7 +135,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         Class private method.
         Establish connection with the CSP sub-element master to get information about:
         - the CBF Master address
-        - the max number of capabilities for each type
+        - the max number of CSP and CBF capabilities for each type
         Args:
             None
         Returns:
@@ -162,21 +162,20 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 for i in range(len(cbf_capabilities)):
                     cap_type, cap_num = cbf_capabilities[i].split(':')
                     self._cbf_capabilities[cap_type] = int(cap_num)
-                self._se_subarrays_fqdn.append(self.CbfSubarray)
+                self._se_subarrays_fqdn.append(self._cbf_subarray_fqdn)
 
             # try connection to PssMaster    
             if cspMasterProxy.pssAdminMode in [AdminMode.ONLINE.value, AdminMode.MAINTENANCE.value]:
                 self._pssAddress = cspMasterProxy.pssMasterAddress
                 self._pssMasterProxy = tango.DeviceProxy(self._pssAddress)
                 self._pssMasterProxy.ping()
-                self._se_subarrays_fqdn.append(self.PssSubarray)
+                self._se_subarrays_fqdn.append(self._pss_subarray_fqdn)
 
             # try connection to PstMaster    
             if cspMasterProxy.pstAdminMode in [AdminMode.ONLINE.value, AdminMode.MAINTENANCE.value]:
                 self._pstAddress = cspMasterProxy.pstMasterAddress
                 self._pstMasterProxy = tango.DeviceProxy(self._pstAddress)
                 self._pstMasterProxy.ping()
-                self._se_subarrays_fqdn.append(self.PstSubarray)
         except tango.DevFailed as df:
             tango.Except.throw_exception("Connection Failed", df.args[0].desc,
                                          "connect_to_master ", tango.ErrSeverity.ERR)
@@ -184,8 +183,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     def __is_subarray_available(self, subarray_name):
         """
         Class private method.
-        Check if the sub-element subarray specified by the input argument is 
-        available in the TANGO DB. 
+        Check if the sub-element subarray is exported in the TANGO DB. 
         If the subarray device is not present in the list of the connected subarrays, a 
         connection with the device is performed.
         Args:
@@ -195,7 +193,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         """
         try:
             proxy = self._se_subarrays_proxies[subarray_name]
+            proxy.ping()
         except KeyError as key_err: 
+            # Raised when a mapping (dictionary) key is not found in the set of existing keys.
             # no proxy registered for the subarray device
             proxy = tango.DeviceProxy(subarray_name)
             proxy.ping()
@@ -207,7 +207,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     def __set_subarray_state(self):
         """
         Class private method.
-        Set the subarray state and health state.
+        Set the subarray State and healthState.
         Args:
             None
         Returns:
@@ -240,10 +240,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         Returns:
             None
         """
-        if self._cbf_subarray_obs_state == ObsState.CONFIGURING.value or\
-                self._pss_subarray_obs_state == ObsState.CONFIGURING.value or\
-                self._pst_subarray_obs_state == ObsState.CONFIGURING.value:
-           self._obs_state = ObsState.CONFIGURING.value
+        if self._cbf_subarray_obs_state == ObsState.READY.value and self._obs_mode == ObsMode.IMAGING.value:
+            self._obs_state = ObsState.READY.value
+        if self._cbf_subarray_obs_state == ObsState.IDLE.value and self._obs_mode == ObsMode.IMAGING.value:
+            self._obs_state = ObsState.IDLE.value
+            self._obs_mode = ObsMode.IDLE.value
+
         # analyze only IMAGING mode.
         #TODO: ObsMode need to be defined as a mask because we can have more
         # than one obs_mode active for a sub-array
@@ -258,16 +260,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         dtype='str', default_value="mid_csp/elt/master"
     )
 
-    CbfSubarray = device_property(
-        dtype='str',
+    CbfSubarrayPrefix = device_property(
+        dtype='str', default_value="mid_csp_cbf/sub_elt/subarray_"
     )
 
-    PssSubarray = device_property(
-        dtype='str', 
-    )
-
-    PstSubarray = device_property(
-        dtype='str', 
+    PssSubarrayPrefix = device_property(
+        dtype='str', default_value="mid_csp_pss/sub_elt/subarray_"
     )
 
     # ----------
@@ -303,10 +301,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         dtype='DevState',
     )
 
-    pstSubarrayState = attribute(
-        dtype='DevState',
-    )
-
     cbfSubarrayHealthState = attribute(
         dtype='DevEnum',
         label="CBF Subarray Health State",
@@ -318,13 +312,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         dtype='DevEnum',
         label="PSS Subarray Health State",
         doc="PSS Subarray Health State",
-        enum_labels=["OK", "DEGRADED", "FAILED", "UNKNOWN", ],
-    )
-
-    pstSubarrayHealthState = attribute(
-        dtype='DevEnum',
-        label="PST Subarray Health State",
-        doc="PST Subarray Health State",
         enum_labels=["OK", "DEGRADED", "FAILED", "UNKNOWN", ],
     )
 
@@ -342,13 +329,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         enum_labels=["IDLE", "CONFIGURING", "READY", "SCANNING", "PAUSED", "ABORTED", "FAULT", ],
     )
 
-    pstSubarrayObsState = attribute(
-        dtype='DevEnum',
-        label="PST Subarray Observing State",
-        doc="The PST subarray observing state.",
-        enum_labels=["IDLE", "CONFIGURING", "READY", "SCANNING", "PAUSED", "ABORTED", "FAULT", ],
-    )
-
     pssSubarrayAddr = attribute(
         dtype='str',
         doc="The PSS Subarray TANGO address.",
@@ -359,10 +339,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         doc="The CBF Subarray TANGO address.",
     )
 
-    pstSubarrayAddr = attribute(
+    validScanConfiguration = attribute(
         dtype='str',
-        label="PST Subarray Address",
-        doc="The PST Subarray TANOG address.",
+        label="Valid Scan Configuration",
+        doc="Store the last valid scan configuration.",
     )
 
     receptors = attribute(
@@ -427,6 +407,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         max_dim_x=20,
     )
 
+    timingBeamsObsState = attribute(
+        dtype=('uint16',),
+        max_dim_x=16,
+        label="Timing Beams obsState",
+        doc="The observation state of assigned timing beams.",
+    )
     vccState = attribute(name="vccState", label="vccState",
         forwarded=True
     )
@@ -448,7 +434,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # PROTECTED REGION ID(CspSubarray.init_device) ENABLED START #
         self.set_state(tango.DevState.INIT)
         self._health_state = HealthState.UNKNOWN.value
-        self._admin_mode = AdminMode.ONLINE.value
+        self._admin_mode   = AdminMode.ONLINE.value
+        self._obs_mode     = ObsState.IDLE.value
+        self._obs_state    = tango.DevState.OFF
         # get subarray ID
         if self.SubID:
             self._subarray_id = int(self.SubID)
@@ -474,32 +462,22 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         self._receptors = []        # list of receptors  assigned to subarray
         self._fsp = []              # list of FSPs assigned to subarray`
 
-        #initialize the list with sub-element sub-arrays addresses
-        self._se_subarrays_fqdn = []
-        # set default values for sub-element sub-array addresses if not defined in DB
-        if self.CbfSubarray == None:
-            subarray_fqdn_prefix = "mid_csp_cbf/sub_elt/subarray_"
-            if self._subarray_id < 10:
-                self.CbfSubarray = subarray_fqdn_prefix + "0" + str(self._subarray_id)
-            else:    
-                self.CbfSubarray = subarray_fqdn_prefix + str(self._subarray_id)
+        self._cbf_subarray_fqdn = ''
+        self._pss_subarray_fqdn = ''
+        # build the sub-element sub-array fqdn
+        if self._subarray_id < 10:
+            self._cbf_subarray_fqdn = self.CbfSubarrayPrefix + "0" + str(self._subarray_id)
+            self._pss_subarray_fqdn = self.PssSubarrayPrefix + "0" + str(self._subarray_id)
+        else:    
+            self._cbf_subarray_fqdn = self.CbfSubarrayPrefix + "0" + str(self._subarray_id)
+            self._pss_subarray_fqdn = self.PssSubarrayPrefix + "0" + str(self._subarray_id)
 
-        if self.PssSubarray == None:
-            subarray_fqdn_prefix = "mid_csp_pss/sub_elt/subarray_"
-            if self._subarray_id < 10:
-                self.PssSubarray = subarray_fqdn_prefix + "0" + str(self._subarray_id)
-            else:    
-                self.PssSubarray = subarray_fqdn_prefix + str(self._subarray_id)
-        if self.PstSubarray == None:
-            subarray_fqdn_prefix = "mid_csp_pst/sub_elt/subarray_"
-            if self._subarray_id < 10:
-                self.PstSubarray = subarray_fqdn_prefix + "0" + str(self._subarray_id)
-            else:    
-                self.PstSubarray = subarray_fqdn_prefix + str(self._subarray_id)
+        self._se_subarrays_fqdn = []  
         self._se_subarrays_proxies = {}
         self._se_subarray_event_id = {}
-        self._csp_capabilities = ''
         self._vcc_to_receptor_map = {}
+        self._csp_capabilities = ''
+        self._valid_scan_configuration = ''
         # initialize proxy to CBFMaster device
         self._cbfMasterProxy = 0
         self._cbfAddress = ''
@@ -516,7 +494,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         try:
             self.__connect_to_master()
             self.__connect_to_subarrays()
-            self._receptors = self._se_subarrays_proxies[self.CbfSubarray].receptors
+            self._receptors = self._se_subarrays_proxies[self._cbf_subarray_fqdn].receptors
             if not self._receptors:
                 self.dev_logging("No receptor assigned to the subarray", tango.LogLevel.LOG_INFO)
             else:
@@ -582,11 +560,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         return self._pss_subarray_state
         # PROTECTED REGION END #    //  CspSubarray.pssSubarrayState_read
 
-    def read_pstSubarrayState(self):
-        # PROTECTED REGION ID(CspSubarray.pstSubarrayState_read) ENABLED START #
-        return self._pst_subarray_state
-        # PROTECTED REGION END #    //  CspSubarray.pstSubarrayState_read
-
     def read_cbfSubarrayHealthState(self):
         # PROTECTED REGION ID(CspSubarray.cbfSubarrayHealthState_read) ENABLED START #
         return self._cbf_subarray_health_state
@@ -596,11 +569,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # PROTECTED REGION ID(CspSubarray.pssSubarrayHealthState_read) ENABLED START #
         return self._pss_subarray_health_state
         # PROTECTED REGION END #    //  CspSubarray.pssSubarrayHealthState_read
-
-    def read_pstSubarrayHealthState(self):
-        # PROTECTED REGION ID(CspSubarray.pstSubarrayHealthState_read) ENABLED START #
-        return self._pst_subarray_health_state
-        # PROTECTED REGION END #    //  CspSubarray.pstSubarrayHealthState_read
 
     def read_cbfSubarrayObsState(self):
         # PROTECTED REGION ID(CspSubarray.cbfSubarrayObsState_read) ENABLED START #
@@ -612,25 +580,20 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         return self._pss_subarray_obs_state
         # PROTECTED REGION END #    //  CspSubarray.pssSubarrayObsState_read
 
-    def read_pstSubarrayObsState(self):
-        # PROTECTED REGION ID(CspSubarray.pstSubarrayObsState_read) ENABLED START #
-        return self._pst_subarray_obs_state
-        # PROTECTED REGION END #    //  CspSubarray.pstSubarrayObsState_read
-
     def read_pssSubarrayAddr(self):
         # PROTECTED REGION ID(CspSubarray.pssSubarrayAddr_read) ENABLED START #
-        return self.PssSubarray 
+        return self._pss_subarray_fqdn
         # PROTECTED REGION END #    //  CspSubarray.pssSubarrayAddr_read
 
     def read_cbfSubarrayAddr(self):
         # PROTECTED REGION ID(CspSubarray.cbfSubarrayAddr_read) ENABLED START #
-        return self.CbfSubarray 
+        return self._cbf_subarray_fqdn
         # PROTECTED REGION END #    //  CspSubarray.cbfSubarrayAddr_read
 
-    def read_pstSubarrayAddr(self):
-        # PROTECTED REGION ID(CspSubarray.pstSubarrayAddr_read) ENABLED START #
-        return self.PstSubarray 
-        # PROTECTED REGION END #    //  CspSubarray.pstSubarrayAddr_read
+    def read_validScanConfiguration(self):
+        # PROTECTED REGION ID(CspSubarray.validScanConfiguration_read) ENABLED START #
+        return self._valid_scan_configuration
+        # PROTECTED REGION END #    //  CspSubarray.validScanConfiguration_read
 
     def read_receptors(self):
         # PROTECTED REGION ID(CspSubarray.receptors_read) ENABLED START #
@@ -692,10 +655,27 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         return [0]
         # PROTECTED REGION END #    //  CspSubarray.vlbiBeamsHealthState_read
 
+    def read_timingBeamsObsState(self):
+        # PROTECTED REGION ID(CspSubarray.timingBeamsObsState_read) ENABLED START #
+        return [0]
+        # PROTECTED REGION END #    //  CspSubarray.timingBeamsObsState_read
+
 
     # --------
     # Commands
     # --------
+
+    def is_AddReceptors_allowed(self):
+        """
+        Check if the AddReceptors command can be executed. Receptors can be assigned to a subarray
+        only when its obsState is IDLE or READY. 
+
+        Returns:
+            True if the command can be executed, otherwise False
+        """
+        if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
+            return False
+        return True
 
     @command(
     dtype_in=('uint16',), 
@@ -705,6 +685,16 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     def AddReceptors(self, argin):
         # PROTECTED REGION ID(CspSubarray.AddReceptors) ENABLED START #
         # the list with subarray affiliation of each receptor
+        # OSS: num_of_vcc is the max number of VCCs instantiate for this element. 
+        # So it may be num_of_vcc < 197. The vcc_id of the 
+        # instantiated VCC capabilities are ALWAYS assigned starting from 1 up to 
+        # num_of_vcc. Each vcc_id map to a vcc_fqdn inside CbfMaster, for example 
+        # we can have the following situation:
+        # vcc_id = 1 -> mid_csp_cbf/vcc/vcc_005
+        # vcc_id = 2 -> mid_csp_cbf/vcc/vcc_011
+        # .....
+        # vcc_id = 17 -> mid_csp_cbf/vcc/vcc_191
+
         num_of_vcc = self._cbf_capabilities["VCC"]
         receptor_membership = [0] * num_of_vcc
         # the list of receptor to assign to the subarray
@@ -720,6 +710,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             # vccID range is [1, 197]!!
             # vcc_id range is [0,196]!!
             for vcc_id in range(num_of_vcc):
+                # get the associated receptor ID: this value can be any value in 
+                # the range [1,197]!!
                 receptorID = self._vcc_to_receptor_map[vcc_id + 1]
                 receptor_membership[receptorID - 1] = vcc_membership[vcc_id]
         except tango.DevFailed as df:
@@ -729,8 +721,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             tango.Except.throw_exception("Command failed", df.args[0].desc,
                                          "AddReceptors", tango.ErrSeverity.ERR)
         for receptorId in argin:
-            #check if the specified recetorID is valid
-            if receptorId in range(1,198):
+            # check if the specified recetorID is valid, that is a number
+            # in the range [1-197]
+            if receptorId in range(1, const.NUM_OF_RECEPTORS + 1):
                 # check if the required receptor is already assigned
                 if receptor_membership[receptorId - 1] in list(range(1,17)):
                     sub_id = receptor_membership[receptorId - 1]
@@ -748,11 +741,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             log_msg = "The required receptors are already assigned to the subarray"
             self.dev_logging(log_msg, tango.LogLevel.LOG_INFO)
             return  
-        #check if the device is already connected to the CbfSubarray
+        # check if the CspSubarray is already connected to the CbfSubarray
         proxy = 0
-        if self.__is_subarray_available(self.CbfSubarray):
+        if self.__is_subarray_available(self._cbf_subarray_fqdn):
             try:     
-                proxy = self._se_subarrays_proxies[self.CbfSubarray]
+                proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
+                # forward the command to the CbfSubarray
                 proxy.command_inout("AddReceptors", receptor_to_assign)
                 # read the updated list of the assigned receptors
                 self._receptors = proxy.receptors
@@ -766,19 +760,35 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 for item in df.args:
                     log_msg = item.desc
                     self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
-                    # TODO: check the kind of failure. If it's a command failure 
-                    # re-throw the exception
+                    tango.Except.re_throw_exception(df, "Command failed", 
+                                             "CspSubarray AddReceptors command failed", 
+                                             "Command()",
+                                             tango.ErrSeverity.ERR)
             except TypeError as err:
+                # Raised when an operation or function is applied to an object of inappropriate type. 
+                # The associated value is a string giving details about the type mismatch.
                 log_msg =  "TypeError: " + str(err)
                 self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
                 tango.Except.throw_exception("Command failed", log_msg,
                                              "AddReceptors", tango.ErrSeverity.ERR)
         else:
-            log_msg = "Subarray " + str(self.CbfSubarray) + " not registered!"
+            log_msg = "Subarray " + str(self._cbf_subarray_fqdn) + " not registered!"
             self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
             tango.Except.throw_exception("Command failed", log_msg,
                                          "AddReceptors", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.AddReceptors
+
+    def is_RemoveReceptors_allowed(self):
+        """
+        Check if the RemoveReceptors command can be executed. Receptors can be removed from a subarray
+        only when its obsState is IDLE or READY. 
+
+        Returns:
+            True if the command can be executed, otherwise False
+        """
+        if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
+            return False
+        return True
 
     @command(
     dtype_in=('uint16',), 
@@ -786,49 +796,112 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     )
     @DebugIt()
     def RemoveReceptors(self, argin):
+        """
+        Remove the receptors from a subarray.
+        Argin:
+            The list of the receptor IDs to remove from the subarray.
+            Type: array of DevUShort
+        Returns:
+            None
+        Raises:
+            tango.DevFailed exception if the command fails.
+        """
         # PROTECTED REGION ID(CspSubarray.RemoveReceptors) ENABLED START #
-        try:
-            proxy = self._se_subarrays_proxies[self.CbfSubarray]
-            proxy.RemoveReceptors(argin)
-            # re-read the list of assigned receptors
-            self._receptors = proxy.receptors
-            # build the list with the VCCs assigned to the sub-array
-            for receptor_id in self._receptors:
-                vcc_id = receptor_to_vccId[receptor_id]
-                self._vcc.remove(vcc_id) 
-        except KeyError as key_err: 
-            proxy = tango.DeviceProxy(self.CbfSubarray)
-            self._se_subarrays_proxies[self.CbfSubarray] = proxy
-        except tango.DevFailed as df:
-            log_msg = "RemoveReceptors:" + df.args[0].desc
+        # check if the list of assigned receptors is empty.
+        if not self._receptors:
+            self.dev_logging("RemoveReceptors: no receptor to remove", tango.LogLevel.LOG_INFO)
+            return
+        # check if the CspSubarray is already connected to the CbfSubarray
+        proxy = 0
+        if self.__is_subarray_available(self._cbf_subarray_fqdn):
+            try:
+                proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
+                # forward the command to CbfSubarray
+                proxy.RemoveReceptors(argin)
+                # update the list of assigned receptors
+                self._receptors = proxy.receptors
+                # update the list of assigned VCCs
+                for receptor_id in self._receptors:
+                    vcc_id = receptor_to_vccId[receptor_id]
+                    self._vcc.remove(vcc_id) 
+                # TODO
+                # If the list of receptors is empty do we explicity set State to OFF 
+                # or do we rely on CbfSubarray State change?
+                # if not self._receptors:
+                #    self.set_state(tango.DevState.OFF)
+            except tango.DevFailed as df:
+                log_msg = "RemoveReceptors:" + df.args[0].desc
+                self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.re_throw_exception(df, "Command failed", 
+                        "CspSubarray RemoveReceptors command failed", 
+                        "Command()", tango.ErrSeverity.ERR)
+        else:
+            log_msg = "Subarray " + str(self._cbf_subarray_fqdn) + " not registered!"
             self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.throw_exception("Command failed", log_msg,
+                                         "RemoveReceptors", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.RemoveReceptors
 
+    def is_RemoveAllReceptors_allowed(self):
+        """
+        Check if the RemoveAllReceptors command can be executed. Receptors can be removed from a subarray
+        only when its obsState is IDLE or READY. 
+
+        Returns:
+            True if the command can be executed, otherwise False
+        """
+        if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
+            return False
+        return True
     @command(
     )
     @DebugIt()
     def RemoveAllReceptors(self):
+        """
+        Remove all the assigned receptors from a subarray.
+        Argin:
+            None
+        Returns:
+            None
+        Raises:
+            tango.DevFailed exception if the command fails.
+        """
         # PROTECTED REGION ID(CspSubarray.RemoveAllReceptors) ENABLED START #
-        try:
-            proxy = self._se_subarrays_proxies[self.CbfSubarray]
-            proxy.command_inout("RemoveAllReceptors")
-            # re-read the list of assigned receptors
-            self._receptors = proxy.receptors
-            if not self._receptors:
-                self._vcc = []
-        except KeyError as key_err: 
-            proxy = tango.DeviceProxy(self.CbfSubarray)
-            self._se_subarrays_proxies[self.CbfSubarray] = proxy
-        except tango.DevFailed as df:
-            log_msg = "RemoveAllReceptors:" + df.args[0].desc
+        # check if the list of assigned receptors is empty
+        if not self._receptors:
+            self.dev_logging("RemoveReceptors: no receptor to remove", tango.LogLevel.LOG_INFO)
+            return
+        proxy = 0
+        if self.__is_subarray_available(self._cbf_subarray_fqdn):
+            try:
+                proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
+                # forward the command to the CbfSubarray
+                proxy.command_inout("RemoveAllReceptors")
+                # re-read the list of assigned receptors
+                self._receptors = proxy.receptors
+                if not self._receptors:
+                    self._vcc = []
+                    # TODO
+                    # Do we explicity set State to OFF or do we rely on CbfSubarray State change?
+                    #self.set_state(tango.DevState.OFF)
+            except tango.DevFailed as df:
+                log_msg = "RemoveAllReceptors:" + df.args[0].desc
+                self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.re_throw_exception(df, "Command failed", 
+                        "CspSubarray RemoveAllReceptors command failed", 
+                        "Command()", tango.ErrSeverity.ERR)
+        else:
+            log_msg = "Subarray " + str(self._cbf_subarray_fqdn) + " not registered!"
             self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.throw_exception("Command failed", log_msg,
+                                         "RemoveAllReceptors", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.RemoveAllReceptors
 
     def is_ConfigureScan_allowed(self):
         """
-        Check the subarray obsState and State values.A scan configuration can be performed 
-        only if:
-        - obsMode = IDLE and State = ON or 
+        Check if a ConfigureScan command can be executed. A scan configuration can be performed 
+        only when:
+        - obsMode = IDLE and State = ON  
         - obsMode = READY
 
         Returns:
@@ -863,6 +936,14 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         """
 
         # PROTECTED REGION ID(CspSubarray.ConfigureScan) ENABLED START #
+
+        # check connection with CbfSubarray
+        if not self.__is_subarray_available(self._cbf_subarray_fqdn):
+            log_msg = "Subarray " + str(self._cbf_subarray_fqdn) + " not registered!"
+            self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.throw_exception("Command failed", log_msg,
+                                         "ConfigureScan execution", tango.ErrSeverity.ERR)
+
         try:
             argin = json.loads(argin)
         except json.JSONDecodeError:  # argument not a valid JSON object
@@ -972,11 +1053,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
         # Forward the ConfigureScan command to CbfSubarray.
         try:
-            proxy = self._se_subarrays_proxies[self.CbfSubarray]
+            proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
             proxy.ping()
             proxy.comman_inout("ConfigureScan", argin) 
             self._obs_state = ObsState.CONFIGURING.value
             self._obs_mode = proxy.obsMode
+            self._valid_scan_configuration = argin
         except tango.DevFailed as df:
             self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
             tango.Except.re_throw_eception(df, "Command failed", 
@@ -989,55 +1071,80 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     doc_in="The number of SearchBeams Capabilities to assign to the subarray", 
     )
     @DebugIt()
-    def AddSearchBeams(self, argin):
+    def AddNumOfSearchBeams(self, argin):
         # PROTECTED REGION ID(CspSubarray.AddSearchBeams) ENABLED START #
         pass
         # PROTECTED REGION END #    //  CspSubarray.AddSearchBeams
 
     @command(
     dtype_in='uint16', 
-    doc_in="The number of SearchBeam Capabilities to remove from the sub-rrays.", 
+    doc_in="The number of SearchBeam Capabilities to remove from the sub-arrays.\nAll the search beams are removed from the sub-array if the input number \nis equal to the max number of search bem capabilities (1500 for MID)", 
     )
     @DebugIt()
-    def RemoveSearchBeams(self, argin):
+    def RemoveNumOfSearchBeams(self, argin):
         # PROTECTED REGION ID(CspSubarray.RemoveSearchBeams) ENABLED START #
         pass
         # PROTECTED REGION END #    //  CspSubarray.RemoveSearchBeams
 
     @command(
-    dtype_in='DevVarLongStringArray', 
-    doc_in="The TiedArrayBeam type (SearchBeam, TimingBeam, VlbiBeam) and the list \nof the the IDs to remove.\ns.arg[0] = TiedArrayBeam type\nl.arg[0]...l.arg[N] the TiedArray BeamIds.", 
+    dtype_in=('uint16',), 
+    doc_in="The list of timing beams IDs to assign to the subarray", 
     )
     @DebugIt()
-    def AddTiedArrayBeams(self, argin):
-        # PROTECTED REGION ID(CspSubarray.AddTiedArrayBeams) ENABLED START #
+    def AddTimingBeams(self, argin):
+        # PROTECTED REGION ID(CspSubarray.AddTimingBeams) ENABLED START #
         pass
-        # PROTECTED REGION END #    //  CspSubarray.AddTiedArrayBeams
+        # PROTECTED REGION END #    //  CspSubarray.AddTimingBeams
 
     @command(
-    dtype_in='DevVarLongStringArray', 
-    doc_in="The list of list of the TiedArray BeamIds to remove and the type of the TiedArray Beam (SearchBeam, TimingBeam, VlbiBeam)", 
+    dtype_in=('uint16',), 
+    doc_in="The list of Vlbi beams ID to assign to the subarray.", 
     )
     @DebugIt()
-    def RemoveTiedArrayBeams(self, argin):
-        # PROTECTED REGION ID(CspSubarray.RemoveTiedArrayBeams) ENABLED START #
+    def AddVlbiBeams(self, argin):
+        # PROTECTED REGION ID(CspSubarray.AddVlbiBeams) ENABLED START #
         pass
-        # PROTECTED REGION END #    //  CspSubarray.RemoveTiedArrayBeams
+        # PROTECTED REGION END #    //  CspSubarray.AddVlbiBeams
 
     @command(
-    dtype_in='str', 
-    doc_in="The Capability type (SearchBeam, TimingBeam or VlbiBeam)", 
+    dtype_in=('uint16',), 
+    doc_in="The list of Search Beam Capabilities ID to assign to the sub-array.", 
     )
     @DebugIt()
-    def RemoveAllTiedArrayBeams(self, argin):
-        # PROTECTED REGION ID(CspSubarray.RemoveAllTiedArrayBeams) ENABLED START #
+    def AddSearchBeamsID(self, argin):
+        # PROTECTED REGION ID(CspSubarray.AddSearchBeamsID) ENABLED START #
         pass
-        # PROTECTED REGION END #    //  CspSubarray.RemoveAllTiedArrayBeams
+        # PROTECTED REGION END #    //  CspSubarray.AddSearchBeamsID
+
+    @command(
+    dtype_in=('uint16',), 
+    doc_in="The list of Search Beams IDs to remove from the sub-array.", 
+    )
+    @DebugIt()
+    def RemoveSearchBeamsID(self, argin):
+        # PROTECTED REGION ID(CspSubarray.RemoveSearchBeamsID) ENABLED START #
+        pass
+        # PROTECTED REGION END #    //  CspSubarray.RemoveSearchBeamsID
+
+    @command(
+    )
+    @DebugIt()
+    def RemoveTimingBeams(self):
+        # PROTECTED REGION ID(CspSubarray.RemoveTimingBeams) ENABLED START #
+        pass
+        # PROTECTED REGION END #    //  CspSubarray.RemoveTimingBeams
+
+    @command(
+    )
+    @DebugIt()
+    def RemoveVlbiBeams(self):
+        # PROTECTED REGION ID(CspSubarray.RemoveVlbiBeams) ENABLED START #
+        pass
+        # PROTECTED REGION END #    //  CspSubarray.RemoveVlbiBeams
 
 # ----------
 # Run server
 # ----------
-
 
 def main(args=None, **kwargs):
     # PROTECTED REGION ID(CspSubarray.main) ENABLED START #
