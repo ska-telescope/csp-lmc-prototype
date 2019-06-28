@@ -1,6 +1,6 @@
 {
     "scanID": 3,
-    "frequencyBand": "6",
+    "frequencyBand": "5a",
     "band5Tuning": [5.85, 7.25],
     "frequencyBandOffsetStream1": 0,
     "frequencyBandOffsetStream2": 0,
