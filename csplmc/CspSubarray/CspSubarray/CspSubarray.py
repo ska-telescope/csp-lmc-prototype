@@ -159,6 +159,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 cbf_capabilities = self._cbfMasterProxy.maxCapabilities
                 vcc_to_receptor = self._cbfMasterProxy.vccToReceptor
                 self._vcc_to_receptor_map = dict([int(ID) for ID in pair.split(":")] for pair in vcc_to_receptor)
+                receptor_to_vcc = self._cbfMasterProxy.receptorToVcc
+                self._receptor_to_vcc_map = dict([int(ID) for ID in pair.split(":")] for pair in receptor_to_vcc)
                 for i in range(len(cbf_capabilities)):
                     cap_type, cap_num = cbf_capabilities[i].split(':')
                     self._cbf_capabilities[cap_type] = int(cap_num)
@@ -476,6 +478,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         self._se_subarrays_proxies = {}
         self._se_subarray_event_id = {}
         self._vcc_to_receptor_map = {}
+        self._receptor_to_vcc_map = {}
         self._csp_capabilities = ''
         self._valid_scan_configuration = ''
         # initialize proxy to CBFMaster device
@@ -495,10 +498,14 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             self.__connect_to_master()
             self.__connect_to_subarrays()
             self._receptors = self._se_subarrays_proxies[self._cbf_subarray_fqdn].receptors
+            #TODO: read also the vcc!!
             if not self._receptors:
                 self.dev_logging("No receptor assigned to the subarray", tango.LogLevel.LOG_INFO)
             else:
                 self.dev_logging("{} assigned to the subarray".format(self._receptors), tango.LogLevel.LOG_INFO)
+                for receptorId in self._receptors:
+                    vcc_id = self._receptor_to_vcc_map[receptorId]
+                    self._vcc.append(vcc_id)
         except tango.DevFailed as df:    
             for item in df.args:
                 log_msg = "Error in {}: {}". format(item.origin, item.reason)
@@ -751,10 +758,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 # read the updated list of the assigned receptors
                 self._receptors = proxy.receptors
                 # build the list with the VCCs assigned to the sub-array
-                receptor_to_vcc_dict = self._cbfMasterProxy.receptorToVcc
-                receptor_to_vccId = dict([int(ID) for ID in pair.split(":")] for pair in receptor_to_vcc_dict)
+                self._vcc = []
                 for receptor_id in self._receptors:
-                    vcc_id = receptor_to_vccId[receptor_id]
+                    vcc_id = self._receptor_to_vcc_map[receptor_id]
                     self._vcc.append(vcc_id) 
             except tango.DevFailed as df:
                 for item in df.args:
@@ -821,9 +827,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 # update the list of assigned receptors
                 self._receptors = proxy.receptors
                 # update the list of assigned VCCs
+                self._vcc = []
                 for receptor_id in self._receptors:
-                    vcc_id = receptor_to_vccId[receptor_id]
-                    self._vcc.remove(vcc_id) 
+                    vcc_id = self._receptor_to_vcc_map[receptor_id]
+                    self._vcc.append(vcc_id) 
                 # TODO
                 # If the list of receptors is empty do we explicity set State to OFF 
                 # or do we rely on CbfSubarray State change?
