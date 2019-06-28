@@ -275,8 +275,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         and adminMode attributes of each CSP Sub-element and registers a callback function
         to handle the events (see seSCMCallback()).
         Exceptions are logged.
-        Args:
-            None
+
         Returns:
             None
         """
@@ -795,6 +794,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # Try connection with sub-elements
         self.__connect_to_subelements()
         self.__get_maxnum_of_receptors()
+        # connect to Subarray
         # create TANGO Groups to handle SearchBeams, TimingBeams and VlbiBeams
         self.__create_search_beam_group()
         self.__create_timing_beam_group()
@@ -820,7 +820,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def write_adminMode(self, value):
         """
-        Class method.
+        Class attribute method.
         Set the administration mode for the whole CSP element.
 
         Args:  
@@ -847,10 +847,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_commandProgress(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
-            Return the commandProgress attribute value.           
+            The commandProgress attribute value.           
         """
         # PROTECTED REGION ID(CspMaster.commandProgress_read) ENABLED START #
         return self._progress_command
@@ -858,10 +858,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_cspCbfState(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
-            Return the CBF Sub-element State.           
+            The CBF Sub-element State.           
         """
         # PROTECTED REGION ID(CspMaster.cspCbfState_read) ENABLED START #
         return self._cbf_state
@@ -869,10 +869,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_cspPssState(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
-            Return the Pss Sub-element State.           
+            The Pss Sub-element State.           
         """
         # PROTECTED REGION ID(CspMaster.cspPssState_read) ENABLED START #
         return self._pss_state
@@ -880,10 +880,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_cspPstState(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
-            Return the Pst Sub-element State.           
+            The Pst Sub-element State.           
         """
         # PROTECTED REGION ID(CspMaster.cspPstState_read) ENABLED START #
         return self._pst_state
@@ -891,10 +891,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_cspCbfHealthState(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
-            Return the Cbf Sub-element HealthState.           
+            The Cbf Sub-element HealthState.           
         """
         # PROTECTED REGION ID(CspMaster.cspCbfHealthState_read) ENABLED START #
         return self._cbf_health_state
@@ -902,10 +902,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_cspPssHealthState(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
-            Return the Pss Sub-element HealthState.           
+            The Pss Sub-element HealthState.           
         """
         # PROTECTED REGION ID(CspMaster.cspPssHealthState_read) ENABLED START #
         return self._pss_health_state
@@ -913,10 +913,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_cspPstHealthState(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
-            Return the Pst Sub-element HealthState.           
+            The Pst Sub-element HealthState.           
         """
         # PROTECTED REGION ID(CspMaster.cspPstHealthState_read) ENABLED START #
         return self._pst_health_state
@@ -924,7 +924,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_cbfMasterAddress(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
             Return the CbfMaster TANGO Device address.
@@ -935,10 +935,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_pssMasterAddress(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
-            Return the PssMaster TANGO Device address.
+            The PssMaster TANGO Device address.
         """
         # PROTECTED REGION ID(CspMaster.pssMasterAddress_read) ENABLED START #
         return self.CspMidPss
@@ -946,10 +946,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_pstMasterAddress(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
-            Return the PstMaster TANGO Device address.
+           The PstMaster TANGO Device address.
         """
         # PROTECTED REGION ID(CspMaster.pstMasterAddress_read) ENABLED START #
         return self.CspMidPst
@@ -957,10 +957,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_cbfAdminMode(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
-            Return the CbfMaster administration mode.
+            The CbfMaster administration mode.
         """
         # PROTECTED REGION ID(CspMaster.pssAdminMode_read) ENABLED START #
         return self._cbf_admin_mode
@@ -969,7 +969,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     def write_cbfAdminMode(self, value):
         # PROTECTED REGION ID(CspMaster.cbfAdminMode_write) ENABLED START #
         """
-        Class method.
+        Class attribute method.
         Set the CBF sub-element administration mode.
 
         Args:  
@@ -994,7 +994,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_pssAdminMode(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
             Return the PssMaster administration mode.
@@ -1005,7 +1005,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def write_pssAdminMode(self, value):
         """
-        Class method.
+        Class attribute method.
         Set the PSS sub-element administration mode.
 
         Args:  
@@ -1031,7 +1031,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_pstAdminMode(self):
         """
-        Class method.
+        Class attribute method.
 
         Returns: 
             Return the PstMaster administration mode.
@@ -1042,12 +1042,12 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def write_pstAdminMode(self, value):
         """
-        Class method.
+        Class attribute method.
         Set the PST sub-element administration mode.
 
         Args:  
             value: one of the administration mode value (ON-LINE,\
-            OFF-LInE, MAINTENANCE, NOT-FITTED).
+            OFF-LINE, MAINTENANCE, NOT-FITTED).
 
         Returns: 
             None
@@ -1068,9 +1068,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         
     def read_availableCapabilities(self):
         """
-        Override method.
+        Override attribute method.
 
-        Argin: None
         Returns:
             A list of strings with the number of available resources for each
             capability/resource type.
@@ -1093,9 +1092,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportSearchBeamState(self):
         """
-        Class method.
+        Class attribute method.
 
-        Argin: None  
         Returns: 
             Return the State of the CSP SearchBeam Capabilities as an array of DevState.
         """
@@ -1107,9 +1105,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         """
         Class method.
 
-        Argin: None  
         Returns: 
-            Return the healthState of the CSP SearchBeam Capabilities as an array of UShort.
+            Report the healthState of the CSP SearchBeam Capabilities as an array of UShort.
             (It's not possible to allocate an array of DevEnum)
         """
         # PROTECTED REGION ID(CspMaster.reportSearchBeamHealthState_read) ENABLED START #
@@ -1118,11 +1115,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportSearchBeamAdminMode(self):
         """
-        Class method.
+        Class attribute method.
 
-        Argin: None  
         Returns: 
-            Return the adminMode of the CSP SearchBeam Capabilities as an array of UShort.
+            The adminMode of the CSP SearchBeam Capabilities as an array of UShort.
             (It's not possible to allocate an array of DevEnum)
         """
         # PROTECTED REGION ID(CspMaster.reportSearchBeamAdminMode_read) ENABLED START #
@@ -1136,9 +1132,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportTimingBeamHealthState(self):
         """
-        Class method
+        Class attribute method
 
-        Argin: None  
         Returns:
             The healthState of the CSP TimingBeam Capabilities as an array \
              of UShort.
@@ -1149,9 +1144,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportTimingBeamAdminMode(self):
         """
-        Class method
+        Class attribute method
 
-        Argin: None  
         Returns:
             The adminMode of the CSP TimingBeam Capabilities as an array \
              of UShort.
@@ -1162,9 +1156,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportVlbiBeamState(self):
         """
-        Class method
+        Class attribute method
 
-        Argin: None  
         Returns:
             The State of the CSP VlbiBeam Capabilities as an array 
             of DevState.
@@ -1175,9 +1168,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportVlbiBeamHealthState(self):
         """
-        Class method
+        Class attribute method
 
-        Argin: None  
         Returns:
             The healthState of the CSP VlbiBeam Capabilities as an array 
             of UShort.
@@ -1188,9 +1180,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportVlbiBeamAdminMode(self):
         """
-        Class method
+        Class attribute method
 
-        Argin: None  
         Returns:
             The adminMode of the CSP VlbiBeam Capabilities as an array \
              of UShort.
@@ -1200,6 +1191,9 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.reportVlbiBeamAdminMode_read
     
     def read_cspSubarrayAddress(self):
+        """
+        Class attribute method.
+        """
         # PROTECTED REGION ID(CspMaster.cspSubarrayAddress_read) ENABLED START #
         if self.CspSubarrays:
             return self.CspSubarrays
@@ -1209,6 +1203,9 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.cspSubarrayAddress_read
 
     def read_searchBeamCapAddress(self):
+        """
+        Class attribute method.
+        """
         # PROTECTED REGION ID(CspMaster.searchBeamCapAddress_read) ENABLED START #
         if self.SearchBeams: 
             return self.SearchBeams
@@ -1230,6 +1227,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.timingBeamCapAddress_read
 
     def read_vlbiCapAddress(self):
+        """
+        Class attribute method.
+        """
+
         # PROTECTED REGION ID(CspMaster.vlbiCapAddress_read) ENABLED START #
         if self.VlbiBeams: 
             return self.VlbiBeams
@@ -1240,6 +1241,12 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.vlbiCapAddress_read
 
     def read_receptorMembership(self):
+        """
+        Class attribute method.
+
+        Returns:
+           The subarray affilitiaion of the receptors.
+        """
         # PROTECTED REGION ID(CspMaster.receptorMembership_read) ENABLED START #
         try:
            proxy = self._se_proxies[self.CspMidCbf]
@@ -1256,37 +1263,71 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.receptorMembership_read
 
     def read_searchBeamMembership(self):
+        """
+        Class attribute method.
+
+        Returns:
+           The subarray affilitiaion of the Search Beams.
+        """
         # PROTECTED REGION ID(CspMaster.searchBeamMembership_read) ENABLED START #
         return self._searchBeamsMembership
         # PROTECTED REGION END #    //  CspMaster.searchBeamMembership_read
 
     def read_timingBeamMembership(self):
+        """
+        Class attribute method.
+
+        Returns:
+           The subarray affilitiaion of the Timing Beams.
+        """
         # PROTECTED REGION ID(CspMaster.timingBeamMembership_read) ENABLED START #
         return self._timingBeamsMembership
         # PROTECTED REGION END #    //  CspMaster.timingBeamMembership_read
 
     def read_vlbiBeamMembership(self):
+        """
+        Class attribute method.
+
+        Returns:
+           The subarray affilitiaion of the Vlbi Beams.
+        """
         # PROTECTED REGION ID(CspMaster.vlbiBeamMembership_read) ENABLED START #
         return self._vlbiBeamsMembership
         # PROTECTED REGION END #    //  CspMaster.vlbiBeamMembership_read
 
     def read_availableReceptorIDs(self):
+        """
+        Class attribute method.
+
+        Returns:
+            the list (as an array of UShort) of the available receptors IDs.
+            The list includes all the receptors that are not assigned to any subarray and, 
+            from the side of CSP, are considered "full working". This means:
+            - a valid link connection between receptor-VCC 
+            - the connected VCC healthState OK
+        """
         # PROTECTED REGION ID(CspMaster.availableReceptorIDs_read) ENABLED START #
         self._available_receptorIDs = []
         try:
             proxy = self._se_proxies[self.CspMidCbf]
             proxy.ping()
             vcc_state = proxy.reportVCCState
-            # TODO: get the state of the receptor-vcc link!
-            #receptor_link_state = proxy.receptorLinkState
+            vcc_membership = proxy.reportVccSubarrayMembership
             for vcc_id in range(self._receptors_maxnum):
                 if vcc_state[vcc_id] not in [tango.DevState.UNKNOWN]:
-                    #OSS: receptorID is in [1,197] range
-                    #index of receptor_link_state is in [0,196]
+                    # skip the vcc already assigned to a sub-array
+                    if vcc_membership[vcc_id] != 0:
+                        continue
+                    # OSS: valid receptorIDs are in [1,197] range
+                    # receptorID = 0 means the link connection between 
+                    # the receptor and the VCC is off
                     receptorID = self._vcc_to_receptor_map[vcc_id + 1]
-                    # TODO: check the receptor_link_state of the receptor
-                    #if receptor_link_state[receptorID - 1] not in [tango.DevState.UNKNOWN]: 
-                    self._available_receptorIDs.append(receptorID)
+                    if receptorID > 0:
+                        self._available_receptorIDs.append(receptorID)
+                    else:
+                        log_msg = "Link problem with receptor connected\
+                                to Vcc {}".format(vcc_id + 1)
+                        self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
         except tango.DevFailed as df:
             log_msg = "Error in read_availableReceptorIDs: " + df.args[0].reason
             self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
@@ -1386,13 +1427,16 @@ If the array length is > 1, each array element specifies the FQDN of the\
     @DebugIt()
     def Off(self, argin):
         """
-        Switch off the CSP Element or a single CSP Sub-element.\n
-        :param argin: The list of sub-elements to switch-off. If the array\
-        length is 0, the command applies to the whole CSP Element.\
-        If the array length is > 1, each array element specifies the FQDN of the\
-        CSP SubElement to switch OFF \n
+        Switch off the CSP Element or a single CSP Sub-element.
 
-        :return: None
+        Argin:
+            The list of sub-elements to switch-off. If the array\
+            length is 0, the command applies to the whole CSP Element.\
+            If the array length is > 1, each array element specifies the FQDN of the\
+            CSP SubElement to switch OFF \n
+
+        Returns: 
+            None
 
         """
         # PROTECTED REGION ID(CspMaster.Off) ENABLED START #
@@ -1440,8 +1484,12 @@ If the array length is > 1, each array element specifies the FQDN of the\
     def Standby(self,argin):
         # PROTECTED REGION ID(CspMaster.Standby) ENABLED START #
         """
-        :param argin: listof devices
-        :return: None
+        Args: 
+            argin: The list of the Sub-element devices FQDNs (as an array of DevString)
+        Returns: 
+            None
+        Raises:
+            DevFailed if command fails or if no DeviceProxy associated to the FQDNs.
         """
         device_list = []    
         num_of_devices = len(argin) 
