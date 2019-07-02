@@ -48,6 +48,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     # ---------------
     # Event Callback functions
     # ---------------
+    def cmd_done_cb(self):
+        self.dev_logging("Asynch command accepted!", tango.LogLevel.LOG_INFO)
+
     def scm_change_callback(self, evt):
         """
         Class private method.
@@ -121,6 +124,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 ev_id = device_proxy.subscribe_event("obsState", EventType.CHANGE_EVENT,
                         self.scm_change_callback, stateless=True)
                 self._se_subarray_event_id[fqdn].append(ev_id)
+
             except tango.DevFailed as df:
                 for item in df.args:
                     if "DB_DeviceNotDefined" in item.reason:
@@ -242,14 +246,18 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         Returns:
             None
         """
-        if self._cbf_subarray_obs_state == ObsState.READY.value and self._obs_mode == ObsMode.IMAGING.value:
+        # OSS: when obs_mode is set, its value should be considered to set the final 
+        # obs_state of the sub-array
+        #if self._cbf_subarray_obs_state == ObsState.READY.value and self._obs_mode == ObsMode.IMAGING.value:
+        if self._cbf_subarray_obs_state == ObsState.READY.value :
             self._obs_state = ObsState.READY.value
-        if self._cbf_subarray_obs_state == ObsState.IDLE.value and self._obs_mode == ObsMode.IMAGING.value:
+        #if self._cbf_subarray_obs_state == ObsState.IDLE.value and self._obs_mode == ObsMode.IMAGING.value:
+        if self._cbf_subarray_obs_state == ObsState.IDLE.value:
             self._obs_state = ObsState.IDLE.value
             self._obs_mode = ObsMode.IDLE.value
 
         # analyze only IMAGING mode.
-        #TODO: ObsMode need to be defined as a mask because we can have more
+        #TODO: ObsMode should be defined as a mask because we can have more
         # than one obs_mode active for a sub-array
 
 
@@ -421,12 +429,15 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     vccHealthState = attribute(name="vccHealthState", label="vccHealthState",
         forwarded=True
     )
+    #
+    # These attributes are not defined in CbfMaster.
     #fspState = attribute(name="fspState", label="fspState",
     #    forwarded=True
     #)
     #fspHealthState = attribute(name="fspHealthState",label="fspHealthState",
     #    forwarded=True
     #)
+
     # ---------------
     # General methods
     # ---------------
@@ -437,8 +448,11 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         self.set_state(tango.DevState.INIT)
         self._health_state = HealthState.UNKNOWN.value
         self._admin_mode   = AdminMode.ONLINE.value
-        self._obs_mode     = ObsState.IDLE.value
-        self._obs_state    = tango.DevState.OFF
+        # NOTE: need to adjust SKAObsDevice class because some of its
+        # attributes (such as obs_state, obs_mode nad command_progress) are not 
+        # visibile from the derived classes!!
+        self._obs_mode     = ObsMode.IDLE.value
+        self._obs_state    = ObsState.IDLE.value
         # get subarray ID
         if self.SubID:
             self._subarray_id = int(self.SubID)
@@ -511,6 +525,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 log_msg = "Error in {}: {}". format(item.origin, item.reason)
                 self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
 
+        # to use the push model in command_inout_asynch (the one with the callback parameter), 
+        # change the global TANGO model to PUSH_CALLBACK. 
+        apiutil = tango.ApiUtil.instance()
+        apiutil.set_asynch_cb_sub_model(tango.cb_sub_model.PUSH_CALLBACK)
         # PROTECTED REGION END #    //  CspSubarray.init_device
 
     def always_executed_hook(self):
@@ -671,6 +689,73 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     # --------
     # Commands
     # --------
+
+    @command(
+    )
+    @DebugIt()
+    def EndScan(self):
+        # PROTECTED REGION ID(CspSubarray.EndScan) ENABLED START #
+        # Check if the EndScan command can be executed. This command is allowed when the 
+        # Subarray State is SCANNING.
+        if self._obs_state != ObsState.SCANNING.value:
+            #get the obs_state label
+            for obs_state in ObsState:
+                if obs_state == self._obs_state:
+                    break
+            log_msg = "Subarray obs_state is {}, not SCANNING".format(obs_state.name)
+            tango.Except.throw_exception("Command failed", log_msg,
+                                         "EndScan", tango.ErrSeverity.ERR)
+        proxy = 0
+        #TODO: the command is forwarded only to CBF. Future implementation has to
+        # check the observing mode and depending on this, the command is forwarded to
+        # the interested sub-elements.
+        if self.__is_subarray_available(self._cbf_subarray_fqdn):
+            try:     
+                proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
+                # forward the command to the CbfSubarray
+                proxy.command_inout_asynch("EndScan", self.cmd_done_cb)
+            except tango.DevFailed as df:
+                for item in df.args:
+                    log_msg = item.desc
+                    self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+                    tango.Except.re_throw_exception(df, "Command failed", 
+                                             "CspSubarray EndScan command failed", 
+                                             "Command()",
+                                             tango.ErrSeverity.ERR)
+        # PROTECTED REGION END #    //  CspSubarray.EndScan
+
+    @command(
+    dtype_in=('str',), 
+    )
+    @DebugIt()
+    def Scan(self, argin):
+        # PROTECTED REGION ID(CspSubarray.Scan) ENABLED START #
+        # Check if the Scan command can be executed. This command is allowed when the 
+        # Subarray State is READY.
+        if self._obs_state != ObsState.READY.value:
+            #get the obs_state label
+            for obs_state in ObsState:
+                if obs_state == self._obs_state:
+                    break
+            log_msg = "Subarray is in {} state, not READY".format(obs_state.name)
+            tango.Except.throw_exception("Command failed", log_msg,
+                                         "Scan", tango.ErrSeverity.ERR)
+        proxy = 0
+        if self.__is_subarray_available(self._cbf_subarray_fqdn):
+            try:     
+                proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
+                # forward the command to the CbfSubarray
+                proxy.command_inout_asynch("Scan", argin, self.cmd_done_cb)
+                self._obs_state = ObsState.SCANNING.value
+            except tango.DevFailed as df:
+                for item in df.args:
+                    log_msg = item.desc
+                    self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+                    tango.Except.re_throw_exception(df, "Command failed", 
+                                             "CspSubarray Scan command failed", 
+                                             "Command()",
+                                             tango.ErrSeverity.ERR)
+        # PROTECTED REGION END #    //  CspSubarray.Scan
 
     def is_AddReceptors_allowed(self):
         """
@@ -907,19 +992,14 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     def is_ConfigureScan_allowed(self):
         """
         Check if a ConfigureScan command can be executed. A scan configuration can be performed 
-        only when:
-        - obsMode = IDLE and State = ON  
-        - obsMode = READY
+        when the Subarray is ON (that is, at least one receptor is assigned to it)
 
         Returns:
             True if the command can be executed, otherwise False
         """
-
-        if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
+        #TODO: checks other states?
+        if self.get_state() in [tango.DevState.OFF]:
             return False
-        if self._obs_state == ObsState.IDLE.value:
-            if self.get_state() != tango.DevState.ON:
-                return False
         return True
 
     @command(
@@ -939,11 +1019,19 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
         **Note**: Part of this code (the input string parsing) comes from the CBF project 
         developed by J.Jjang (NRC-Canada)
-
         """
 
         # PROTECTED REGION ID(CspSubarray.ConfigureScan) ENABLED START #
 
+        # check obs_state: the subarray can be configured only when the obs_state is
+        # IDLE or READY (re-configuration)
+        if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
+            for obs_state in ObsState:
+                if obs_state == self._obs_state:
+                    break
+            log_msg = "Subarray is in {} state, not IDLE or READY".format(obs_state.name)
+            tango.Except.throw_exception("Command failed", log_msg,
+                                         "Scan", tango.ErrSeverity.ERR)
         # check connection with CbfSubarray
         if not self.__is_subarray_available(self._cbf_subarray_fqdn):
             log_msg = "Subarray " + str(self._cbf_subarray_fqdn) + " not registered!"
@@ -968,7 +1056,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
             tango.Except.throw_exception("Command failed", file_err,
                                          "ConfigureScan execution", tango.ErrSeverity.ERR)
-        except json.JSONDecodeError:  # argument not a valid JSON object
+        except json.JSONDecodeError as e:  # argument not a valid JSON object
             # this is a fatal error
             msg = "Scan configuration object is not a valid JSON object. Aborting configuration."
             self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
@@ -978,7 +1066,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # If not given, abort the scan configuration.
         # If malformed, abort the scan configuration.
         if "scanID" in argin_dict:
-            print("scanID: ", argin_dict["scanID"])
             if int(argin_dict["scanID"]) <= 0:  # scanID not positive
                 msg = "'scanID' must be positive (received {}). "\
                     "Aborting configuration.".format(int(argin_dict["scanID"]))
@@ -986,6 +1073,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
                 tango.Except.throw_exception("Command failed", msg, "ConfigureScan execution",
                                                tango.ErrSeverity.ERR)
+            #TODO: add on CspMaster the an attribute with the list of scanID 
+            # of each sub-array
             #elif any(map(lambda i: i == int(argin_dict["scanID"]),
             #             self._proxy_csp_master.subarrayScanID)):  # scanID already taken
             #    msg = "'scanID' must be unique (received {}). "\
@@ -996,7 +1085,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             #                                   tango.ErrSeverity.ERR)
             else:  # scanID is valid
                 self._scan_ID = int(argin_dict["scanID"])
-                print("scanID:", self._scan_ID)
         else:  # scanID not given
             msg = "'scanID' must be given. Aborting configuration."
             # this is a fatal error

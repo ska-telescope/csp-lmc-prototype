@@ -1,3 +1,5 @@
+.. Documentation
+
 CspMaster Class Documentation 
 ================================
 
@@ -5,4 +7,4 @@ CspMaster Class Documentation
    :members:
    :undoc-members:
    :show-inheritance:
-   :member-order: 
+   :member-order:

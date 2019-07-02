@@ -1086,6 +1086,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             self._available_capabilities["TimingBeam"] = const.NUM_OF_TIMING_BEAMS
             self._available_capabilities["VlbiBeam"] = const.NUM_OF_VLBI_BEAMS
         except tango.DevFailed as df:
+            #TODO: add message logging
             print(df.args[0].desc)
         return utils.convert_dict_to_list(self._available_capabilities)
         # PROTECTED REGION END #    //  CspMaster.availableCapabilities_read

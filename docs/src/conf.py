@@ -12,9 +12,20 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+
+autodoc_mock_imports = ['PyTango', 'tango', 'tango.server', 'run', 'DeviceMeta', 'command',
+                 'future', 'future.utils', 'logging', 'logging.handlers', 'skabase',
+                 'skabase.SKABaseDevice.SKABaseDevice', 'SKABaseDevice',
+                 'skabase.SKAMaster.SKAMaster', 'SKAMaster',
+                 'skabase.SKASubarray.SKASubarray', 'SKASubarray', 'numpy'
+                 ]
+
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../'))
+#sys.path.insert(0, os.path.abspath('../../csplmc/CspMaster/CspMaster'))
+#sys.path.insert(0, os.path.abspath('../../csplmc/CspSubarray/CspSubarray'))
+sys.path.insert(0, os.path.abspath('../..'))
+
 
 import sphinx_rtd_theme
 
