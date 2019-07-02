@@ -3,7 +3,7 @@
 CspMaster Class Documentation 
 ================================
 
-.. automodule:: csplmc.CspMaster.CspMaster
+.. automodule:: CspMaster
    :members:
    :undoc-members:
    :show-inheritance:

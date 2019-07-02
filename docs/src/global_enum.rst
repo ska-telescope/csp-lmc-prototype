@@ -1,7 +1,7 @@
 CspMaster Class Documentation 
 ================================
 
-.. automodule:: CspSubarray
+.. automodule:: global_enum
    :members:
    :undoc-members:
    :member-order: 
