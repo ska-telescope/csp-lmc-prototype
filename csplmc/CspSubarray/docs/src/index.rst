@@ -1,6 +1,6 @@
 CspSubarray
 ************************
-.. automodule:: CspSubarray.CspSubarray
+.. automodule:: CspSubarray
 
 .. autoclass:: CspSubarray
    :members:
