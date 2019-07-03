@@ -18,9 +18,6 @@ autodoc_mock_imports = ['PyTango', 'tango', 'tango.server','run', 'DeviceMeta', 
                  'skabase.auxiliary', 'skabase.SKAMaster.SKAMaster', 'SKAMaster',
                  'skabase.SKASubarray.SKASubarray', 'SKASubarray','numpy'
                  ]
-#autodoc_default_options = {
-#    'member-order': 'bysource',
-#}
 autodoc_member_order = 'bysource'
 
 import os
