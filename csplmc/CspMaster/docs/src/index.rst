@@ -1,6 +1,6 @@
 CspMaster
 ************************
-.. automodule:: CspMaster.CspMaster
+.. automodule:: CspMaster
 
 .. autoclass:: CspMaster
    :members:
