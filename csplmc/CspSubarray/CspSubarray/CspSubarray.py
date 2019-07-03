@@ -33,7 +33,7 @@ sys.path.insert(0, commons_pkg_path)
 #
 import global_enum as const
 from global_enum import HealthState, AdminMode, ObsState, ObsMode
-from skabase.  SKASubarray import SKASubarray
+from skabase.Subarray import SKASubarray
 import json
 # PROTECTED REGION END #    //  CspMaster.additionnal_import
 
@@ -53,13 +53,16 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     def scm_change_callback(self, evt):
         """
-        Class private method.
+        *Class private method.*
+
         Retrieve the values of the sub-element sub-arrays SCM attributes subscribed for change
         event at device initialization.
 
-        :param evt: The event data
+        Args: 
+            evt: The event data
 
-        :return: None
+        Returns:
+            None
         """
         if evt.err is False:
             try:
@@ -90,7 +93,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     def __connect_to_subarrays(self):
         """
-        Class private method.
+        *Class private method.*
+
         Establish connection with each sub-element sub-array.
         If connection succeeds, the CspSubarrays device subscribes the State, healthState 
         and adminMode attributes of each Sub-element sub-array and registers a callback function
@@ -136,16 +140,21 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     def __connect_to_master(self):
         """
-        Class private method.
+        *Class private method.*
+
         Establish connection with the CSP sub-element master to get information about:
-        - the CBF Master address
-        - the max number of CSP and CBF capabilities for each type
-        Args:
-            None
+
+        * the CBF Master address
+
+        * the max number of CSP and CBF capabilities for each type
+
+        Establish connection with the sub-element Master devices to get information about
+        the support capabilities.
+
         Returns:
             None
         Raises: 
-            Raise a DevFailed exception if connections fail.
+            DevFailed: when connections to the CspMaster and sub-element Master devices fail.
         """
         try:
             self.dev_logging("Trying connection to {}".format(self.CspMaster), int(tango.LogLevel.LOG_INFO))
@@ -188,10 +197,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     def __is_subarray_available(self, subarray_name):
         """
-        Class private method.
+        *Class private method.*
+
         Check if the sub-element subarray is exported in the TANGO DB. 
         If the subarray device is not present in the list of the connected subarrays, a 
         connection with the device is performed.
+
         Args:
             subarray_name : the FQDN of the subarray  
         Returns:
@@ -212,7 +223,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     def __set_subarray_state(self):
         """
-        Class private method.
+        *Class private method*
+
         Set the subarray State and healthState.
         Args:
             None
@@ -239,7 +251,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     def __set_subarray_obs_state(self):
         """
-        Class private method.
+        *Class private method*
+
         Set the subarray obsState attribute value. It works only for IMAGING.
         Args:
             None
@@ -269,14 +282,41 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     CspMaster = device_property(
         dtype='str', default_value="mid_csp/elt/master"
     )
+    """
+    *Device property*
+
+    The CspMaster FQDN.
+
+    *Type*: DevString
+    """
 
     CbfSubarrayPrefix = device_property(
         dtype='str', default_value="mid_csp_cbf/sub_elt/subarray_"
     )
+    """
+    *Device property*
+
+    The CBF sub-element subarray FQDN prefix.
+
+    *Type*: DevString
+
+    Example:
+        *mid_csp_cbf/sub_elt/subarray_*
+    """
 
     PssSubarrayPrefix = device_property(
         dtype='str', default_value="mid_csp_pss/sub_elt/subarray_"
     )
+    """
+    *Device property*
+
+    The PSS sub-element subarray FQDN prefix.
+
+    *Type*: DevString
+
+    Example:
+        *mid_csp_pss/sub_elt/subarray_*
+    """
 
     # ----------
     # Attributes
@@ -286,30 +326,79 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         dtype='uint64',
         access=AttrWriteType.READ_WRITE,
     )
+    """
+    *Class attribute*
+
+    The identification number of the scan.
+
+    *Type*: DevULong64
+    """
 
     corrInherentCap = attribute(
         dtype='str',
     )
+    """
+    *Class attribute*
+
+    The CspSubarray Correlation inherent Capability FQDN.
+
+    *Type*: DevString
+    """
 
     pssInherentCap = attribute(
         dtype='str',
     )
+    """
+    *Class attribute*
+
+    The CspSubarray Pss inherent Capability FQDN.
+
+    *Type*: DevString
+    """
 
     pstInherentCap = attribute(
         dtype='str',
     )
+    """
+    *Class attribute*
+
+    The CspSubarray Pst inherent Capability FQDN.
+
+    *Type*: DevString
+    """
 
     vlbiInherentCap = attribute(
         dtype='str',
     )
+    """
+    *Class attribute*
+
+    The CspSubarray Vlbi inherent Capability FQDN.
+
+    *Type*: DevString
+    """
 
     cbfSubarrayState = attribute(
         dtype='DevState',
     )
+    """
+    *Class attribute*
+
+    The CBF sub-element subarray State attribute value.
+
+    *Type*: DevState
+    """
 
     pssSubarrayState = attribute(
         dtype='DevState',
     )
+    """
+    *Class attribute*
+
+    The PSS sub-element subarray State attribute value.
+
+    *Type*: DevState
+    """
 
     cbfSubarrayHealthState = attribute(
         dtype='DevEnum',
@@ -317,6 +406,15 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         doc="CBF Subarray Health State",
         enum_labels=["OK", "DEGRADED", "FAILED", "UNKNOWN", ],
     )
+    """
+    *Class attribute*
+
+    The CBF sub-element subarray healthState attribute value.
+
+    *Type*: DevEnum
+
+    *enum_labels*=["OK", "DEGRADED", "FAILED", "UNKNOWN", ]*
+    """
 
     pssSubarrayHealthState = attribute(
         dtype='DevEnum',
@@ -324,6 +422,15 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         doc="PSS Subarray Health State",
         enum_labels=["OK", "DEGRADED", "FAILED", "UNKNOWN", ],
     )
+    """
+    *Class attribute*
+
+    The PSS sub-element subarray healthState attribute value.
+
+    *Type*: DevEnum
+
+    *enum_labels*=["OK", "DEGRADED", "FAILED", "UNKNOWN", ]*
+    """
 
     cbfSubarrayObsState = attribute(
         dtype='DevEnum',
@@ -331,6 +438,15 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         doc="The CBF subarray observing state.",
         enum_labels=["IDLE", "CONFIGURING", "READY", "SCANNING", "PAUSED", "ABORTED", "FAULT", ],
     )
+    """
+    *Class attribute*
+
+    The CBF sub-element subarray obsState attribute value.
+
+    *Type*: DevEnum
+
+    enum_labels=["IDLE", "CONFIGURING", "READY", "SCANNING", "PAUSED", "ABORTED", "FAULT", ]
+    """
 
     pssSubarrayObsState = attribute(
         dtype='DevEnum',
@@ -338,22 +454,52 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         doc="The PSS subarray observing state.",
         enum_labels=["IDLE", "CONFIGURING", "READY", "SCANNING", "PAUSED", "ABORTED", "FAULT", ],
     )
+    """
+    *Class attribute*
+
+    The PSS sub-element subarray obsState attribute value.
+
+    *Type*: DevEnum
+
+    enum_labels=["IDLE", "CONFIGURING", "READY", "SCANNING", "PAUSED", "ABORTED", "FAULT", ]
+    """
 
     pssSubarrayAddr = attribute(
         dtype='str',
         doc="The PSS Subarray TANGO address.",
     )
+    """
+    *Class attribute*
+
+    The PSS sub-element subarray FQDN.
+
+    *Type*: DevString
+    """
 
     cbfSubarrayAddr = attribute(
         dtype='str',
         doc="The CBF Subarray TANGO address.",
     )
+    """
+    *Class attribute*
+
+    The CBF sub-element subarray FQDN.
+
+    *Type*: DevString
+    """
 
     validScanConfiguration = attribute(
         dtype='str',
         label="Valid Scan Configuration",
         doc="Store the last valid scan configuration.",
     )
+    """
+    *Class attribute*
+
+    The last valid scan configuration JSON-encoded string.
+
+    *Type*: DevString
+    """
 
     receptors = attribute(
         dtype=('uint',),
@@ -361,61 +507,156 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         label="Receptor IDs",
         doc="The list of receptor IDs assigned to the subarray.",
     )
+    """
+    *Class attribute*
+
+    The list of receptor IDs assigned to the subarray.
+
+    *Type*: array od DevUShort
+    """
 
     fsp = attribute(
         dtype=('uint16',),
         max_dim_x=27,
     )
+    """
+    *Class attribute*
+
+    The list of receptor IDs assigned to the subarray.
+
+    *Type*: array od DevUShort
+    """
 
     vcc = attribute(
         dtype=('uint16',),
         max_dim_x=197,
     )
+    """
+    *Class attribute*
+
+    The list of VCC IDs assigned to the subarray.
+
+    *Type*: array od DevUShort
+    """
 
     searchBeams = attribute(
         dtype=('uint16',),
         max_dim_x= 1500,
     )
+    """
+    *Class attribute*
+
+    The list of Search Beam Capability IDs assigned to the subarray.
+
+    *Type*: array od DevUShort
+    """
 
     timingBeams = attribute(
         dtype=('uint16',),
         max_dim_x= 16,
     )
+    """
+    *Class attribute*
+
+    The list of Timing Beam Capability IDs assigned to the subarray.
+
+    *Type*: array od DevUShort
+    """
 
     vlbiBeams = attribute(
         dtype=('uint16',),
         max_dim_x= 20,
     )
+    """
+    *Class attribute*
+
+    The list of Vlbi Beam Capability IDs assigned to the subarray.
+
+    *Type*: array od DevUShort
+    """
 
     searchBeamsState = attribute(
         dtype=('DevState',),
         max_dim_x=1500,
     )
+    """
+    *Class attribute*
+
+    The *State* attribue value of the Search Beam Capabilities assigned to the subarray.
+
+    *Type*: array od DevState
+    """
 
     timingBeamsState = attribute(
         dtype=('DevState',),
         max_dim_x=16,
     )
+    """
+    *Class attribute*
+
+    The *State* attribue value of the Timing Beam Capabilities assigned to the subarray.
+
+    *Type*: array od DevState
+    """
 
     vlbiBeamsState = attribute(
         dtype=('DevState',),
         max_dim_x=20,
     )
+    """
+    *Class attribute*
+
+    The *State* attribue value of the Vlbi Beam Capabilities assigned to the subarray.
+
+    *Type*: array od DevState
+    """
 
     searchBeamsHealthState = attribute(
         dtype=('uint16',),
         max_dim_x=1500,
+        doc="The healthState ttribute value of the Search Beams Capbilities assigned to the subarray.",
     )
+    """
+    *Class attribute*
+
+    The *healthState* attribute value of the Search Beams Capbilities assigned to the subarray.
+
+    *Type*: array od DevUShort.
+
+    References:
+        See *Common definition* paragraph for corrispondences among Ushort values and label
+    """
 
     timingBeamsHealthState = attribute(
         dtype=('uint16',),
         max_dim_x=16,
     )
+    """
+    *Class attribute*
+
+    The *healthState* attribute value of the Timing Beams Capbilities assigned to the subarray.
+
+    *Type*: array od DevUShort.
+
+    References:
+        See *Common definition* paragraph for corrispondences among Ushort values and label
+    """
 
     vlbiBeamsHealthState = attribute(
         dtype=('uint16',),
         max_dim_x=20,
     )
+    """
+    *Class attribute*
+
+    The *healthState* attribute value of the Vlbi Beams Capbilities assigned to the subarray.
+
+    *Type*: array od DevUShort.
+
+    References:
+        See *Common definition* paragraph for corrispondences among Ushort values and healthState labels.
+
+    """
 
     timingBeamsObsState = attribute(
         dtype=('uint16',),
@@ -423,12 +664,39 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         label="Timing Beams obsState",
         doc="The observation state of assigned timing beams.",
     )
+    """
+    *Class attribute*
+
+    The *obsState* attribute  value of the Timing Beams Capbilities assigned to the subarray.
+
+    *Type*: array od DevUShort.
+
+    References:
+        See *Common definition* paragraph for corrispondences among Ushort values and obsState labels.
+    """
+
     vccState = attribute(name="vccState", label="vccState",
         forwarded=True
     )
+    """
+    The State attribute value of the VCCs assigned to the subarray.
+
+    *Forwarded attribute*
+
+    *_root_att*: mid_csp_cbf/sub_elt/master/reportVCCState
+    """
+
     vccHealthState = attribute(name="vccHealthState", label="vccHealthState",
         forwarded=True
     )
+    """
+    The healthState attribute value of the VCCs assigned to the subarray.
+
+    *Forwarded attribute*
+
+    *_root_att*: mid_csp_cbf/sub_elt/master/reportVCChealthState
+    """
+
     #
     # These attributes are not defined in CbfMaster.
     #fspState = attribute(name="fspState", label="fspState",
@@ -889,13 +1157,13 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     def RemoveReceptors(self, argin):
         """
         Remove the receptors from a subarray.
-        Argin:
-            The list of the receptor IDs to remove from the subarray.
+        Args:
+            argin: The list of the receptor IDs to remove from the subarray.
             Type: array of DevUShort
         Returns:
             None
         Raises:
-            tango.DevFailed exception if the command fails.
+            tango.DevFailed: raised on command failure.
         """
         # PROTECTED REGION ID(CspSubarray.RemoveReceptors) ENABLED START #
         # check if the list of assigned receptors is empty.
@@ -950,13 +1218,13 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     @DebugIt()
     def RemoveAllReceptors(self):
         """
+        *Class method.*
+
         Remove all the assigned receptors from a subarray.
-        Argin:
-            None
         Returns:
             None
         Raises:
-            tango.DevFailed exception if the command fails.
+            tango.DevFailed: raised on command failure.
         """
         # PROTECTED REGION ID(CspSubarray.RemoveAllReceptors) ENABLED START #
         # check if the list of assigned receptors is empty
@@ -1009,15 +1277,19 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     @DebugIt()
     def ConfigureScan(self, argin):
         """
+        *Class method.*
+
         Configure a scan for the subarray.
-        Argin:
+
+        Args:
             a JSON-encoded string with the parameters to configure a scan.
         Returns:
             None
         Raises:
             tango.DevFailed exception if the configuration is not valid.
 
-        **Note**: Part of this code (the input string parsing) comes from the CBF project 
+        Note: 
+            Part of this code (the input string parsing) comes from the CBF project 
         developed by J.Jjang (NRC-Canada)
         """
 
@@ -1187,6 +1459,18 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     )
     @DebugIt()
     def AddNumOfSearchBeams(self, argin):
+        """
+        *Class method*
+
+        Add the specified number of Search Beams capabilities to the subarray.
+        
+        Note: 
+            Still to be implemented
+        Args:
+            argin: The number of SearchBeams Capabilities to assign to the subarray
+        Returns:
+            None
+        """
         # PROTECTED REGION ID(CspSubarray.AddSearchBeams) ENABLED START #
         pass
         # PROTECTED REGION END #    //  CspSubarray.AddSearchBeams
@@ -1197,6 +1481,19 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     )
     @DebugIt()
     def RemoveNumOfSearchBeams(self, argin):
+        """
+        *Class method*
+
+        Remove the specified number of Search Beams capabilities from the subarray.
+        
+        Note: 
+            Still to be implemented
+        Args:
+            argin: The number of SearchBeams Capabilities to remove from the subarray. If equal\
+            to the max number of search bem capabilities (1500 for MID), all the search beams are removed.
+        Returns:
+            None
+        """
         # PROTECTED REGION ID(CspSubarray.RemoveSearchBeams) ENABLED START #
         pass
         # PROTECTED REGION END #    //  CspSubarray.RemoveSearchBeams
@@ -1207,6 +1504,19 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     )
     @DebugIt()
     def AddTimingBeams(self, argin):
+        """
+        *Class method*
+
+        Add the specified Timing Beams Capability IDs to the subarray.
+        
+        Note: 
+            Still to be implemented
+        Args:
+            argin: The list of  Timing Beams Capability IDs to assign to the subarray.
+            Type: array of DevUShort
+        Returns:
+            None
+        """
         # PROTECTED REGION ID(CspSubarray.AddTimingBeams) ENABLED START #
         pass
         # PROTECTED REGION END #    //  CspSubarray.AddTimingBeams
@@ -1217,6 +1527,19 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     )
     @DebugIt()
     def AddVlbiBeams(self, argin):
+        """
+        *Class method*
+
+        Add the specified Vlbi Beams Capability IDs to the subarray.
+        
+        Note: 
+            Still to be implemented
+        Args:
+            argin: The list of Vlbi Beams Capability IDs to assign to the subarray.
+            Type: array of DevUShort
+        Returns:
+            None
+        """
         # PROTECTED REGION ID(CspSubarray.AddVlbiBeams) ENABLED START #
         pass
         # PROTECTED REGION END #    //  CspSubarray.AddVlbiBeams
@@ -1227,6 +1550,24 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     )
     @DebugIt()
     def AddSearchBeamsID(self, argin):
+        """
+        Note: 
+            Still to be implemented
+        *Class method*
+
+        Add the specified Search Beams Capability IDs to the subarray.
+        This method requires some knowledge of the internal behavior of the PSS machine,\
+        because Seach Beam capabilities with PSS pipelines belonging to the same PSS node,\ 
+        can't be assigned to different subarrays.
+
+        Args:
+            argin: The list of Search Beams Capability IDs to assign to the subarray.
+            Type: array of DevUShort
+        Returns:
+            None
+        References:
+            AddNumOfSearchBeams
+        """
         # PROTECTED REGION ID(CspSubarray.AddSearchBeamsID) ENABLED START #
         pass
         # PROTECTED REGION END #    //  CspSubarray.AddSearchBeamsID
@@ -1245,6 +1586,21 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     )
     @DebugIt()
     def RemoveTimingBeams(self):
+        """
+        *Class method*
+
+        Remove the specified Timing Beams capabilities from the subarray.
+        
+        Note: 
+            Still to be implemented
+        Args:
+            argin: The list of Timing Beams Capability IDs to remove from the subarray. 
+        Type:
+            Array of unsigned short
+
+        Returns:
+            None
+        """
         # PROTECTED REGION ID(CspSubarray.RemoveTimingBeams) ENABLED START #
         pass
         # PROTECTED REGION END #    //  CspSubarray.RemoveTimingBeams
