@@ -101,10 +101,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         Establish connection with each sub-element sub-array.
         If connection succeeds, the CspSubarrays device subscribes the State, healthState 
         and adminMode attributes of each Sub-element sub-array and registers a callback function
-        to handle the events.
-        Exceptions are logged.
-        Args:
-            None
+        to handle the events. Exceptions are logged.
+
         Returns:
             None
         """
@@ -416,7 +414,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     *Type*: DevEnum
 
-    *enum_labels*=["OK", "DEGRADED", "FAILED", "UNKNOWN", ]*
+    *enum_labels*: ["OK", "DEGRADED", "FAILED", "UNKNOWN", ]
     """
 
     pssSubarrayHealthState = attribute(
@@ -432,7 +430,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     *Type*: DevEnum
 
-    *enum_labels*=["OK", "DEGRADED", "FAILED", "UNKNOWN", ]*
+    *enum_labels*: ["OK", "DEGRADED", "FAILED", "UNKNOWN", ]
     """
 
     cbfSubarrayObsState = attribute(
@@ -1296,7 +1294,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         """
         *Class method*
 
-        Add the receptor IDs specified in the input argument to the subarray.
+        Add the specified receptor IDs to the subarray.
 
         Args:
             argin: the list of receptor IDs
@@ -1424,7 +1422,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     @DebugIt()
     def RemoveReceptors(self, argin):
         """
-        Remove the receptors from a subarray.
+        Remove the receptor IDs from the subarray.
+
         Args:
             argin: The list of the receptor IDs to remove from the subarray.
             Type: array of DevUShort
@@ -1490,7 +1489,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         """
         *Class method.*
 
-        Remove all the assigned receptors from a subarray.
+        Remove all the assigned receptors from the subarray.
         Returns:
             None
         Raises:
@@ -1541,9 +1540,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     def is_ConfigureScan_allowed(self):
         """
-        TANGO is_allowed method: filter the external request depending on the current device state.\
-        Check if a ConfigureScan command can be executed. A scan configuration can be performed 
-        when the Subarray is ON (that is, at least one receptor is assigned to it)
+        *TANGO is_allowed method*: filter the external request depending on the current device state.\n
+        Check if the ConfigureScan method can be issued on the subarray.\n
+        A scan configuration can be performed when the subarray *State* is ON (that is, \
+        at least one receptor is assigned to it)
 
         Returns:
             True if the command can be executed, otherwise False
@@ -1569,7 +1569,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         Configure a scan for the subarray.
 
         Args:
-            a JSON-encoded string with the parameters to configure a scan.
+            argin: a JSON-encoded string with the parameters to configure a scan.
         Returns:
             None
         Raises:
