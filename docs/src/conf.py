@@ -13,6 +13,11 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 
+autodoc_mock_imports = ['PyTango', 'tango', 'tango.server', 'run', 'DeviceMeta', 'command',
+                 'future', 'future.utils', 'logging', 'logging.handlers', 'skabase',
+                 'skabase.auxiliary', 'skabase.SKAMaster.SKAMaster', 'SKAMaster',
+                 'skabase.SKASubarray.SKASubarray', 'SKASubarray','numpy'
+                 ]
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../../csplmc/CspMaster/CspMaster'))
