@@ -7,9 +7,12 @@
 # Distributed under the terms of the GPL license.
 # See LICENSE.txt for more info.
 
-""" CspSubarray prototype
+""" 
+    **CspSubarray TANGO Device Class**
 
-CspSubarray TANGO Device Class
+    CSP subarray functionality is modeled via a TANGO Device Class, named *CspSubarray*. This class exports
+    a set of attributes and methods required for configuration, control and monitoring 
+    of the subarray.
 """
 # Python standard library
 from __future__ import absolute_import
@@ -41,7 +44,9 @@ __all__ = ["CspSubarray", "main"]
 
 class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     """
-    CspSubarray TANGO Device Class
+    CSP subarray functionality is modeled via a TANGO Device Class, named *CspSubarray*. This class exports
+    a set of attributes and methods required for configuration, control and monitoring 
+    of the subarray.
     """
     # PROTECTED REGION ID(CspSubarray.class_variable) ENABLED START #
 
@@ -343,7 +348,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     The CspSubarray Correlation inherent Capability FQDN.
 
-    *Type*: DevString
+    *Type*: DevString\n
     """
 
     pssInherentCap = attribute(

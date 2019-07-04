@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ASCII"?>
 <pogoDsl:PogoSystem xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:pogoDsl="http://www.esrf.fr/tango/pogo/PogoDsl">
   <classes name="CspSubarray" pogoRevision="9.4">
-    <description description="CspSubarray TANGO Device Class" title="CspSubarray prototype" sourcePath="/home/softir/src/ska-git/csp-lmc-prototype/csplmc/CspSubarray/CspSubarray" language="PythonHL" filestogenerate="XMI   file,Code files,Protected Regions" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="true" hasAbstractCommand="false" hasAbstractAttribute="false">
+    <description description="CSP subarray functionality is modeled via a TANGO Device Class, named *CspSubarray*. This class exports a set of attributes and methods required for configuration, control and monitoring      of the subarray." title="**CspSubarray TANGO Device Class**" sourcePath="/home/softir/src/ska-git/csp-lmc-prototype/csplmc/CspSubarray/CspSubarray" language="PythonHL" filestogenerate="XMI   file,Code files,Protected Regions" license="GPL" copyright="" hasMandatoryProperty="false" hasConcreteProperty="true" hasAbstractCommand="false" hasAbstractAttribute="false">
       <inheritances classname="Device_Impl" sourcePath=""/>
       <inheritances classname="SKAObsDevice" sourcePath="../../../../lmc-base-classes/skabase/SKASubarray/../SKAObsDevice"/>
       <inheritances classname="SKASubarray" sourcePath="/home/softir/src/ska-git/lmc-base-classes/skabase/SKASubarray"/>
@@ -133,7 +133,7 @@
       </argout>
       <status abstract="false" inherited="true" concrete="true"/>
     </commands>
-    <commands name="EndScan" description="Terminate scan." execMethod="end_scan" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+    <commands name="EndScan" description="Terminate scan." execMethod="end_scan" displayLevel="OPERATOR" polledPeriod="0">
       <argin description="">
         <type xsi:type="pogoDsl:VoidType"/>
       </argin>
@@ -196,7 +196,7 @@
       </argout>
       <status abstract="false" inherited="true" concrete="true"/>
     </commands>
-    <commands name="Scan" description="Starts the scan." execMethod="scan" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+    <commands name="Scan" description="Starts the scan." execMethod="scan" displayLevel="OPERATOR" polledPeriod="0">
       <argin description="">
         <type xsi:type="pogoDsl:StringArrayType"/>
       </argin>
