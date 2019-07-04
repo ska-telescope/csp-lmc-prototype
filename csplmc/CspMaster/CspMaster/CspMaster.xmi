@@ -380,7 +380,7 @@
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
       <dataReadyEvent fire="false" libCheckCriteria="true"/>
-      <status abstract="false" inherited="true" concrete="true" concreteHere="true"/>
+      <status abstract="false" inherited="true" concrete="true"/>
       <properties description="A list of available number of instances of each capability type, e.g. `CORRELATOR:512`, `PSS-BEAMS:4`." label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
     </attributes>
     <attributes name="reportSearchBeamState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="1500" maxY="" allocReadMember="true" isDynamic="false">
