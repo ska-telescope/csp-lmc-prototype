@@ -1360,7 +1360,11 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         try:
             proxy = tango.DeviceProxy(self.get_name())
             available_receptors = proxy.availableReceptorIDs
-            self._available_capabilities["Receptors"] = len(available_receptors)
+            if available_receptors is not None:
+                self._available_capabilities["Receptors"] = len(available_receptors)
+            else:
+                self._available_capabilities["Receptors"] = 0
+
             #TODO: update when also PSS and PST will be available
             self._available_capabilities["SearchBeam"] = const.NUM_OF_SEARCH_BEAMS
             self._available_capabilities["TimingBeam"] = const.NUM_OF_TIMING_BEAMS
