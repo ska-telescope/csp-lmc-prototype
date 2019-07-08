@@ -24,7 +24,6 @@
         {
             "fspID": 1,
             "functionMode": "CORR",
-            "receptors": [1],
             "frequencySliceID": 1,
             "corrBandwidth": 1,
             "zoomWindowTuning": 6000000,
