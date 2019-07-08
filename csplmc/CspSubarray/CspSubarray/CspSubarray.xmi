@@ -7,6 +7,16 @@
       <inheritances classname="SKASubarray" sourcePath="/home/softir/src/ska-git/lmc-base-classes/skabase/SKASubarray"/>
       <identification contact="at inaf.it - elisabetta.giani" author="elisabetta.giani" emailDomain="inaf.it" classFamily="Communication" siteSpecific="" platform="Unix Like" bus="Not Applicable" manufacturer="" reference=""/>
     </description>
+    <classProperties name="CbfSubarrayPrefix" description="CbfSubaray FQDN prefix.">
+      <type xsi:type="pogoDsl:StringType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>mid_csp_cbf/sub_elt/subarray_</DefaultPropValue>
+    </classProperties>
+    <classProperties name="PssSubarrayPrefix" description="PSS subarray FQDN preifx.">
+      <type xsi:type="pogoDsl:StringType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>mid_csp_pss/sub_elt/subarray_</DefaultPropValue>
+    </classProperties>
     <deviceProperties name="CapabilityTypes" description="List of Capability types e.g. capCorr, capPss,&#xA;capPstBf, capVlbi, this will be used to dynamically&#xA;define groups for subarray.">
       <type xsi:type="pogoDsl:StringVectorType"/>
       <status abstract="false" inherited="true" concrete="true"/>
@@ -41,16 +51,6 @@
       <type xsi:type="pogoDsl:StringType"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
       <DefaultPropValue>mid_csp/elt/master</DefaultPropValue>
-    </deviceProperties>
-    <deviceProperties name="CbfSubarrayPrefix" description="The TANGO address of the CsbSubarray.">
-      <type xsi:type="pogoDsl:StringType"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <DefaultPropValue>mid_csp_cbf/sub_elt/subarray_</DefaultPropValue>
-    </deviceProperties>
-    <deviceProperties name="PssSubarrayPrefix" description="The PSS Subarray TANGO address.">
-      <type xsi:type="pogoDsl:StringType"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <DefaultPropValue>mid_csp_pss/sub_elt/subarray_</DefaultPropValue>
     </deviceProperties>
     <commands name="Abort" description="Change obsState to ABORTED." execMethod="abort" displayLevel="OPERATOR" polledPeriod="0">
       <argin description="">
@@ -516,14 +516,6 @@
       <status abstract="false" inherited="true" concrete="true"/>
       <properties description="A list of capability types with no. of instances in use on this subarray; e.g.&#xA;Correlators:512, PssBeams:4, PstBeams:4, VlbiBeams:0." label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
     </attributes>
-    <attributes name="receptors" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="197" maxY="" allocReadMember="true" isDynamic="false">
-      <dataType xsi:type="pogoDsl:UIntType"/>
-      <changeEvent fire="false" libCheckCriteria="false"/>
-      <archiveEvent fire="false" libCheckCriteria="false"/>
-      <dataReadyEvent fire="false" libCheckCriteria="true"/>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
-      <properties description="The list of receptor IDs assigned to the subarray." label="Receptor IDs" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
-    </attributes>
     <attributes name="fsp" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="27" maxY="" allocReadMember="true" isDynamic="false">
       <dataType xsi:type="pogoDsl:UShortType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
@@ -630,6 +622,9 @@
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
     </forwardedAttributes>
     <forwardedAttributes name="fspHealthState" label="fspHealthState">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
+    <forwardedAttributes name="receptors" label="receptors">
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
     </forwardedAttributes>
     <states name="ON" description="This state could have been called OK or OPERATIONAL. It means that the device is in its operational state. (E.g. the power supply is giving its nominal current, th motor is ON and ready to move, the instrument is operating). This state is modified by the Attribute alarm checking of the DeviceImpl:dev_state method. i.e. if the State is ON and one attribute has its quality factor to ATTR_WARNING or ATTR_ALARM, then the State is modified to ALARM.">
