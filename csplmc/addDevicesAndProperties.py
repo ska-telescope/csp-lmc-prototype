@@ -33,6 +33,15 @@ for device in json_devices:
     db.add_device(dev_info)
 
     # Adding device properties
+    for classProperty in device["classProperties"]:
+        # Adding class property: classProperty["classPropValue"]
+        # with value: classProperty["classPropValue"]
+        if (classProperty["classPropName"]) != "" and (classProperty["classPropValue"] != ""):
+            db.put_class_property(dev_info._class,
+                                   {classProperty["classPropName"]:
+                                        classProperty["classPropValue"]})
+
+    # Adding device properties
     for deviceProperty in device["deviceProperties"]:
         # Adding device property: deviceProperty["devPropValue"]
         # with value: deviceProperty["devPropValue"]

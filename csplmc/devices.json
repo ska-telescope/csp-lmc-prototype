@@ -3,6 +3,7 @@
     "class": "CspMaster",
     "serverName": "CspMaster/csp",
     "devName": "mid_csp/elt/master",
+    "classProperties" : [],
     "deviceProperties": [
       {
        "devPropName":"MaxCapabilities",
@@ -119,18 +120,20 @@
     "class": "CspSubarray",
     "serverName": "CspSubarray/sub1",
     "devName": "mid_csp/elt/subarray_01",
+    "classProperties": [
+      {
+       "classPropName":"CbfSubarrayPrefix",
+       "classPropValue":"mid_csp_cbf/sub_elt/subarray_"
+      },
+      {
+       "classPropName":"PssSubarrayPrefix",
+       "classPropValue":"mid_csp_pss/sub_elt/subarray_"
+      }
+    ],
     "deviceProperties": [
       {
-       "devPropName":"CbfSubarray",
-       "devPropValue":"mid_csp_cbf/sub_elt/subarray_01"
-      },
-      {
-       "devPropName":"PssSubarray",
-       "devPropValue":"mid_csp_pss/sub_elt/subarray_01"
-      },
-      {
-       "devPropName":"PstSubarray",
-       "devPropValue":"mid_csp_pst/sub_elt/subarray_01"
+       "devPropName": "CspMaster",
+       "devPropValue":"mid_csp/elt/master"
       },
       {
        "devPropName": "SubID",
@@ -177,6 +180,13 @@
         "attributeName": "vccHealthState",
         "attrPropName": "__root_att",
         "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/vccHealthState",
+        "pollingPeriod": "",
+        "changeEventAbs": ""
+      },
+      {
+        "attributeName": "receptors",
+        "attrPropName": "__root_att",
+        "attrPropValue": "mid_csp_cbf/sub_elt/subarray_01/receptors",
         "pollingPeriod": "",
         "changeEventAbs": ""
       }
