@@ -13,11 +13,14 @@
 
 ## Description
 
-The `CSP.LMC` prototype implements at the moment two TANGO devices:
+The `CSP.LMC` prototype implements at the moment three TANGO devices:
 
 * the `CSPMaster` device: based on the SKA Base SKAMaster class, it represents a primary point of contact for CSP Monitor and Control.It implements CSP state and mode indicators and a limited set of housekeeping commands.
-* the `CbfTestMaster` device: based on the SKA Base SKAMaster class, simulates the CBF Sub-element Master and it's used to test CSP Master basic functionalities.
+* the `CbfTestMaster` device: based on the SKA Base SKAMaster class, simulates the CBF Sub-element Master and it's used to test CSP Master basic functionalities. 
+* the `CspSubarray` device: based on the SKA Base SKASubarray class, models a CSP subarray.
 
+__NOTE__
+>The `CbfTestMaster` device is becoming obsolete since there is already in place the Mid CBF project, providing a complete set of CBF.LMC devices.
 ## Getting started
 
 The project can be found in the SKA github repository.
@@ -44,6 +47,7 @@ The script `start_prototype` in the project root directory starts the two TANGO 
 The script:
 
  * checks if the TANGO DB is up and running
+ * configure the CSP.LMC devices properties
  * checks if the CSP.LMC prototype TANGO devices are already registered within the TANGO DB, otherwise it adds them
  * starts the CSP.LMC prototype devices in the proper order (CBF Sub-element master first).
  * starts the `jive` tool (if installed in the local system).
@@ -72,10 +76,10 @@ For example, the procedure to configure the `CbfTestMaster` device is as follow:
 * select `Events` entry (left window) and select the `Change event` tab (right window)
 * set to 1 the `Absolute` entry for the `healthState` attribute
 
-The same sequence of operations has to be repeated for the CspMaster, otherwise no TANGO client is able to subscribe and receive `events` for that device.
+The same sequence of operations has to be repeated for the CspMaster, and CspSubarray otherwise no TANGO client is able to subscribe and receive `events` for that device.
 
-A dedicated script (based on the work done by the NCRA team) has been written to perform this procedure in automatic way (see [configurePollingAndEvents.py](csplmc/configurePollingAndEvents.py). 
-Run this script after the start of the CSP prototype devices.
+A dedicated script (based on the work done by the NCRA team) has been written to perform this procedure in automatic way (see [configureAttrProperties.py](csplmc/configureAttrProperties.py). 
+Run this script after the start of the CSP prototype devices. 
 
 ## How to run in Docker containers
 
@@ -97,7 +101,7 @@ shows the list of the running containers:
 * csplmc-tangodb: the MariaDB database with the TANGO database tables
 * csplmc-databaseds: the TANGO DB device server
 * csplmc-cspmaster: the CspMaster TANGO device
-* csplmc-cbftestmaster: the CbfTestMaster TANGO device
+* csplmc-cspsubarray01: the nstance 01 of the CspSubarray TANGO device
 * csplmc-rsyslog-csplmc: the rsyslog container for the CSP.LMC devices
 
 To stop the Docker containers, issue the command
@@ -109,7 +113,9 @@ make down
 from the prototype root directory.
 
 __NOTE__
- 
+>Support for `CbfTestMaster` has been removed from the docker environment.
+
+__NOTE__
 >Docker containers are run with the `--network=host` option.
 In this case there is no isolation between the host machine and the container. 
 So, the TANGO DB running in the container is available on port 10000 of the host machine.
