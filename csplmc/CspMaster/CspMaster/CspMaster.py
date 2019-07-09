@@ -247,6 +247,9 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             log_msg = "Error: no key found for " + str(key_err)
             self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
 
+        except AttributeError as attr_err:
+            log_msg = "AttributeError: " + str(attr_err)
+            self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
         except tango.DevFailed as df:
             log_msg = "Error: " + str(df.args[0].reason)
             self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))

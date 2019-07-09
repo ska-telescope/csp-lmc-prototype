@@ -245,6 +245,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 self._pstAddress = cspMasterProxy.pstMasterAddress
                 self._pstMasterProxy = tango.DeviceProxy(self._pstAddress)
                 self._pstMasterProxy.ping()
+        except AttributeError as attr_err:
+            msg = "Attribute error:" + str(attr_err)
+            self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
         except tango.DevFailed as df:
             tango.Except.throw_exception("Connection Failed", df.args[0].desc,
                                          "connect_to_master ", tango.ErrSeverity.ERR)
