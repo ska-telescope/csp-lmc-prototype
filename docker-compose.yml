@@ -50,38 +50,42 @@ services:
       - -ORBendPoint
       - giop:tcp::10000
 
-  conf-polling-events:
-    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
-    depends_on:
-    - cspsubarray01
+  dsconfig:
+    image: nexus.engageska-portugal.pt/ska-docker/tango-dsconfig:latest
     network_mode: ${NETWORK_MODE}
-    container_name: ${CONTAINER_NAME_PREFIX}conf-polling-events
-    environment:
-    - TANGO_HOST=${TANGO_HOST}
-    command: >
-      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
-             /venv/bin/python /app/csplmc/configurePollingAndEvents.py"
-
-  add-devs-and-props:
-    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
+    container_name: ${CONTAINER_NAME_PREFIX}dsconfig
     depends_on:
       - databaseds
-    network_mode: ${NETWORK_MODE}
-    container_name: ${CONTAINER_NAME_PREFIX}add-devs-and-props
     environment:
       - TANGO_HOST=${TANGO_HOST}
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
-             /venv/bin/python /app/csplmc/addDevicesAndProperties.py"
+             json2tango -w -a -u csplmc/csplmc/data/csplmc_dsconfig.json  && sleep infinity"
+    volumes:
+      - .:/csplmc
+
+  dsconfigdump:
+    image: nexus.engageska-portugal.pt/ska-docker/tango-dsconfig:latest
+    network_mode: ${NETWORK_MODE}
+    container_name: ${CONTAINER_NAME_PREFIX}dsconfigdump
+    depends_on:
+      - databaseds
+    environment:
+      - TANGO_HOST=${TANGO_HOST}
+    command: >
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
+             python -m dsconfig.dump && sleep infinity"
+    volumes:
+      - .:/csplmc     
 
   cspsubarray01:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}cspsubarray01
     depends_on:
-      - databaseds
-      - rsyslog-csplmc
+      - dsconfig
       - cspmaster
+      - rsyslog-csplmc
     environment:
       - TANGO_HOST=${TANGO_HOST}
     command: >
@@ -97,7 +101,7 @@ services:
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}cspmaster
     depends_on:
-      - databaseds
+      - dsconfig
       - rsyslog-csplmc
     environment:
       - TANGO_HOST=${TANGO_HOST}

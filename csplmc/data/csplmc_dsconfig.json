@@ -1,0 +1,188 @@
+{
+    "servers": {
+        "CspMaster": {
+            "csp": {
+                "CspMaster": {
+                    "mid_csp/elt/master": {
+                        "attribute_properties": {
+                            "adminMode": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "fspMembership": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/master/reportFSPSubarrayMembership"
+                                ]
+                            }, 
+                            "healthState": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "reportFSPAdminMode": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/master/reportFSPAdminMode"
+                                ]
+                            }, 
+                            "reportFSPHealthState": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/master/reportFSPHealthState"
+                                ]
+                            }, 
+                            "reportFSPState": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/master/reportFSPState"
+                                ]
+                            }, 
+                            "reportVCCAdminMode": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/master/reportVCCAdminMode"
+                                ]
+                            }, 
+                            "reportVCCHealthState": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/master/reportVCCHealthState"
+                                ]
+                            }, 
+                            "reportVCCState": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/master/reportVCCState"
+                                ]
+                            }, 
+                            "vccMembership": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/master/reportVCCSubarrayMembership"
+                                ]
+                            }
+                        }, 
+                        "properties": {
+                            "CspSubarrays": [
+                                "mid_csp/elt/subarray_02", 
+                                "mid_csp/elt/subarray_01"
+                            ], 
+                            "MaxCapabilities": [
+                                "Subarray:16", 
+                                "VlbiBeam:20", 
+                                "TimingBeam:16", 
+                                "SearchBeam:1500"
+                            ], 
+                            "polled_attr": [
+                                "1000", 
+                                "healthstate", 
+                                "1000", 
+                                "adminmode", 
+                                "1000", 
+                                "state", 
+                                "csppststate", 
+                                "1000", 
+                                "1000", 
+                                "cspcbfstate", 
+                                "3000", 
+                                "csppsthealthstate", 
+                                "3000", 
+                                "pssadminmode", 
+                                "3000", 
+                                "cbfadminmode", 
+                                "csppssstate", 
+                                "1000", 
+                                "3000", 
+                                "pstadminmode", 
+                                "3000", 
+                                "commandprogress", 
+                                "3000", 
+                                "cspcbfhealthstate", 
+                                "csppsshealthstate", 
+                                "3000"
+                            ]
+                        }
+                    }
+                }
+            }
+        }, 
+        "CspSubarray": {
+            "sub1": {
+                "CspSubarray": {
+                    "mid_csp/elt/subarray_01": {
+                        "attribute_properties": {
+                            "adminMode": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "healthState": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "obsState": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "receptors": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/subarray_01/receptors"
+                                ]
+                            }, 
+                            "vccHealthState": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/subarray_01/vccHealthState"
+                                ]
+                            }, 
+                            "vccState": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/subarray_01/vccState"
+                                ]
+                            }
+                        }, 
+                        "properties": {
+                            "CspMaster": [
+                                "mid_csp/elt/master"
+                            ], 
+                            "SubID": [
+                                "1"
+                            ], 
+                            "polled_attr": [
+                                "1000", 
+                                "state", 
+                                "healthstate", 
+                                "1000", 
+                                "1000", 
+                                "adminmode", 
+                                "obsstate", 
+                                "1000"
+                            ]
+                        }
+                    }
+                }
+            }
+        }, 
+        "DataBaseds": {
+            "2": {
+                "DataBase": {
+                    "sys/database/2": {}
+                }
+            }
+        }, 
+        "TangoAccessControl": {
+            "1": {
+                "TangoAccessControl": {
+                    "sys/access_control/1": {}
+                }
+            }
+        }, 
+        "TangoTest": {
+            "test": {
+                "TangoTest": {
+                    "sys/tg_test/1": {}
+                }
+            }
+        }
+    }
+}
