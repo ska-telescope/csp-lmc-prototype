@@ -70,32 +70,32 @@
                                 "SearchBeam:1500"
                             ], 
                             "polled_attr": [
-                                "1000", 
                                 "healthstate", 
                                 "1000", 
                                 "adminmode", 
                                 "1000", 
                                 "state", 
+				"1000",
                                 "csppststate", 
                                 "1000", 
-                                "1000", 
                                 "cspcbfstate", 
-                                "3000", 
+                                "1000", 
                                 "csppsthealthstate", 
-                                "3000", 
+                                "1000", 
                                 "pssadminmode", 
-                                "3000", 
+                                "1000", 
                                 "cbfadminmode", 
+                                "1000", 
                                 "csppssstate", 
                                 "1000", 
-                                "3000", 
                                 "pstadminmode", 
-                                "3000", 
+                                "1000", 
                                 "commandprogress", 
                                 "3000", 
                                 "cspcbfhealthstate", 
+                                "1000",
                                 "csppsshealthstate", 
-                                "3000"
+                                "1000"
                             ]
                         }
                     }
@@ -149,13 +149,15 @@
                                 "1"
                             ], 
                             "polled_attr": [
-                                "1000", 
                                 "state", 
+                                "1000", 
                                 "healthstate", 
                                 "1000", 
-                                "1000", 
                                 "adminmode", 
+                                "1000", 
                                 "obsstate", 
+                                "1000",
+                                "obsmode", 
                                 "1000"
                             ]
                         }
