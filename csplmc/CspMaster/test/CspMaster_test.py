@@ -35,59 +35,52 @@ from CspMaster.CspMaster import CspMaster
 from global_enum import HealthState, AdminMode
 
 # Device test case
-@pytest.mark.usefixtures("tango_context", "initialize_device", "cbfmaster_proxy", "csp_master")
+@pytest.mark.usefixtures("cbf_master", "csp_master", "cbf_subarray01", "csp_subarray01")
 
 class TestCspMaster(object):
     @classmethod
-    def mocking(cls):
-        """Mock external libraries."""
-        # Example : Mock numpy
-        # cls.numpy = CspMaster.numpy = MagicMock()
 
-
-    def test_State(self, csp_master, cbfmaster_proxy):
+    def test_State(self, csp_master, cbf_master):
         """Test for State after initialization """
         # reinitalize Csp Master and CbfMaster devices
-        csp_master.Init()
-        cbfmaster_proxy.Init()
-        # seleep for a while to wait for state transition
-        time.sleep(2)
         csp_state = csp_master.state()
-        assert csp_state in [DevState.STANDBY, DevState.INIT]
+        assert csp_state in [DevState.STANDBY, DevState.INIT, DevState.DISABLE]
 
-    def test_adminMode(self, tango_context):
+    def test_adminMode(self, csp_master):
         """ Test the adminMode attribute w/r"""
-        tango_context.device.adminMode = AdminMode.OFFLINE.value
-        assert tango_context.device.adminMode.value == AdminMode.OFFLINE.value
+        csp_master.adminMode = AdminMode.OFFLINE.value
+        time.sleep(3)
+        assert csp_master.adminMode.value == AdminMode.OFFLINE.value
 
-    def test_cbfAdminMode(selfs,tango_context):
+    def test_cbfAdminMode(self, csp_master):
         """ Test the CBF adminMode attribute w/r"""
-        tango_context.device.cbfAdminMode = AdminMode.ONLINE.value
-        assert tango_context.device.cbfAdminMode.value == AdminMode.ONLINE.value
+        csp_master.cbfAdminMode = AdminMode.ONLINE.value
+        time.sleep(2)
+        assert csp_master.cbfAdminMode.value == AdminMode.ONLINE.value
 
-    def test_pssAdminMode(self, tango_context):
+    def test_pssAdminMode(self, csp_master):
         """ Test the PSS adminMode attribute w/r"""
         try:
-            tango_context.device.pssAdminMode = AdminMode.ONLINE.value
-            assert tango_context.device.pssAdminMode.value == AdminMode.ONLINE.value
+            csp_master.pssAdminMode = AdminMode.ONLINE.value
+            assert csp_master.pssAdminMode.value == AdminMode.ONLINE.value
         except tango.DevFailed as df:
             assert "No proxy for device" in df.args[0].desc
 
-    def test_pstAdminMode(self,tango_context):
+    def test_pstAdminMode(self, csp_master):
         """ Test the PST adminMode attribute w/r"""
         try:
-            tango_context.device.pstAdminMode = AdminMode.ONLINE.value
-            assert tango_context.device.pstAdminMode.value == AdminMode.ONLINE.value
+            csp_master.pstAdminMode = AdminMode.ONLINE.value
+            assert csp_master.pstAdminMode.value == AdminMode.ONLINE.value
         except tango.DevFailed as df:
             assert "No proxy for device" in df.args[0].desc
 
-    def test_subelement_address(self, tango_context):
+    def test_subelement_address(self, csp_master):
         """Test for report state of SearchBeam Capabilitities"""
-        cbf_addr = tango_context.device.cbfMasterAddress
+        cbf_addr = csp_master.cbfMasterAddress
         assert cbf_addr == "mid_csp_cbf/sub_elt/master"
-        pss_addr = tango_context.device.pssMasterAddress
+        pss_addr = csp_master.pssMasterAddress
         assert pss_addr == "mid_csp_pss/sub_elt/master"
-        pst_addr = tango_context.device.pstMasterAddress
+        pst_addr = csp_master.pstMasterAddress
         assert pst_addr == "mid_csp_pst/sub_elt/master"
 
     def test_On_invalid_argument(self, csp_master):
@@ -97,30 +90,30 @@ class TestCspMaster(object):
             csp_master.On(argin)
         assert "No proxy found for device" in str(df.value)
 
-    def test_On_valid_state(self, csp_master, cbfmaster_proxy):
+    def test_On_valid_state(self, csp_master, cbf_master):
         """
         Test for execution of On command when the CbfTestMaster is in the right state
         """
         #reinit CSP and CBFTest master devices
-        cbfmaster_proxy.Init()
+        cbf_master.Init()
         time.sleep(2)
         # sleep for a while to wait state transition
         # check CspMaster state
         csp_master.Init()
         assert csp_master.State() == DevState.STANDBY
-        # issue the "On" command on CbfTestMaster device
+        # issue the "On" command on CbfMaster device
         argin = ["mid_csp_cbf/sub_elt/master",]
         csp_master.On(argin)
         time.sleep(3)
         assert csp_master.state() == DevState.ON
 
-    def test_On_invalid_state(self, csp_master, cbfmaster_proxy):
+    def test_On_invalid_state(self, csp_master, cbf_master):
         """
         Test for the execution of the On command when the CbfMaster 
         is in an invalid state
         """
         #reinit CSP and CBF master devices
-        cbfmaster_proxy.Init()
+        cbf_master.Init()
         csp_master.Init()
         # sleep for a while to wait for state transitions
         time.sleep(3)
@@ -143,9 +136,9 @@ class TestCspMaster(object):
         #Oss: maxCapability returns a tuple
         assert csp_master.maxCapabilities == tuple(capability_list)
 
-    def test_forwarded_attributes(self, csp_master, cbfmaster_proxy):
+    def test_forwarded_attributes(self, csp_master, cbf_master):
         vcc_state = csp_master.reportVCCState
-        vcc_state_cbf = cbfmaster_proxy.reportVCCState
+        vcc_state_cbf = cbf_master.reportVCCState
         assert vcc_state == vcc_state_cbf
 
     def test_search_beams_states_at_init(self, csp_master):
@@ -195,3 +188,5 @@ class TestCspMaster(object):
         assert  num_of_beam == len(vlbi_beam_state)
         expected_search_beam = [tango.DevState.UNKNOWN for i in range(num_of_beam)]
         assert tuple(expected_search_beam) == vlbi_beam_state
+
+

@@ -152,6 +152,16 @@ ifneq ($(NETWORK_MODE),host)
 	docker network inspect $(NETWORK_MODE) &> /dev/null && ([ $$? -eq 0 ] && docker network rm $(NETWORK_MODE)) || true
 endif
 
+dsconfigdump: up ## dump the entire configuration to the file dsconfig.json
+	docker exec -it $(CONTAINER_NAME_PREFIX)dsconfigdump python -m dsconfig.dump
+	docker exec -it $(CONTAINER_NAME_PREFIX)dsconfigdump python -m dsconfig.dump > dsconfig.json
+
+dsconfigadd: up ## Add a configuration json file (environment variable DSCONFIG_JSON_FILE) to the database
+	-docker exec -it $(CONTAINER_NAME_PREFIX)dsconfigdump json2tango -u -w -a $(DSCONFIG_JSON_FILE)
+
+dsconfigcheck: up ## check a json file (environment variable DSCONFIG_JSON_FILE) according to the project lib-maxiv-dsconfig json schema
+	-docker exec -it $(CONTAINER_NAME_PREFIX)dsconfigdump json2tango -a $(DSCONFIG_JSON_FILE)
+
 help:  ## show this help.
 	@grep -hE '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 

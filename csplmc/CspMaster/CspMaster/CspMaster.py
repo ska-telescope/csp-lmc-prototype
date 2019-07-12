@@ -28,6 +28,9 @@ from tango.server import run, DeviceMeta, attribute, command, device_property
 file_path = os.path.dirname(os.path.abspath(__file__))
 commons_pkg_path = os.path.abspath(os.path.join(file_path, "../../commons"))
 sys.path.insert(0, commons_pkg_path)
+#add the paht to import release file (!!)
+csplmc_path = os.path.abspath(os.path.join(file_path, "../../"))
+sys.path.insert(0, csplmc_path)
 
 # Additional import
 # PROTECTED REGION ID(CspMaster.additionnal_import) ENABLED START #

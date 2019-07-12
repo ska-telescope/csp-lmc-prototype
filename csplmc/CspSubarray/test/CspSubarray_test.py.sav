@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# This file is part of the csp-lmc-prototype project
+#
+#
+#
+# Distributed under the terms of the BSD-3-Clause license.
+# See LICENSE.txt for more info.
+"""Contain the tests for the CspSubarray."""
+
+# Standard imports
+import sys
+import os
+import time
+
+# Path
+file_path = os.path.dirname(os.path.abspath(__file__))
+# insert base package directory to import global_enum 
+# module in commons folder
+commons_pkg_path = os.path.abspath(os.path.join(file_path, "../../commons"))
+sys.path.insert(0, commons_pkg_path)
+
+path = os.path.join(os.path.dirname(__file__), os.pardir)
+sys.path.insert(0, os.path.abspath(path))
+
+# Tango imports
+import tango
+from tango import DevState
+from tango.test_context import DeviceTestContext
+import pytest
+
+#Local imports
+from CspSubarray import CspSubarray
+from global_enum import HealthState, AdminMode
+
+# Device test case
+@pytest.mark.usefixtures("csp_master", "csp_subarray01", "cbf_subarray01")
+
+class TestCspSubarray(object):
+    @classmethod
+    def mocking(cls):
+        """Mock external libraries."""
+        # Example : Mock numpy
+        # cls.numpy = CspMaster.numpy = MagicMock()
+
+
+    def test_State(self, csp_subarray01):
+        """Test for State after initialization """
+        csp_subarray01.Init()
+        time.sleep(2)
+        state = csp_subarray01.state()
+        assert state in [DevState.OFF]
+
+
+    def test_assign_invalid_receptors(self, csp_subarray01, csp_master):
+
+        receptors_list = csp_master.availableReceptorIDs
+        assert receptors_list
+        random_list = []
+        receptor_to_assign = []
+        number_of_receptors = len(receptors_list)
+        for i in range(number_of_receptors):
+            random_list.append(i)
+        for receptor_id in receptors_list:
+            if receptor_id not in random_list:
+                receptor_to_assign.append(receptor_id)
+        with pytest.raises(tango.DevFailed) as df:
+            csp_subarray01.AddReceptors(receptor_to_assign)
+        if df:
+            assert "AttributeError: subarrayMembership" in str(df.value.args[0].desc)
+        else:    
+            receptors = csp_subarray01.receptors     
+            assert random_list == list(receptors)
+             
+    def test_assign_valid_receptors(self, csp_subarray01, csp_master):
+        csp_subarray01.Init()
+        time.sleep(2)
+        assert csp_subarray01.state() == DevState.OFF
+        receptor_list = csp_master.availableReceptorIDs
+        assert receptor_list
+        csp_subarray01.AddReceptors(receptor_list)
+        receptors = csp_subarray01.receptors     
+        assert receptor_list == list(receptors)
+
+    def test_State_after_receptors_assignment(self, csp_subarray01):
+        """Test for State after initialization """
+        receptors = csp_subarray01.receptors     
+        assert len(receptor_list) > 0
+        state = csp_subarray01.state()
+        assert state == DevState.ON
