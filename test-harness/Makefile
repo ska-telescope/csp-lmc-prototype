@@ -12,6 +12,8 @@ all: test
 # The following steps copy across useful output to this volume which can
 # then be extracted to form the CI summary for the test procedure.
 test:
+	retry --max=10 -- tango_admin --ping-device mid_csp_cbf/sub_elt/master
+	retry --max=10 -- tango_admin --ping-device mid_csp_cbf/sub_elt/subarray_01
 	retry --max=10 -- tango_admin --ping-device mid_csp/elt/master
 	retry --max=10 -- tango_admin --ping-device mid_csp/elt/subarray_01
 	cd /app/csplmc/CspMaster && python setup.py test | tee setup_py_test.stdout
