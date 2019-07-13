@@ -48,6 +48,9 @@ else
 CONTAINER_NAME_PREFIX := $(PROJECT)-
 endif
 
+COMPOSE_FILES := $(wildcard *.yml)
+COMPOSE_FILE_ARGS := $(foreach yml,$(COMPOSE_FILES),-f $(yml))
+
 ifeq ($(OS),Windows_NT)
     $(error Sorry, Windows is not supported yet)
 else
@@ -119,6 +122,7 @@ make = tar -c test-harness/ | \
 
 test: DOCKER_RUN_ARGS = --volumes-from=$(BUILD)
 test: build up ## test the application
+#test: up ## test the application
 	$(INIT_CACHE)
 	$(call make,test); \
 	  status=$$?; \
@@ -135,7 +139,8 @@ up: build  ## start develop/test environment
 ifneq ($(NETWORK_MODE),host)
 	docker network inspect $(NETWORK_MODE) &> /dev/null || ([ $$? -ne 0 ] && docker network create $(NETWORK_MODE))
 endif
-	$(DOCKER_COMPOSE_ARGS) docker-compose up 
+#	$(DOCKER_COMPOSE_ARGS) docker-compose -f csp-tangodb.yml up -d
+	$(DOCKER_COMPOSE_ARGS) docker-compose  $(COMPOSE_FILE_ARGS) up -d
 
 piplock: build  ## overwrite Pipfile.lock with the image version
 	docker run $(IMAGE_TO_TEST) cat /app/Pipfile.lock > $(CURDIR)/Pipfile.lock
@@ -147,7 +152,7 @@ interactive:  ## start an interactive session using the project image (caution: 
 
 down:  ## stop develop/test environment and any interactive session
 	docker ps | grep $(CONTAINER_NAME_PREFIX)dev && docker stop $(PROJECT)-dev || true
-	$(DOCKER_COMPOSE_ARGS) docker-compose down
+	$(DOCKER_COMPOSE_ARGS) docker-compose $(COMPOSE_FILE_ARGS) down
 ifneq ($(NETWORK_MODE),host)
 	docker network inspect $(NETWORK_MODE) &> /dev/null && ([ $$? -eq 0 ] && docker network rm $(NETWORK_MODE)) || true
 endif
