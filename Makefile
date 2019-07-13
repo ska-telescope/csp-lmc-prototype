@@ -135,7 +135,7 @@ up: build  ## start develop/test environment
 ifneq ($(NETWORK_MODE),host)
 	docker network inspect $(NETWORK_MODE) &> /dev/null || ([ $$? -ne 0 ] && docker network create $(NETWORK_MODE))
 endif
-	$(DOCKER_COMPOSE_ARGS) docker-compose up -d
+	$(DOCKER_COMPOSE_ARGS) docker-compose up 
 
 piplock: build  ## overwrite Pipfile.lock with the image version
 	docker run $(IMAGE_TO_TEST) cat /app/Pipfile.lock > $(CURDIR)/Pipfile.lock
