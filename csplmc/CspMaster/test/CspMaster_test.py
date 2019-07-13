@@ -55,7 +55,7 @@ class TestCspMaster(object):
     def test_cbfAdminMode(self, csp_master):
         """ Test the CBF adminMode attribute w/r"""
         csp_master.cbfAdminMode = AdminMode.ONLINE.value
-        time.sleep(2)
+        time.sleep(3)
         assert csp_master.cbfAdminMode.value == AdminMode.ONLINE.value
 
     def test_pssAdminMode(self, csp_master):
@@ -119,8 +119,9 @@ class TestCspMaster(object):
         time.sleep(3)
         assert csp_master.cspCbfState == DevState.STANDBY
         # issue the command to switch off the CbfMaster
-        argin=["",]
-        cbfmaster_proxy.Off(argin)
+        #argin=["",]
+        argin = ["mid_csp_cbf/sub_elt/master",]
+        csp_master.Off(argin)
         # wait for the state transition from STANDBY to OFF
         time.sleep(3)
         assert csp_master.cspCbfState == DevState.OFF

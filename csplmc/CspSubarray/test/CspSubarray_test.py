@@ -57,19 +57,29 @@ class TestCspSubarray(object):
         The AddReceptors method fails raising a tango.DevFailed exception.
         """
         receptors_list = csp_master.availableReceptorIDs
+        print(receptors_list)
         assert receptors_list
         random_list = []
         receptor_to_assign = []
         number_of_receptors = len(receptors_list)
-        for i in range(number_of_receptors):
-            random_list.append(i + 1)
+        for i in range(1,198):
+            if i not in receptors_list:
+                random_list.append(i)
+            if len(random_list) > 3:
+                break
+        print(random_list)
         for receptor_id in random_list:
             if receptor_id not in receptors_list:
                 receptor_to_assign.append(receptor_id)
+        print(receptor_to_assign)
         with pytest.raises(tango.DevFailed) as df:
             csp_subarray01.AddReceptors(receptor_to_assign)
         if df:
-            assert "AttributeError: subarrayMembership" in str(df.value.args[0].desc)
+            err_msg = str(df.value.args[0].desc)
+            #assert "AttributeError: subarrayMembership" in str(df.value.args[0].desc)
+            #assert str(df.value.args[0].desc) in ["AttributeError: subarrayMembership", "IndexError: list index out of range"]
+            assert err_msg.rstrip() in ["AttributeError: subarrayMembership", "IndexError: list index out of range"]
+            #assert "AttributeError: subarrayMembership" in str(df.value.args[0].desc) or  assert "IndexError: list index out of range" in str(df.value.args[0].desc)
         else:    
             receptors = csp_subarray01.receptors     
             assert random_list == list(receptors)

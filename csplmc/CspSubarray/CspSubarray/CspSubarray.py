@@ -1391,6 +1391,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             # check if device is connected
             self._cbfMasterProxy.ping()
             vcc_membership = self._cbfMasterProxy.reportVCCSubarrayMembership
+            # TODO: get the  list of available receptors
+            # available_receptors = cspMasterProxy.availableReceptorIDs
             # vccID range is [1, 197]!!
             # vcc_id range is [0,196]!!
             for vcc_id in range(num_of_vcc):
@@ -1413,6 +1415,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         for receptorId in argin:
             # check if the specified recetorID is valid, that is a number
             # in the range [1-197]
+            # TODO if receptorId in available_receptors:
             if receptorId in range(1, const.NUM_OF_RECEPTORS + 1):
                 # check if the required receptor is already assigned
                 if receptor_membership[receptorId - 1] in list(range(1,17)):

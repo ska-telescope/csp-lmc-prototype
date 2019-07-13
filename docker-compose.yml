@@ -50,41 +50,40 @@ services:
       - -ORBendPoint
       - giop:tcp::10000
 
-  dsconfig:
+  csp_dsconfig:
     image: nexus.engageska-portugal.pt/ska-docker/tango-dsconfig:latest
     network_mode: ${NETWORK_MODE}
-    container_name: ${CONTAINER_NAME_PREFIX}dsconfig
+    container_name: ${CONTAINER_NAME_PREFIX}csp_dsconfig
     depends_on:
       - databaseds
     environment:
       - TANGO_HOST=${TANGO_HOST}
     command: >
-      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
-             json2tango -w -a -u csplmc/csplmc/data/csplmc_dsconfig.json &&\ 
-             json2tango -w -a -u csplmc/csplmc/data/midcbf_dsconfig.json  && sleep infinity"
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
+             json2tango -w -a -u csplmc/csplmc/data/csplmc_dsconfig.json sleep infinity"
     volumes:
       - .:/csplmc
 
-  dsconfigdump:
+  cbf_dsconfig:
     image: nexus.engageska-portugal.pt/ska-docker/tango-dsconfig:latest
     network_mode: ${NETWORK_MODE}
-    container_name: ${CONTAINER_NAME_PREFIX}dsconfigdump
+    container_name: ${CONTAINER_NAME_PREFIX}cbf_dsconfig
     depends_on:
       - databaseds
     environment:
       - TANGO_HOST=${TANGO_HOST}
     command: >
-      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
-             python -m dsconfig.dump && sleep infinity"
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
+             json2tango -w -a -u csplmc/csplmc/data/midcbf_dsconfig.json  && sleep infinity"
     volumes:
-      - .:/csplmc     
+      - .:/csplmc
 
   cspsubarray01:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}cspsubarray01
     depends_on:
-      - dsconfig
+      - csp_dsconfig
       - cspmaster
       - rsyslog-csplmc
     environment:
@@ -102,8 +101,8 @@ services:
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}cspmaster
     depends_on:
+      - csp_dsconfig
       - cbfmaster
-      - dsconfig
       - rsyslog-csplmc
     environment:
       - TANGO_HOST=${TANGO_HOST}
@@ -120,11 +119,12 @@ services:
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}cbfmaster
     depends_on:
+      - databaseds
+      - cbf_dsconfig
       - vcc001
       - vcc002
       - vcc003
       - vcc004
-      - databaseds
       - rsyslog-csplmc
     environment:
       - TANGO_HOST=${TANGO_HOST}
@@ -141,6 +141,7 @@ services:
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}cbfsubarray01
     depends_on:
+      - cbf_dsconfig
       - vcc001
       - vcc002
       - vcc003
@@ -162,10 +163,11 @@ services:
     container_name: ${CONTAINER_NAME_PREFIX}vcc001
     depends_on:
       - databaseds
+      - cbf_dsconfig
     environment:
       - TANGO_HOST=${TANGO_HOST}
     command: >
-      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-001"
     volumes_from:
       - rsyslog-csplmc:rw
@@ -176,10 +178,11 @@ services:
     container_name: ${CONTAINER_NAME_PREFIX}vcc002
     depends_on:
       - databaseds
+      - cbf_dsconfig
     environment:
       - TANGO_HOST=${TANGO_HOST}
     command: >
-      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-002"
     volumes_from:
       - rsyslog-csplmc:rw
@@ -190,10 +193,11 @@ services:
     container_name: ${CONTAINER_NAME_PREFIX}vcc003
     depends_on:
       - databaseds
+      - cbf_dsconfig
     environment:
       - TANGO_HOST=${TANGO_HOST}
     command: >
-      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-003"
     volumes_from:
       - rsyslog-csplmc:rw
@@ -204,10 +208,11 @@ services:
     container_name: ${CONTAINER_NAME_PREFIX}vcc004
     depends_on:
       - databaseds
+      - cbf_dsconfig
     environment:
       - TANGO_HOST=${TANGO_HOST}
     command: >
-      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-004"
     volumes_from:
       - rsyslog-csplmc:rw
