@@ -140,12 +140,9 @@ ifneq ($(NETWORK_MODE),host)
 	docker network inspect $(NETWORK_MODE) &> /dev/null || ([ $$? -ne 0 ] && docker network create $(NETWORK_MODE))
 endif
 	$(DOCKER_COMPOSE_ARGS) docker-compose -f csp-tangodb.yml up -d
-	@while true; do\
-            tango_admin --ping-database;\
-            [[ $$? != 0 ]] && sleep 20; echo 'Waiting for TANGO DB to come up';\
-            break;\
-        done
-	$(DOCKER_COMPOSE_ARGS) docker-compose  $(COMPOSE_FILE_ARGS) up -d 
+	# put a sleep to wait TANGO DB 
+	@sleep 10
+	$(DOCKER_COMPOSE_ARGS) docker-compose  $(COMPOSE_FILE_ARGS) up -d
 
 piplock: build  ## overwrite Pipfile.lock with the image version
 	docker run $(IMAGE_TO_TEST) cat /app/Pipfile.lock > $(CURDIR)/Pipfile.lock
