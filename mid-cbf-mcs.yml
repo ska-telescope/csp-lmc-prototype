@@ -38,14 +38,11 @@ services:
       - vcc002
       - vcc003
       - vcc004
-      - rsyslog-midcbf
     environment:
       - TANGO_HOST=${TANGO_HOST}
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
              /venv/bin/python /app/csplmc/CbfMaster/CbfMaster/CbfMaster.py master"
-    volumes_from:
-      - rsyslog-midcbf:rw
 
   cbfsubarray01:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
@@ -63,8 +60,6 @@ services:
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
              /venv/bin/python /app/csplmc/CbfSubarray/CbfSubarrayMulti/CbfSubarrayMulti.py cbfSubarray-01"
-    volumes_from:
-      - rsyslog-midcbf:rw
 
   vcc001:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
@@ -78,8 +73,6 @@ services:
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-001"
-    volumes_from:
-      - rsyslog-midcbf:rw
 
   vcc002:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
@@ -93,8 +86,6 @@ services:
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-002"
-    volumes_from:
-      - rsyslog-midcbf:rw
 
   vcc003:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
@@ -108,8 +99,6 @@ services:
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-003"
-    volumes_from:
-      - rsyslog-midcbf:rw
 
   vcc004:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
@@ -123,10 +112,4 @@ services:
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-004"
-    volumes_from:
-      - rsyslog-midcbf:rw
 
-  rsyslog-midcbf: 
-    image: jumanjiman/rsyslog
-    container_name: ${CONTAINER_NAME_PREFIX}rsyslog-midcbf
-    network_mode: ${NETWORK_MODE}

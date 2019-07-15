@@ -40,7 +40,7 @@ services:
     entrypoint:
       - /usr/local/bin/wait-for-it.sh
       - ${MYSQL_HOST}
-      - --timeout=240
+      - --timeout=70
       - --strict
       - --
       - /usr/local/bin/DataBaseds
