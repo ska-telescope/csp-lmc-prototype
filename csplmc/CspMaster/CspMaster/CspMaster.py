@@ -457,6 +457,17 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     *Type*: array of DevString
     """
 
+    CspTelState = device_property(
+        dtype='str', default_value="mid_csp/elt/telstate"
+    )
+    """
+    *Device property*
+
+    The CSP TelStatem FQDN.
+
+    *Type*: DevString
+    """
+
     # ----------
     # Attributes
     # ----------

@@ -73,6 +73,11 @@
       <type xsi:type="pogoDsl:StringVectorType"/>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
     </deviceProperties>
+    <deviceProperties name="CspTelState" description="The CSP.LMC TelState FQDN.">
+      <type xsi:type="pogoDsl:StringType"/>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <DefaultPropValue>mid_csp/elt/telstate</DefaultPropValue>
+    </deviceProperties>
     <commands name="State" description="This command gets the device state (stored in its device_state data member) and returns it to the caller." execMethod="dev_state" displayLevel="OPERATOR" polledPeriod="0">
       <argin description="none">
         <type xsi:type="pogoDsl:VoidType"/>
@@ -375,12 +380,11 @@
       <status abstract="false" inherited="true" concrete="true"/>
       <properties description="Maximum number of instances of each capability type, e.g. 'CORRELATOR:512', 'PSS-BEAMS:4'." label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
     </attributes>
-    <attributes name="availableCapabilities" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="20" maxY="" allocReadMember="true" isDynamic="false">
+    <attributes name="availableCapabilities" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="20" maxY="" allocReadMember="true">
       <dataType xsi:type="pogoDsl:StringType"/>
       <changeEvent fire="false" libCheckCriteria="false"/>
       <archiveEvent fire="false" libCheckCriteria="false"/>
-      <dataReadyEvent fire="false" libCheckCriteria="true"/>
-      <status abstract="false" inherited="true" concrete="true"/>
+      <status abstract="false" inherited="true" concrete="true" concreteHere="true"/>
       <properties description="A list of available number of instances of each capability type, e.g. `CORRELATOR:512`, `PSS-BEAMS:4`." label="" unit="" standardUnit="" displayUnit="" format="" maxValue="" minValue="" maxAlarm="" minAlarm="" maxWarning="" minWarning="" deltaTime="" deltaValue=""/>
     </attributes>
     <attributes name="reportSearchBeamState" attType="Spectrum" rwType="READ" displayLevel="OPERATOR" polledPeriod="0" maxX="1500" maxY="" allocReadMember="true" isDynamic="false">
@@ -588,5 +592,6 @@
       <status abstract="false" inherited="true" concrete="true"/>
     </states>
     <preferences docHome="./doc_html" makefileHome="/usr/local/share/pogo/preferences"/>
+    <overlodedPollPeriodObject name="availableCapabilities" type="attribute" pollPeriod="0"/>
   </classes>
 </pogoDsl:PogoSystem>

@@ -139,7 +139,12 @@
                                 "__root_att": [
                                     "mid_csp_cbf/sub_elt/subarray_01/vccState"
                                 ]
-                            }
+                            },
+                            "cbfOutputLink": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/subarray_01/outputLinksDistribution"
+                                ]
+                            } 
                         }, 
                         "properties": {
                             "CspMaster": [
@@ -160,6 +165,18 @@
                                 "obsmode", 
                                 "1000"
                             ]
+                        }
+                    }
+                }
+            }
+        }, 
+        "CspTelState": {
+            "csp": {
+                "CspTelState": {
+                    "mid_csp/elt/telstate": {
+                        "attribute_properties": {
+                        }, 
+                        "properties": {
                         }
                     }
                 }

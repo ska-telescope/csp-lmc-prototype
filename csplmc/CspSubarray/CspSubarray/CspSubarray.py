@@ -754,6 +754,16 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     *_root_att*: mid_csp_cbf/sub_elt/subarray_N/reportVCChealthState
     """
+    cbfOutputLink = attribute(name="cbfOutputLink", label="cbfOutputLink",
+        forwarded=True
+    )
+    """
+    The CBF Subarray published information.
+
+    *Forwarded attribute*
+
+    *_root_att*: mid_csp_cbf/sub_elt/subarray_N/cbfOutputLinksDistribution
+    """
 
     #
     # These attributes are not defined in CbfMaster.
