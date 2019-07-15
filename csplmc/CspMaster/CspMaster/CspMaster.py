@@ -316,6 +316,32 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                             " device: " + str(item.reason)
                     self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
 
+    def __is_subelement_available(self, subelement_name):
+        """
+        *Class private method.*
+
+        Check if the sub-element is exported in the TANGO DB. 
+        If the device is not present in the list of the connected sub-elements, a 
+        connection with the device is performed.
+
+        Args:
+            subelement_name : the FQDN of the sub-element
+        Returns:
+            True if the connection with the subarray is established, False otherwise
+        """
+        try:
+            proxy = self._se_proxies[subelement_name]
+            proxy.ping()
+        except KeyError as key_err: 
+            # Raised when a mapping (dictionary) key is not found in the set of existing keys.
+            # no proxy registered for the suelement device
+            proxy = tango.DeviceProxy(subelement_name)
+            proxy.ping()
+            self._se_proxies[subelement_name] = proxy
+        except tango.DevFailed as df:
+            return False
+        return True
+
     def __create_search_beam_group(self):
         """
         Class private method.
@@ -1256,17 +1282,13 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             tango.DevFailed: raised when there is no DeviceProxy providing interface to the CBF sub-element\
             Master, or an exception is caught in command execution.
         """
-        try:
-            cbf_proxy = self._se_proxies[self.CspMidCbf]
-            cbf_proxy.adminMode = value
-        except KeyError as key_err:
-            err_msg = "No proxy for device" + str(key_err)
-            self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
-            tango.Except.throw_exception("Command failed", err_msg,
-                                         "Set cbf admin mode", tango.ErrSeverity.ERR)
-        except tango.DevFailed as df: 
-            tango.Except.throw_exception("Command failed", str(df.args[0].desc),
-                                         "Set cbf admin mode", tango.ErrSeverity.ERR)
+        if self.__is_subelement_available(self.CspMidCbf):
+            try:
+                cbf_proxy = self._se_proxies[self.CspMidCbf]
+                cbf_proxy.adminMode = value
+            except tango.DevFailed as df: 
+                tango.Except.throw_exception("Command failed", str(df.args[0].desc),
+                                             "Set cbf admin mode", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.cbfAdminMode_write
 
     def read_pssAdminMode(self):
@@ -1566,17 +1588,18 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
            The subarray affilitiaion of the receptors.
         """
         # PROTECTED REGION ID(CspMaster.receptorMembership_read) ENABLED START #
-        try:
-           proxy = self._se_proxies[self.CspMidCbf]
-           proxy.ping()
-           vcc_membership = proxy.reportVccSubarrayMembership
-           for vcc_id in range(len(vcc_membership)):
-               receptorID = self._vcc_to_receptor_map[vcc_id + 1]
-               self._receptorsMembership[receptorID - 1] = vcc_membership[vcc_id]
-        except tango.DevFailed as df:
-            tango.Except.re_throw_exception(df, "CommandFailed",
-                                                "read_receptorsMembership failed", 
-                                                "Command()")
+        if self.__is_subelement_available(self.CspMidCbf):
+            try:
+               proxy = self._se_proxies[self.CspMidCbf]
+               proxy.ping()
+               vcc_membership = proxy.reportVccSubarrayMembership
+               for vcc_id in range(len(vcc_membership)):
+                   receptorID = self._vcc_to_receptor_map[vcc_id + 1]
+                   self._receptorsMembership[receptorID - 1] = vcc_membership[vcc_id]
+            except tango.DevFailed as df:
+                tango.Except.re_throw_exception(df, "CommandFailed",
+                                                    "read_receptorsMembership failed", 
+                                                    "Command()")
         return self._receptorsMembership
         # PROTECTED REGION END #    //  CspMaster.receptorMembership_read
 
