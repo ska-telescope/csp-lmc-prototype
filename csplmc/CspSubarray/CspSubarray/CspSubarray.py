@@ -78,22 +78,33 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             err = True
             device =''
             command = ''
-            for attr in dir(evt):
-                if attr == "cmd_name":
-                    command = getattr(evt, attr)
-                if attr == "device":
-                    device = getattr(evt, attr)
-                if attr == "err":
-                    err = getattr(evt, attr)
-            if err == False:
-                msg = "Device {} is processing command {}".format(device, command)
-                self.dev_logging(msg, tango.LogLevel.LOG_INFO)
-            else :
-                msg = "Error in executing command {} ended on device {}".format(command,device)
-                self.dev_logging(msg, tango.LogLevel.LOG_WARN)
-                if command == "Scan":
-                    self._obs_state = ObsState.READY.value
-                    self._obs_mode  = ObsMode.IDLE.value
+            print(dir(evt))
+            try :
+                for attr in dir(evt):
+                    if attr == "cmd_name":
+                        command = getattr(evt, attr)
+                    if attr == "device":
+                        device = getattr(evt, attr)
+                    if attr == "err":
+                        err = getattr(evt, attr)
+                if err == False:
+                    msg = "Device {} is processing command {}".format(device, command)
+                    #self.dev_logging(msg, tango.LogLevel.LOG_INFO)
+                else :
+                    msg = "Error in executing command {} ended on device {}".format(command,device)
+                    #self.dev_logging(msg, tango.LogLevel.LOG_WARN)
+                    if command == "Scan":
+                        self._obs_state = ObsState.READY.value
+                        self._obs_mode  = ObsMode.IDLE.value
+                    elif command == "ConfigureScan":
+                        self._obs_state = ObsState.Configuring.value
+                        #self._obs_mode  = ObsMode.IDLE.value
+                    else:
+                        msg = "Unhandled command {} on device {}".format(command, device)
+                        #self.dev_logging(msg, tango.LogLevel.LOG_INFO)
+            except Exception as ex:
+                print("Received exception:", str(ex))
+
 
     # ---------------
     # Event Callback functions
@@ -135,7 +146,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 # TODO handle API_EventTimeout
                 #
                 log_msg = item.reason + ": on attribute " + str(evt.attr_name)
-                self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+                #self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+                if "API_CommandTimeout" in item.reason:
+                    print("Command Timeout out")
 
     # Class private methods
 
@@ -1774,6 +1787,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
             proxy.ping()
             self._obs_state = ObsState.CONFIGURING.value
+            # Some problem with asynch command. Need to look at it carefully. For the moment I
+            # use synchronous but we need to pay attention!
+            #proxy.command_inout_asynch("ConfigureScan", argin, self._command_cb) 
             proxy.command_inout("ConfigureScan", argin) 
             self._obs_mode = proxy.obsMode
             self._valid_scan_configuration = argin

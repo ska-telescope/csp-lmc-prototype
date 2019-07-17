@@ -66,27 +66,36 @@ class CspTelState(with_metaclass(DeviceMeta, SKATelState)):
         """
         if evt.err is False:
             try:
-                if "cbfOutputLink" in evt.attr_name:
+                print("err:", evt.err)
+                print(evt.attr_name)
+                if "cbfoutputlink" in evt.attr_name:
                     attr_name = evt.attr_name
-                    attr_value = evt.attr_value.value
                     # get the number of the subarray
                     pos = attr_name.find("subarray_")
-                    subarray_id = int(attr_name[pos:pos+2])
-                    # attach the number to the attribute name
-                    attr_name = "cbfOutputLink" + subarray_id
-                    self.push_change_event(attr_name, attr_value)
+                    # pos+9 is the starting position of the subarray Id 
+                    subarray_id = int(attr_name[pos + 9:pos + 11])
+                    # store the new output link value
+                    self._cbf_output_links[subarray_id - 1] = evt.attr_value.value
+                    print(self._cbf_output_links[subarray_id - 1])
+                    # get the subarray ID value to build the name of the CspTelState outputlink 
+                    # attribute. This has the form "cbfOutputLinkN"  where N is the subarray ID
+                    attr_name = "cbfOutputLinks" + str(subarray_id)
+                    # publish the outputlink
+                    self.push_change_event(attr_name, self._cbf_output_links[subarray_id - 1])
                 else:
                     self.dev_logging("Attribute {} not yet handled".format(evt.attr_name), 
-                                     tango.LogLevel.LOG_ERR)
+                                     tango.LogLevel.LOG_ERROR)
                     
             except tango.DevFailed as df:
-                self.dev_logging(str(df.args[0].desc), tango.LogLevel.LOG_ERR)
+                #self.dev_logging(str(df.args[0].desc), tango.LogLevel.LOG_ERROR)
+                print(df)
         else: 
             for item in evt.errors: 
                 # TODO handle API_EventTimeout
                 #
                 log_msg = item.reason + ": on attribute " + str(evt.attr_name)
-                self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+                print(log_msg)
+                #self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
 
     def __connect_to_master(self):
         """
@@ -98,7 +107,7 @@ class CspTelState(with_metaclass(DeviceMeta, SKATelState)):
         Returns:
             None
         Raises: 
-            DevFailed: when connections to the CspMaster and sub-element Master devices fail.
+            DevFailed: when connection to the CspMaster device fails.
         """
         try:
             self.dev_logging("Trying connection to {}".format(self.CspMaster), int(tango.LogLevel.LOG_INFO))
@@ -124,6 +133,7 @@ class CspTelState(with_metaclass(DeviceMeta, SKATelState)):
             tango.DevFailed: raises an execption if connection with a CSP Subarray fails
         """
 
+        err_msg = ''
         for fqdn in self._csp_subarrays_fqdn:
             # initialize the list for each dictionary key-name
             self._csp_subarray_event_id[fqdn] = []
@@ -143,13 +153,14 @@ class CspTelState(with_metaclass(DeviceMeta, SKATelState)):
                 self._csp_subarray_event_id[fqdn].append(ev_id)
 
             except tango.DevFailed as df:
-                for item in df.args:
-                    if "DB_DeviceNotDefined" in item.reason:
-                        log_msg = "Failure in connection to " + str(fqdn) + \
-                                " device: " + str(item.reason)
-                        self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
-                tango.Except.throw_exception(df.args[0].reason, "Connection to {} failed".format(fqdn), 
-                                         "Connect to subarrays", tango.ErrSeverity.ERR)
+                for item in df.args: 
+                    err_msg += "Failure in connection to " + str(fqdn) + \
+                                " device: " + str(item.reason) + " "
+
+            if not err_msg == False:
+                self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
+                tango.Except.throw_exception("Connection failed", err_msg,
+                                             "Connect to subarrays", tango.ErrSeverity.ERR)
     # PROTECTED REGION END #    //  CspTelState.class_variable
 
 
@@ -270,16 +281,25 @@ class CspTelState(with_metaclass(DeviceMeta, SKATelState)):
         SKATelState.init_device(self)
         # PROTECTED REGION ID(CspTelState.init_device) ENABLED START #
         # connect to CspMaster to get the list of CspSubarray FQDNs
-        self._csp_master_proxy = 0
-        self._csp_subarrays_fqdn = 0
-        self._csp_subarray_event_id = {}
-        self._csp_subarray_proxies = {}
+
+        # initialize the private class attributes
+        self._csp_master_proxy = 0          # CspMaster DeviceProxy
+        self._csp_subarrays_fqdn = 0        # list of CspSubarray FQDNs
+        # NOTE: the dict keys are the CspSubarrays FQDNs
+        self._csp_subarray_event_id = {}    # dict of the events subscribed for each CspSubarray
+        self._csp_subarray_proxies = {}     # dict of CspSubarrays DeviceProxy
+        self._cbf_output_links = ['']*16         # list with Cbf outputlinks  values
         try: 
             self.__connect_to_master()
             self.__connect_to_subarrays()
             self.set_state(tango.DevState.ON)
+            self._health_state = HealthState.OK.value
         except tango.DevFailed as df:
-            self.set_state(tango.DevState.FAULT)
+            print(df)
+            msg = "Failure in connection:" + str(df.args[0].reason)
+            self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+            print(msg)
+            self._health_state = HealthState.DEGRADED.value
 
         # PROTECTED REGION END #    //  CspTelState.init_device
 
@@ -299,84 +319,85 @@ class CspTelState(with_metaclass(DeviceMeta, SKATelState)):
 
     def read_cbfOutputLinks1(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks1_read) ENABLED START #
-        fqdn = self._csp_subarrays_fqdn[0]
-        proxy = self._csp_subarray_proxies[fqdn]
-        return proxy.cbfOutputLink
+        print(self._cbf_output_links[0])
+        print(self._cbf_output_links[1])
+        print(self._cbf_output_links[2])
+        return self._cbf_output_links[0]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks1_read
 
     def read_cbfOutputLinks2(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks2_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[1]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks2_read
 
     def read_cbfOutputLinks3(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks3_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[2]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks3_read
 
     def read_cbfOutputLinks4(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks4_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[3]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks4_read
 
     def read_cbfOutputLinks5(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks5_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[4]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks5_read
 
     def read_cbfOutputLinks6(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks6_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[5]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks6_read
 
     def read_cbfOutputLinks7(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks7_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[6]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks7_read
 
     def read_cbfOutputLinks8(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks8_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[7]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks8_read
 
     def read_cbfOutputLinks9(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks9_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[8]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks9_read
 
     def read_cbfOutputLinks10(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks10_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[9]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks10_read
 
     def read_cbfOutputLinks11(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks11_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[10]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks11_read
 
     def read_cbfOutputLinks12(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks12_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[11]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks12_read
 
     def read_cbfOutputLinks13(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks13_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[12]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks13_read
 
     def read_cbfOutputLinks14(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks14_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[13]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks14_read
 
     def read_cbfOutputLinks15(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks15_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[14]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks15_read
 
     def read_cbfOutputLinks16(self):
         # PROTECTED REGION ID(CspTelState.cbfOutputLinks16_read) ENABLED START #
-        return ''
+        return self._cbf_output_links[15]
         # PROTECTED REGION END #    //  CspTelState.cbfOutputLinks16_read
 
 

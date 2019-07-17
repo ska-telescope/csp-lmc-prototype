@@ -272,6 +272,26 @@
             "fsp-01": {
                 "Fsp": {
                     "mid_csp_cbf/fsp/01": {
+                        "attribute_properties": {
+                            "adminMode": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "healthState": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "subarrayMembership": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }
+                        }, 
                         "properties": {
                             "CorrelationAddress": [
                                 "mid_csp_cbf/fsp_corr/01"
@@ -287,6 +307,16 @@
                             ], 
                             "VLBIAddress": [
                                 "mid_csp_cbf/fsp_vlbi/01"
+                            ],
+                            "polled_attr": [
+                                "adminmode", 
+                                "1000", 
+                                "healthstate", 
+                                "1000", 
+                                "state", 
+                                "1000", 
+                                "subarraymembership", 
+                                "1000"
                             ]
                         }
                     }
@@ -353,6 +383,26 @@
             "fsp-02": {
                 "Fsp": {
                     "mid_csp_cbf/fsp/02": {
+                        "attribute_properties": {
+                            "adminMode": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "healthState": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "subarrayMembership": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }
+                        }, 
                         "properties": {
                             "CorrelationAddress": [
                                 "mid_csp_cbf/fsp_corr/02"
@@ -368,6 +418,16 @@
                             ], 
                             "VLBIAddress": [
                                 "mid_csp_cbf/fsp_vlbi/02"
+                            ],
+                            "polled_attr": [
+                                "adminmode", 
+                                "1000", 
+                                "healthstate", 
+                                "1000", 
+                                "state", 
+                                "1000", 
+                                "subarraymembership", 
+                                "1000"
                             ]
                         }
                     }
@@ -434,6 +494,26 @@
             "fsp-03": {
                 "Fsp": {
                     "mid_csp_cbf/fsp/03": {
+                        "attribute_properties": {
+                            "adminMode": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "healthState": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "subarrayMembership": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }
+                        }, 
                         "properties": {
                             "CorrelationAddress": [
                                 "mid_csp_cbf/fsp_corr/03"
@@ -449,6 +529,16 @@
                             ], 
                             "VLBIAddress": [
                                 "mid_csp_cbf/fsp_vlbi/03"
+                            ],
+                            "polled_attr": [
+                                "adminmode", 
+                                "1000", 
+                                "healthstate", 
+                                "1000", 
+                                "state", 
+                                "1000", 
+                                "subarraymembership", 
+                                "1000"
                             ]
                         }
                     }
@@ -515,6 +605,26 @@
             "fsp-04": {
                 "Fsp": {
                     "mid_csp_cbf/fsp/04": {
+                        "attribute_properties": {
+                            "adminMode": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "healthState": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "subarrayMembership": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }
+                        }, 
                         "properties": {
                             "CorrelationAddress": [
                                 "mid_csp_cbf/fsp_corr/04"
@@ -530,6 +640,16 @@
                             ], 
                             "VLBIAddress": [
                                 "mid_csp_cbf/fsp_vlbi/04"
+                            ],
+                            "polled_attr": [
+                                "adminmode", 
+                                "1000", 
+                                "healthstate", 
+                                "1000", 
+                                "state", 
+                                "1000", 
+                                "subarraymembership", 
+                                "1000"
                             ]
                         }
                     }
@@ -948,6 +1068,52 @@
                     "mid_csp_cbf/vcc_sw2/004": {}
                 }
             }
-        }
+        },
+        "TmTelstateTest": {
+            "tm": {
+                "TmTelstateTest": {
+                    "ska1_mid/tm/telmodel": {
+                        "attribute_properties": {
+                            "delayModel": {
+                                "event_period": [
+                                    "10000"
+                                ]
+                            }, 
+                            "dopplerPhaseCorrection_1": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ], 
+                                "event_period": [
+                                    "10000"
+                                ]
+                            }, 
+                            "visDestinationAddress": {
+                                "event_period": [
+                                    "10000"
+                                ]
+                            }
+                        }, 
+                        "properties": {
+			    "CspMasterAddress": [
+		                "mid_csp/elt/master"
+			    ],
+			    "CspTelstateOutputLinks": [
+				"mid_csp/elt/subarray_01/cbfOutputLink"
+			    ],
+
+                            "polled_attr": [
+                                "delaymodel", 
+                                "1000", 
+                                "visdestinationaddress_1", 
+                                "1000", 
+                                "dopplerphasecorrection_1", 
+                                "1000"
+                            ]
+                        }
+                    }
+                }
+            }
+        } 
     }
 }

@@ -77,6 +77,10 @@ services:
       - TANGO_HOST=${TANGO_HOST}
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/01 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/02 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/03 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/04 &&\
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-001"
 
   vcc002:
@@ -90,6 +94,10 @@ services:
       - TANGO_HOST=${TANGO_HOST}
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/01 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/02 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/03 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/04 &&\
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-002"
 
   vcc003:
@@ -103,6 +111,10 @@ services:
       - TANGO_HOST=${TANGO_HOST}
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/01 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/02 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/03 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/04 &&\
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-003"
 
   vcc004:
@@ -116,5 +128,71 @@ services:
       - TANGO_HOST=${TANGO_HOST}
     command: >
       sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/01 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/02 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/03 &&\
+             retry --max=5 -- tango_admin --ping-device mid_csp_cbf/fsp/04 &&\
              /venv/bin/python /app/csplmc/Vcc/VccMulti/VccMulti.py vcc-004"
 
+  fsp01:
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    network_mode: ${NETWORK_MODE}
+    container_name: ${CONTAINER_NAME_PREFIX}fsp01
+    depends_on:
+      - databaseds
+      - cbf_dsconfig
+    environment:
+      - TANGO_HOST=${TANGO_HOST}
+    command: >
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
+             /venv/bin/python /app/csplmc/Fsp/FspMulti/FspMulti.py  fsp-01"
+  fsp02:
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    network_mode: ${NETWORK_MODE}
+    container_name: ${CONTAINER_NAME_PREFIX}fsp02
+    depends_on:
+      - databaseds
+      - cbf_dsconfig
+    environment:
+      - TANGO_HOST=${TANGO_HOST}
+    command: >
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
+             /venv/bin/python /app/csplmc/Fsp/FspMulti/FspMulti.py  fsp-02"
+  fsp03:
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    network_mode: ${NETWORK_MODE}
+    container_name: ${CONTAINER_NAME_PREFIX}fsp03
+    depends_on:
+      - databaseds
+      - cbf_dsconfig
+    environment:
+      - TANGO_HOST=${TANGO_HOST}
+    command: >
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
+             /venv/bin/python /app/csplmc/Fsp/FspMulti/FspMulti.py  fsp-03"
+
+  fsp04:
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    network_mode: ${NETWORK_MODE}
+    container_name: ${CONTAINER_NAME_PREFIX}fsp04
+    depends_on:
+      - databaseds
+      - cbf_dsconfig
+    environment:
+      - TANGO_HOST=${TANGO_HOST}
+    command: >
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
+             /venv/bin/python /app/csplmc/Fsp/FspMulti/FspMulti.py  fsp-04"
+
+  tmtelstatetest:
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    network_mode: ${NETWORK_MODE}
+    container_name: ${CONTAINER_NAME_PREFIX}tmtelstatetest
+    depends_on:
+      - cbfmaster
+      - databaseds
+    environment:
+      - TANGO_HOST=${TANGO_HOST}
+    command: >
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=60 --strict --
+            /venv/bin/python /app/csplmc/TmTelstateTest/TmTelstateTest.py tm"

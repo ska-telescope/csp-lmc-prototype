@@ -44,21 +44,6 @@ services:
     volumes_from:
       - rsyslog-csplmc:rw
 
-  csptelstate:
-    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
-    network_mode: ${NETWORK_MODE}
-    container_name: ${CONTAINER_NAME_PREFIX}csptelstate
-    depends_on:
-      - csp_dsconfig
-      - rsyslog-csplmc
-    environment:
-      - TANGO_HOST=${TANGO_HOST}
-    command: >
-      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
-             /venv/bin/python /app/csplmc/CspTelState/CspTelState/CspTelState.py csp"
-    volumes_from:
-      - rsyslog-csplmc:rw
-
   cspmaster:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
     network_mode: ${NETWORK_MODE}

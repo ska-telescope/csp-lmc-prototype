@@ -59,9 +59,18 @@
                             }
                         }, 
                         "properties": {
+			    "CspMidCbf": [
+				"mid_csp_cbf/sub_elt/master"
+			    ],
+			    "CspMidPss": [
+				"mid_csp_pss/sub_elt/master"
+			    ],
+			    "CspMidPst": [
+				"mid_csp_pst/sub_elt/master"
+			    ],
                             "CspSubarrays": [
-                                "mid_csp/elt/subarray_02", 
-                                "mid_csp/elt/subarray_01"
+                                "mid_csp/elt/subarray_01",
+                                "mid_csp/elt/subarray_02" 
                             ], 
                             "MaxCapabilities": [
                                 "Subarray:16", 
