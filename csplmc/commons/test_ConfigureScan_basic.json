@@ -4,9 +4,9 @@
     "band5Tuning": [5.85, 7.25],
     "frequencyBandOffsetStream1": 0,
     "frequencyBandOffsetStream2": 0,
-    "dopplerPhaseCorrSubscriptionPoint": "ska1_mid/tm/telmodel/dopplerPhaseCorrection_1",
-    "delayModelSubscriptionPoint": "ska1_mid/tm/telmodel/delayModel",
-    "visDestinationAddressSubscriptionPoint": "ska1_mid/tm/telmodel/visDestinationAddress",
+    "dopplerPhaseCorrSubscriptionPoint": "ska_mid/tm_leaf_node/csp_subarray_01/dopplerPhaseCorrection",
+    "delayModelSubscriptionPoint": "ska_mid/tm_leaf_node/csp_subarray_01/delayModel",
+    "visDestinationAddressSubscriptionPoint": "ska_mid/tm_leaf_node/csp_subarray_01/visDestinationAddress",
     "rfiFlaggingMask": {},
     "searchWindow": [
         {
@@ -24,32 +24,40 @@
         {
             "fspID": 1,
             "functionMode": "CORR",
+            "receptors": [4],
             "frequencySliceID": 1,
             "corrBandwidth": 1,
-            "zoomWindowTuning": 6000000,
+            "zoomWindowTuning": 4700000,
             "integrationTime": 140,
             "channelAveragingMap": [
-                [1, 0],
-                [745, 1],
-                [1489, 2],
-                [2233, 3],
-                [2977, 4],
-                [3721, 6],
-                [4465, 8],
+                [1, 8],
+                [745, 0],
+                [1489, 0],
+                [2233, 0],
+                [2977, 0],
+                [3721, 0],
+                [4465, 0],
                 [5209, 0],
-                [5953, 1],
-                [6697, 2],
-                [7441, 3],
-                [8185, 4],
-                [8929, 6],
-                [9673, 8],
+                [5953, 0],
+                [6697, 0],
+                [7441, 0],
+                [8185, 0],
+                [8929, 0],
+                [9673, 0],
                 [10417, 0],
-                [11161, 1],
-                [11905, 2],
-                [12649, 3],
-                [13393, 4],
-                [14137, 6]
+                [11161, 0],
+                [11905, 0],
+                [12649, 0],
+                [13393, 0],
+                [14137, 0]
             ]
+        },
+        {
+            "fspID": 2,
+            "functionMode": "CORR",
+            "frequencySliceID": 20,
+            "corrBandwidth": 0,
+            "integrationTime": 1400
         }
     ]
 }

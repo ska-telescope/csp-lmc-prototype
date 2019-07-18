@@ -61,6 +61,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
            To use the push model (the one with the callback parameter), the global TANGO model has to
            be changed to PUSH_CALLBACK. Do this with the tango.:class:`ApiUtil().set_asynch_cb_sub_model`
         """
+
+        def __init__(self, parent):
+            self._parent = parent   # the main class
+
         def cmd_ended(self, evt):
             """
             Method immediately executed when the asynchronous invoked command returns.
@@ -78,7 +82,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             err = True
             device =''
             command = ''
-            print(dir(evt))
+            errors = ''
             try :
                 for attr in dir(evt):
                     if attr == "cmd_name":
@@ -87,23 +91,32 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                         device = getattr(evt, attr)
                     if attr == "err":
                         err = getattr(evt, attr)
+                    if attr == "errors":
+                        if err:
+                            errors = getattr(evt, attr)
                 if err == False:
                     msg = "Device {} is processing command {}".format(device, command)
-                    #self.dev_logging(msg, tango.LogLevel.LOG_INFO)
+                    self._parent.dev_logging(msg, tango.LogLevel.LOG_INFO)
                 else :
-                    msg = "Error in executing command {} ended on device {}".format(command,device)
-                    #self.dev_logging(msg, tango.LogLevel.LOG_WARN)
+                    msg = "Error in executing command {} ended on device {}.\n".format(command,device)
+                    msg += " Desc: {}".format(errors[0].desc)
+                    self._parent.dev_logging(msg, tango.LogLevel.LOG_ERROR)
                     if command == "Scan":
                         self._obs_state = ObsState.READY.value
                         self._obs_mode  = ObsMode.IDLE.value
                     elif command == "ConfigureScan":
-                        self._obs_state = ObsState.Configuring.value
-                        #self._obs_mode  = ObsMode.IDLE.value
+                        # On ConfigureScan failure the state is reset to IDLE
+                        self._obs_state = ObsState.IDLE.value
+                        self._obs_mode  = ObsMode.IDLE.value
                     else:
                         msg = "Unhandled command {} on device {}".format(command, device)
-                        #self.dev_logging(msg, tango.LogLevel.LOG_INFO)
+                        self._parent.dev_logging(msg, tango.LogLevel.LOG_WARN)
+            except tango.DevFailed as df:
+                msg = "CommandCallback cmd_ended failure - desc: {} reason: {}".format(df.args[0].desc, df.args[0].reason) 
+                self._parent.dev_logging(msg, tango.LogLevel.LOG_ERROR)
             except Exception as ex:
-                print("Received exception:", str(ex))
+                msg = "CommandCallBack cmd_ended general exception: {}".format(str(ex))
+                self._parent.dev_logging(msg, tango.LogLevel.LOG_ERROR)
 
 
     # ---------------
@@ -771,7 +784,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         forwarded=True
     )
     """
-    The CBF Subarray published information.
+    The CBF Subarray output links information.
 
     *Forwarded attribute*
 
@@ -808,7 +821,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
         SKASubarray.init_device(self)
         # PROTECTED REGION ID(CspSubarray.init_device) ENABLED START #
-        print("file:", __file__)
         self.set_state(tango.DevState.INIT)
         self._health_state = HealthState.UNKNOWN.value
         self._admin_mode   = AdminMode.ONLINE.value
@@ -864,7 +876,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # set storage and element logging level
         self._storage_logging_level = int(tango.LogLevel.LOG_INFO)
         self._element_logging_level = int(tango.LogLevel.LOG_INFO)
-        self._command_cb = self.CommandCallBack()
+        self._command_cb = self.CommandCallBack(self)
 
         # build the sub-element sub-array FQDNs
         if self._subarray_id < 10:
@@ -1787,10 +1799,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
             proxy.ping()
             self._obs_state = ObsState.CONFIGURING.value
-            # Some problem with asynch command. Need to look at it carefully. For the moment I
-            # use synchronous but we need to pay attention!
-            #proxy.command_inout_asynch("ConfigureScan", argin, self._command_cb) 
-            proxy.command_inout("ConfigureScan", argin) 
+            # use asynchrnous model
+            proxy.command_inout_asynch("ConfigureScan", argin, self._command_cb) 
+            #proxy.command_inout("ConfigureScan", argin) 
             self._obs_mode = proxy.obsMode
             self._valid_scan_configuration = argin
         except tango.DevFailed as df:

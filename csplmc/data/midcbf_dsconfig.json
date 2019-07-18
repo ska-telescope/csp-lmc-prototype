@@ -162,7 +162,9 @@
                                 "obsstate", 
                                 "1000", 
                                 "scanid", 
-                                "1000"
+                                "1000",
+				"outputLinksDistribution",
+				"1000"
                             ]
                         }
                     }
@@ -728,45 +730,6 @@
                 }
             }
         }, 
-        "TmTelstateTest": {
-            "tm": {
-                "TmTelstateTest": {
-                    "ska1_mid/tm/telmodel": {
-                        "attribute_properties": {
-                            "delayModel": {
-                                "event_period": [
-                                    "10000"
-                                ]
-                            }, 
-                            "dopplerPhaseCorrection_1": {
-                                "abs_change": [
-                                    "-1", 
-                                    "1"
-                                ], 
-                                "event_period": [
-                                    "10000"
-                                ]
-                            }, 
-                            "visDestinationAddress": {
-                                "event_period": [
-                                    "10000"
-                                ]
-                            }
-                        }, 
-                        "properties": {
-                            "polled_attr": [
-                                "visdestinationaddress", 
-                                "1000", 
-                                "delaymodel", 
-                                "1000", 
-                                "dopplerphasecorrection_1", 
-                                "1000"
-                            ]
-                        }
-                    }
-                }
-            }
-        }, 
         "VccMulti": {
             "vcc-001": {
                 "Vcc": {
@@ -1069,45 +1032,38 @@
                 }
             }
         },
-        "TmTelstateTest": {
+        "TmCspSubarrayLeafNodeTest": {
             "tm": {
-                "TmTelstateTest": {
-                    "ska1_mid/tm/telmodel": {
+                "TmCspSubarrayLeafNodeTest": {
+                    "ska_mid/tm_leaf_node/csp_subarray_01": {
                         "attribute_properties": {
                             "delayModel": {
-                                "event_period": [
-                                    "10000"
-                                ]
-                            }, 
-                            "dopplerPhaseCorrection_1": {
                                 "abs_change": [
                                     "-1", 
                                     "1"
-                                ], 
-                                "event_period": [
-                                    "10000"
-                                ]
+                                ] 
                             }, 
-                            "visDestinationAddress": {
-                                "event_period": [
-                                    "10000"
-                                ]
-                            }
+                            "dopplerPhaseCorrection": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ] 
+                            } 
                         }, 
                         "properties": {
 			    "CspMasterAddress": [
 		                "mid_csp/elt/master"
 			    ],
-			    "CspTelstateOutputLinks": [
-				"mid_csp/elt/subarray_01/cbfOutputLink"
+			    "CspSubarrayAddress": [
+		                "mid_csp/elt/subarray_01"
 			    ],
 
                             "polled_attr": [
                                 "delaymodel", 
                                 "1000", 
-                                "visdestinationaddress_1", 
+                                "visdestinationaddress", 
                                 "1000", 
-                                "dopplerphasecorrection_1", 
+                                "dopplerphasecorrection", 
                                 "1000"
                             ]
                         }
