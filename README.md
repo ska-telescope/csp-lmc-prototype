@@ -1,4 +1,5 @@
 [![Documentation Status](https://readthedocs.org/projects/csp-lmc-prototype/badge/?version=latest)](https://developer.skatelescope.org/projects/csp-lmc-prototype/en/latest/?badge=latest)
+<!--Required extensions: table-->
 ## Table of contents
 * [Description](#description)
 * [Getting started](#getting-started)
@@ -107,11 +108,11 @@ At the end of the procedure the command
 <pre><code>docker ps</code></pre>  
 shows the list of the running containers:
 
-|                          |                                                      | 
+|                          |                                                      |
 | ------------------------ |: --------------------------------------------------- |
 | `csplmc-tangodb`:        | the MariaDB database with the TANGO database tables  |
 | `csplmc-databaseds`:     | the TANGO DB device server                           |
-| `csplmc-cspmaster`:      | the CspMaster TANGO device                           | 
+| `csplmc-cspmaster`:      | the CspMaster TANGO device                           |
 | `csplmc-cspsubarray01`:  | the instance 01 of the CspSubarray TANGO device      |
 | `csplmc-rsyslog-csplmc`: | the rsyslog container for the CSP.LMC devices        |
 | `csplmc-cbfmaster`:      | the CbfMaster TANGO device                           |
@@ -137,7 +138,6 @@ with the TANGO DB (running in a docker container) can be visualized and explored
 
 The project includes at the moment one test.
 To run the test on the local host, from the `csplmc/CspMaster` directory issue the command
-
 ```bash
 python setup.py test
 ```
