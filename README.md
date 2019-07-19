@@ -42,7 +42,7 @@ git clone https://github.com/ska-telescope/csp-lmc-prototype.git
 
 ### Start the devices
 
-The script `start_prototype` in the project root directory starts the two TANGO devices, doing some preliminary controls.
+The script `start_prototype` in the project root directory starts the CSP.LMC TANGO devices, doing some preliminary controls.
 
 The script:
 
@@ -83,7 +83,22 @@ Run this script after the start of the CSP prototype devices.
 
 ## How to run in Docker containers
 
-The CSP.LMC prototype can run also in a containerised environment: the YAML configuration file `docker-compose.yml` includes the stages to run the the CSP.LMC TANGO devices inside separate docker containers.
+The CSP.LMC prototype can run also in a containerised environment.
+In this particular case, some containers run a small number of the Mid-CBF.LMC devices: the CbfMaster, one 
+instance of the CbfSubarray, four instances of the Very Coarse Channelizer (VCC) devices and four instance of the Frequency Slice Processor (FPS) devices.
+In this environment it's possible to execute some preliminary integration tests, as for example 
+the assignment/release of receptors to a CSPSubarray. 
+The Mid-CBF.LMC containers are created pulling the `mid-cbf-mcs` project image from the nexus repository.
+
+The containerised environment relies on three YAML configuration files:
+`csplmc-tangodb.yml`, `csp-lmc.yml` and `mid-cbf-mcs.yml`. Each file includes the stages 
+to run the the CSP TANGO DB, CSP.LMC and Mid-CBF.LMC TANGO devices inside separate docker containers.
+Makefile has been modified to run docker-compose with all these files.
+
+The configuration of the CSP.LMC TANGO DB is performed using the `dsconfig` 
+[dsconfig project](https://github.com/MaxIV-KitsControls/lib-maxiv-dsconfig). 
+Configuration for CSP.LMC and Mid-CBF.LMC devices are in two separate files: 
+[csplmc\_dsconfig.json](csplmc/data/csplmc_dsconfig.json) and [midcbf\_dsconfig.json](csplmc/data/midcbf_dsconfig.json)
 
 From the project root directory issue the command:
 
@@ -101,8 +116,12 @@ shows the list of the running containers:
 * csplmc-tangodb: the MariaDB database with the TANGO database tables
 * csplmc-databaseds: the TANGO DB device server
 * csplmc-cspmaster: the CspMaster TANGO device
-* csplmc-cspsubarray01: the nstance 01 of the CspSubarray TANGO device
+* csplmc-cspsubarray01: the instance 01 of the CspSubarray TANGO device
 * csplmc-rsyslog-csplmc: the rsyslog container for the CSP.LMC devices
+* csplmc-cbfmaster: the CbfMaster TANGO device
+* csplmc-cbfsubarray01: the instance 01 of the CbfSubarray TANGO device
+* csplmc-vcc[001-004]: four instances of the Mid-CBF VCC TANGO devices
+* csplmc-rsyslog-cbflmc: the rsyslog container for the Mid-CBF.LMC devices
 
 To stop the Docker containers, issue the command
 
@@ -110,7 +129,7 @@ To stop the Docker containers, issue the command
 make down
 ```
 
-from the prototype root directory.
+from the prototype root directory. The command stops and removes all the containers of the project.
 
 __NOTE__
 >Support for `CbfTestMaster` has been removed from the docker environment.
