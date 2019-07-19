@@ -1,4 +1,16 @@
 {
+    "classes": {
+        "CspSubarray": {
+            "properties": {
+	        "CbfSubarrayPrefix": [
+	            "mid_csp_cbf/sub_elt/subarray_"
+	        ],
+	        "PssSubarrayPrefix": [
+	            "mid_csp_pss/sub_elt/subarray_"
+	        ]
+             }
+    	}
+    },
     "servers": {
         "CspMaster": {
             "csp": {
