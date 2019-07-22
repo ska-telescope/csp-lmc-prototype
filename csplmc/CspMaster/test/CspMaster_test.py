@@ -27,18 +27,18 @@ sys.path.insert(0, os.path.abspath(path))
 # Tango imports
 import tango
 from tango import DevState
-from tango.test_context import DeviceTestContext
+#from tango.test_context import DeviceTestContext
 import pytest
 
 #Local imports
-from CspMaster.CspMaster import CspMaster
-from global_enum import HealthState, AdminMode
+#from CspMaster.CspMaster import CspMaster
+#from global_enum import HealthState, AdminMode
+from global_enum import AdminMode
 
 # Device test case
 @pytest.mark.usefixtures("cbf_master", "csp_master", "cbf_subarray01", "csp_subarray01")
 
 class TestCspMaster(object):
-    @classmethod
 
     def test_State(self, csp_master, cbf_master):
         """Test for State after initialization """

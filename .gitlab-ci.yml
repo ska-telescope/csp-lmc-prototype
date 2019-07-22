@@ -56,6 +56,7 @@ pages:
    - mkdir .public
    - cp build/csp*.* .public
    - cp -r build/csp_master_htmlcov/* .public
+   - cp -r build/csp_subarray_htmlcov/* .public
    - mv .public public
   artifacts:
     paths:

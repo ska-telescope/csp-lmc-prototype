@@ -27,18 +27,18 @@ sys.path.insert(0, os.path.abspath(path))
 # Tango imports
 import tango
 from tango import DevState
-from tango.test_context import DeviceTestContext
+#from tango.test_context import DeviceTestContext
 import pytest
 
 #Local imports
-from CspSubarray import CspSubarray
-from global_enum import HealthState, AdminMode
+#from CspSubarray import CspSubarray
+#from global_enum import HealthState, AdminMode
+#from global_enum import AdminMode
 
 # Device test case
 @pytest.mark.usefixtures("csp_master", "csp_subarray01", "cbf_subarray01")
 
 class TestCspSubarray(object):
-    @classmethod
 
     def test_State(self, csp_subarray01):
         """
@@ -60,7 +60,7 @@ class TestCspSubarray(object):
         assert receptors_list
         random_list = []
         receptor_to_assign = []
-        number_of_receptors = len(receptors_list)
+        #number_of_receptors = len(receptors_list)
         for i in range(1,198):
             if i not in receptors_list:
                 random_list.append(i)

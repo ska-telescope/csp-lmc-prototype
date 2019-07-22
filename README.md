@@ -1,5 +1,7 @@
 [![Documentation Status](https://readthedocs.org/projects/csp-lmc-prototype/badge/?version=latest)](https://developer.skatelescope.org/projects/csp-lmc-prototype/en/latest/?badge=latest)
-<!--Required extensions: table-->
+[![coverage report](https://gitlab.com/ska-telescope/csp-lmc-prototype/badges/master/coverage.svg)](https://ska-telescope.gitlab.io/csp-lmc-prototype/)
+[![pipeline status](https://gitlab.com/ska-telescope/csp-lmc-prototype/badges/master/pipeline.svg)](https://gitlab.com/ska-telescope/csp-lmc-prototype/pipelines)
+
 ## Table of contents
 * [Description](#description)
 * [Getting started](#getting-started)

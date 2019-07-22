@@ -79,14 +79,14 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             # NOTE: if we try to access to evt.cmd_name or other paramters, the callback crashes with
             # this error:
             # terminate called after throwing an instance of 'boost::python::error_already_set'
-            err = True
+            err    = True
             device =''
-            command = ''
+            cmd    = ''
             errors = ''
             try :
                 for attr in dir(evt):
                     if attr == "cmd_name":
-                        command = getattr(evt, attr)
+                        cmd = getattr(evt, attr)
                     if attr == "device":
                         device = getattr(evt, attr)
                     if attr == "err":
@@ -95,21 +95,21 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                         if err:
                             errors = getattr(evt, attr)
                 if err == False:
-                    msg = "Device {} is processing command {}".format(device, command)
+                    msg = "Device {} is processing command {}".format(device, cmd)
                     self._parent.dev_logging(msg, tango.LogLevel.LOG_INFO)
                 else :
-                    msg = "Error in executing command {} ended on device {}.\n".format(command,device)
+                    msg = "Error in executing command {} ended on device {}.\n".format(cmd,device)
                     msg += " Desc: {}".format(errors[0].desc)
                     self._parent.dev_logging(msg, tango.LogLevel.LOG_ERROR)
-                    if command == "Scan":
+                    if cmd == "Scan":
                         self._obs_state = ObsState.READY.value
                         self._obs_mode  = ObsMode.IDLE.value
-                    elif command == "ConfigureScan":
+                    elif cmd == "ConfigureScan":
                         # On ConfigureScan failure the state is reset to IDLE
                         self._obs_state = ObsState.IDLE.value
                         self._obs_mode  = ObsMode.IDLE.value
                     else:
-                        msg = "Unhandled command {} on device {}".format(command, device)
+                        msg = "Unhandled command {} on device {}".format(cmd, device)
                         self._parent.dev_logging(msg, tango.LogLevel.LOG_WARN)
             except tango.DevFailed as df:
                 msg = "CommandCallback cmd_ended failure - desc: {} reason: {}".format(df.args[0].desc, df.args[0].reason) 
@@ -159,7 +159,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 # TODO handle API_EventTimeout
                 #
                 log_msg = item.reason + ": on attribute " + str(evt.attr_name)
-                #self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+                self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
                 if "API_CommandTimeout" in item.reason:
                     print("Command Timeout out")
 
@@ -314,23 +314,23 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         Returns:
             None
         """
-        if self._cbf_subarray_state == tango.DevState.OFF:
-           self.set_state(tango.DevState.OFF)
-           self._health_state = HealthState.DEGRADED.value   
-           return
+        if self._cbf_subarray_state == tango.DevState.OFF: 
+            self.set_state(tango.DevState.OFF)
+            self._health_state = HealthState.DEGRADED.value   
+            return
         if self._cbf_subarray_state == tango.DevState.ON:
-           self.set_state(tango.DevState.ON)
+            self.set_state(tango.DevState.ON)
 
         if self._pss_subarray_health_state == HealthState.OK.value and\
            self._pst_subarray_health_state == HealthState.OK.value and\
-           self._cbf_subarray_health_state == HealthState.OK.value:
-           self._health_state = HealthState.OK.value   
-        if self._pss_subarray_state == tango.DevState.OFF or self._pst_subarray_state == tango.DevState.OFF:
-           self._health_state = HealthState.DEGRADED.value
-        if self._pss_subarray_state == tango.DevState.ON and self._pss_subarray_health_state == HealthState.DEGRADED.value:
-           self._health_state = HealthState.DEGRADED.value
-        if self._pst_subarray_state == tango.DevState.ON and self._pst_subarray_health_state == HealthState.DEGRADED.value:
-           self._health_state = HealthState.DEGRADED.value   
+           self._cbf_subarray_health_state == HealthState.OK.value: 
+               self._health_state = HealthState.OK.value   
+        if self._pss_subarray_state == tango.DevState.OFF or self._pst_subarray_state == tango.DevState.OFF: 
+            self._health_state = HealthState.DEGRADED.value
+        if self._pss_subarray_state == tango.DevState.ON and self._pss_subarray_health_state == HealthState.DEGRADED.value: 
+            self._health_state = HealthState.DEGRADED.value
+        if self._pst_subarray_state == tango.DevState.ON and self._pst_subarray_health_state == HealthState.DEGRADED.value: 
+            self._health_state = HealthState.DEGRADED.value   
 
     def __set_subarray_obs_state(self):
         """
@@ -1138,9 +1138,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # PROTECTED REGION ID(CspSubarray.vcc_read) ENABLED START #
         self._vcc = []
         try:
-            receptors = self._se_subarrays_proxies[self._cbf_subarray_fqdn].receptors
+            assigned_receptors = self._se_subarrays_proxies[self._cbf_subarray_fqdn].receptors
             if receptors:
-                for receptor_id in list_of_receptors: 
+                for receptor_id in assigned_receptors: 
                     vcc_id = self._receptor_to_vcc_map[receptor_id]
                     self._vcc.append(vcc_id) 
         except KeyError as key_err:
@@ -1306,11 +1306,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         if self._obs_state != ObsState.SCANNING.value:
             #get the obs_state label
             for obs_state in ObsState:
-                if obs_state == self._obs_state:
-                    break
-            log_msg = "Subarray obs_state is {}, not SCANNING".format(obs_state.name)
-            tango.Except.throw_exception("Command failed", log_msg,
-                                         "EndScan", tango.ErrSeverity.ERR)
+                if obs_state == self._obs_state: 
+                    log_msg = "Subarray obs_state is {}, not SCANNING".format(obs_state.name)
+                    tango.Except.throw_exception("Command failed", log_msg,
+                                                 "EndScan", tango.ErrSeverity.ERR)
         proxy = 0
         #TODO: the command is forwarded only to CBF. Future implementation has to
         # check the observing mode and depending on this, the command is forwarded to
@@ -1350,11 +1349,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         if self._obs_state != ObsState.READY.value:
             #get the obs_state label
             for obs_state in ObsState:
-                if obs_state == self._obs_state:
-                    break
-            log_msg = "Subarray is in {} state, not READY".format(obs_state.name)
-            tango.Except.throw_exception("Command failed", log_msg,
-                                         "Scan", tango.ErrSeverity.ERR)
+                if obs_state == self._obs_state: 
+                    log_msg = "Subarray is in {} state, not READY".format(obs_state.name)
+                    tango.Except.throw_exception("Command failed", log_msg,
+                                                 "Scan", tango.ErrSeverity.ERR)
         proxy = 0
         if self.__is_subarray_available(self._cbf_subarray_fqdn):
             try:     
@@ -1409,11 +1407,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
             #get the obs_state label
             for obs_state in ObsState:
-                if obs_state == self._obs_state:
-                    break
-            log_msg = "Subarray obs_state is {}, not IDLE or READY".format(obs_state.name)
-            tango.Except.throw_exception("Command failed", log_msg,
-                                         "AddReceptors", tango.ErrSeverity.ERR)
+                if obs_state == self._obs_state: 
+                    log_msg = "Subarray obs_state is {}, not IDLE or READY".format(obs_state.name)
+                    tango.Except.throw_exception("Command failed", log_msg,
+                                                 "AddReceptors", tango.ErrSeverity.ERR)
         try:
             num_of_vcc = self._cbf_capabilities["VCC"]
             receptor_membership = [0] * num_of_vcc
@@ -1523,11 +1520,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
             #get the obs_state label
             for obs_state in ObsState:
-                if obs_state == self._obs_state:
-                    break
-            log_msg = "Subarray obs_state is {}, not IDLE or READY".format(obs_state.name)
-            tango.Except.throw_exception("Command failed", log_msg,
-                                         "RemoveReceptors", tango.ErrSeverity.ERR)
+                if obs_state == self._obs_state: 
+                    log_msg = "Subarray obs_state is {}, not IDLE or READY".format(obs_state.name)
+                    tango.Except.throw_exception("Command failed", log_msg,
+                                                 "RemoveReceptors", tango.ErrSeverity.ERR)
 
         # check if the CspSubarray is already connected to the CbfSubarray
         proxy = 0
@@ -1581,11 +1577,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
             #get the obs_state label
             for obs_state in ObsState:
-                if obs_state == self._obs_state:
-                    break
-            log_msg = "Subarray obs_state is {}, not IDLE or READY".format(obs_state.name)
-            tango.Except.throw_exception("Command failed", log_msg,
-                                         "RemoveAllReceptors", tango.ErrSeverity.ERR)
+                if obs_state == self._obs_state: 
+                    log_msg = "Subarray obs_state is {}, not IDLE or READY".format(obs_state.name)
+                    tango.Except.throw_exception("Command failed", log_msg,
+                                                 "RemoveAllReceptors", tango.ErrSeverity.ERR)
         proxy = 0
         if self.__is_subarray_available(self._cbf_subarray_fqdn):
             try:
@@ -1656,11 +1651,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
         if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
             for obs_state in ObsState:
-                if obs_state == self._obs_state:
-                    break
-            log_msg = "Subarray is in {} state, not IDLE or READY".format(obs_state.name)
-            tango.Except.throw_exception("Command failed", log_msg,
-                                         "Scan", tango.ErrSeverity.ERR)
+                if obs_state == self._obs_state: 
+                    log_msg = "Subarray is in {} state, not IDLE or READY".format(obs_state.name)
+                    tango.Except.throw_exception("Command failed", log_msg,
+                                                 "Scan", tango.ErrSeverity.ERR)
         # check connection with CbfSubarray
         if not self.__is_subarray_available(self._cbf_subarray_fqdn):
             log_msg = "Subarray " + str(self._cbf_subarray_fqdn) + " not registered!"
@@ -1918,8 +1912,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
         Add the specified Search Beams Capability IDs to the subarray.
         This method requires some knowledge of the internal behavior of the PSS machine,\
-        because Seach Beam capabilities with PSS pipelines belonging to the same PSS node,\ 
-        can't be assigned to different subarrays.
+        because Seach Beam capabilities with PSS pipelines belonging to the same PSS node, can't be assigned to different subarrays.
 
         Args:
             argin: The list of Search Beams Capability IDs to assign to the subarray.

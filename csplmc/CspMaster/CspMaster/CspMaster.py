@@ -1600,14 +1600,14 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         """
         # PROTECTED REGION ID(CspMaster.receptorMembership_read) ENABLED START #
         if self.__is_subelement_available(self.CspMidCbf):
-            try:
-               proxy = self._se_proxies[self.CspMidCbf]
-               proxy.ping()
-               vcc_membership = proxy.reportVccSubarrayMembership
-               for vcc_id in range(len(vcc_membership)):
-                   receptorID = self._vcc_to_receptor_map[vcc_id + 1]
-                   self._receptorsMembership[receptorID - 1] = vcc_membership[vcc_id]
-            except tango.DevFailed as df:
+            try: 
+                proxy = self._se_proxies[self.CspMidCbf]
+                proxy.ping()
+                vcc_membership = proxy.reportVccSubarrayMembership
+                for vcc_id in range(len(vcc_membership)): 
+                    receptorID = self._vcc_to_receptor_map[vcc_id + 1]
+                    self._receptorsMembership[receptorID - 1] = vcc_membership[vcc_id]
+            except tango.DevFailed as df: 
                 tango.Except.re_throw_exception(df, "CommandFailed",
                                                     "read_receptorsMembership failed", 
                                                     "Command()")
@@ -1779,11 +1779,11 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 # - cbf command fails
                 # - or the only specified device fails executing the command.
                 # In all other cases the error messages are logged.
-                if ("cbf" in device_name) or num_of_devices == 1:
-                   tango.Except.throw_exception("Command failed", str(df.args[0].desc),
+                if ("cbf" in device_name) or num_of_devices == 1: 
+                    tango.Except.throw_exception("Command failed", str(df.args[0].desc),
                                          "On command execution", tango.ErrSeverity.ERR)
                 else:
-                   self.dev_logging(str(df.args[0].desc), int(tango.LogLevel.LOG_ERROR))
+                    self.dev_logging(str(df.args[0].desc), int(tango.LogLevel.LOG_ERROR))
 
         # throw an exception if ALL the specified devices have no associated proxy
         if nkey_err == num_of_devices:
@@ -1810,7 +1810,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     @command(
         dtype_in=('str',), 
-        doc_in="If the array length is 0, the command applies to the whole\ CSP Element.\
+        doc_in="If the array length is 0, the command applies to the whole CSP Element.\
 If the array length is > 1, each array element specifies the FQDN of the\
  CSP SubElement to switch OFF."
 
@@ -1921,11 +1921,11 @@ If the array length is > 1, each array element specifies the FQDN of the\
                 # - cbf command fails
                 # - or the only specified device fails executing the command.
                 # In all other cases the error messages are logged.
-                if ("cbf" in device_name) or num_of_devices == 1:
-                   tango.Except.throw_exception("Command failed", str(df.args[0].desc),
+                if ("cbf" in device_name) or num_of_devices == 1: 
+                    tango.Except.throw_exception("Command failed", str(df.args[0].desc),
                                     "Standby command execution", tango.ErrSeverity.ERR)
                 else:
-                   self.dev_logging(str(df.args[0].desc), int(tango.LogLevel.LOG_ERROR))
+                    self.dev_logging(str(df.args[0].desc), int(tango.LogLevel.LOG_ERROR))
 
         # throw an exception if ALL the specified devices have no associated proxy
         if nkey_err == num_of_devices:

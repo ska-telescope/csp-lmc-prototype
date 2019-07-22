@@ -127,6 +127,7 @@ test: build up ## test the application
 	$(call make,test); \
 	  status=$$?; \
 	  rm -fr build; \
+	  #docker-compose $(COMPOSE_FILE_ARGS) logs;\
 	  docker cp $(BUILD):/build .; \
 	  docker rm -f -v $(BUILD); \
 	  $(MAKE) down; \
@@ -139,7 +140,9 @@ up: build  ## start develop/test environment
 ifneq ($(NETWORK_MODE),host)
 	docker network inspect $(NETWORK_MODE) &> /dev/null || ([ $$? -ne 0 ] && docker network create $(NETWORK_MODE))
 endif
-	$(DOCKER_COMPOSE_ARGS) docker-compose $(COMPOSE_FILE_ARGS) pull
+	#$(DOCKER_COMPOSE_ARGS) docker-compose $(COMPOSE_FILE_ARGS) pull
+	#pull only the mid-cbf-mcs image
+	docker pull $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/mid-cbf-mcs:latest
 	$(DOCKER_COMPOSE_ARGS) docker-compose -f csp-tangodb.yml up -d
 	# put a sleep to wait TANGO DB 
 	@sleep 10
