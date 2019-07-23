@@ -33,7 +33,7 @@ import pytest
 #Local imports
 #from CspSubarray import CspSubarray
 #from global_enum import HealthState, AdminMode
-#from global_enum import AdminMode
+from global_enum import ObsState
 
 # Device test case
 @pytest.mark.usefixtures("csp_master", "csp_subarray01", "cbf_subarray01")
@@ -156,4 +156,42 @@ class TestCspSubarray(object):
         assert not assigned_receptors
         time.sleep(2)
         assert csp_subarray01.state() == DevState.OFF
+
+    def test_configureScan_invalid_state(self, csp_subarray01, csp_master):
+        subarray_state = csp_subarray01.State()
+        assert subarray_state == tango.DevState.OFF
+        filename = os.path.join(commons_pkg_path, "test_ConfigureScan_basic.json")
+        f = open(filename)
+        with pytest.raises(tango.DevFailed) as df:
+            csp_subarray01.ConfigureScan(f.read().replace("\n", ""))
+        if df:
+            err_msg = str(df.value.args[0].desc)
+            assert "Command ConfigureScan not allowed" in err_msg
+
+
+    def test_configureScan(self, csp_subarray01, csp_master):
+        obs_state = csp_subarray01.obsState
+        assert obs_state in [ObsState.IDLE.value, ObsState.READY.value]
+        receptor_list = csp_master.availableReceptorIDs
+        time.sleep(2)
+        # assert the tuple is not empty
+        assert receptor_list
+        # assign only receptors [1,4] for which the configuration addresses are provided in
+        # the configuration JSON file
+        receptors_to_assign = [1,4]
+        csp_subarray01.AddReceptors(receptors_to_assign)
+        time.sleep(2)
+        subarray_state = csp_subarray01.State()
+        assert subarray_state == tango.DevState.ON
+        receptors = csp_subarray01.receptors
+        print(receptors)
+        filename = os.path.join(commons_pkg_path, "test_ConfigureScan_basic.json")
+        f = open(filename)
+        csp_subarray01.ConfigureScan(f.read().replace("\n", ""))
+        f.close()
+        time.sleep(10)
+        obs_state = csp_subarray01.obsState
+        assert obs_state == ObsState.READY.value
+
+        
 

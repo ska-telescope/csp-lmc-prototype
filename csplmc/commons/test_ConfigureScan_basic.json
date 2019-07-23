@@ -12,7 +12,20 @@
         {
             "searchWindowID": 1,
             "searchWindowTuning": 6000000000,
-            "tdcEnable": false
+            "tdcEnable": true,
+            "tdcNumBits": 8,
+            "tdcPeriodBeforeEpoch": 5,
+            "tdcPeriodAfterEpoch": 25,
+            "tdcDestinationAddress": [
+                {
+                    "receptorID": 4,
+                    "tdcDestinationAddress": ["foo", "bar", "8080"]
+                },
+                {
+                    "receptorID": 1,
+                    "tdcDestinationAddress": ["fizz", "buzz", "80"]
+                }
+            ]
         },
         {
             "searchWindowID": 2,
