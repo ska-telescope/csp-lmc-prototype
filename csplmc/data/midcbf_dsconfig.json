@@ -1037,12 +1037,6 @@
                 "TmCspSubarrayLeafNodeTest": {
                     "ska_mid/tm_leaf_node/csp_subarray_01": {
                         "attribute_properties": {
-                            "delayModel": {
-                                "abs_change": [
-                                    "-1", 
-                                    "1"
-                                ] 
-                            }, 
                             "dopplerPhaseCorrection": {
                                 "abs_change": [
                                     "-1", 
