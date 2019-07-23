@@ -310,11 +310,11 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 ev_id = device_proxy.subscribe_event("adminMode", EventType.CHANGE_EVENT,
                         self.seSCMCallback, stateless=True)
                 self._se_event_id[fqdn].append(ev_id)
-            except tango.DevFailed as df:
-                for item in df.args:
-                    log_msg = "Failure in connection to " + str(fqdn) + \
-                            " device: " + str(item.reason)
-                    self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
+            except tango.DevFailed as df: 
+                #for item in df.args:
+                log_msg = "Failure in connection to " + str(fqdn) + \
+                          " device: " + str(df.args[0].desc)
+                self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
 
     def __is_subelement_available(self, subelement_name):
         """
@@ -1118,7 +1118,17 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def delete_device(self):
         # PROTECTED REGION ID(CspMaster.delete_device) ENABLED START #
-        pass
+        for fqdn in self._se_fqdn:
+            for event_id in self._se_event_id[fqdn]:
+                try:
+                    self._se_proxies[fqdn].unsubscribe_event(event_id)
+                    self._se_event_id[fqdn].remove(event_id)
+                except tango.DevFailed as df:
+                    msg = "Unsubscribe event failure: " + str(df.args[0].desc)
+                    self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                    
+        self._se_proxies.clear()
+        self._se_fqdn.clear()
         # PROTECTED REGION END #    //  CspMaster.delete_device
 
     # PROTECTED REGION ID#    //  CspMaster private methods
@@ -1412,6 +1422,16 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             #TODO: add message logging
             tango.Except.throw_exception("Attribute reading failure", df.args[0].desc,
                                          "read_availableCapabilities", tango.ErrSeverity.ERR)
+        except AttributeError as attr_err: 
+            for element in dir(attr_err): 
+                if element == "__doc__": 
+                    doc = getattr(attr_err, element)
+                    #if attr == "args":    
+                    #    args = getattr(attr_err, element)
+                    msg = "AttributeError: "  + str(doc)
+                    tango.Except.throw_exception("Attribute reading failure", msg,
+                                                 "read_availableCapabilities", 
+                                                 tango.ErrSeverity.ERR)
         return utils.convert_dict_to_list(self._available_capabilities)
         # PROTECTED REGION END #    //  CspMaster.availableCapabilities_read
 
@@ -1611,6 +1631,14 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 tango.Except.re_throw_exception(df, "CommandFailed",
                                                     "read_receptorsMembership failed", 
                                                     "Command()")
+            except AttributeError as attr_err: 
+                for element in dir(attr_err): 
+                    if element == "__doc__": 
+                        doc = getattr(attr_err, element)
+                        msg = "AttributeError: "  + str(doc)
+                        tango.Except.throw_exception("Attribute reading failure", msg,
+                                                     "read_receptorMembership", 
+                                                     tango.ErrSeverity.ERR)
         return self._receptorsMembership
         # PROTECTED REGION END #    //  CspMaster.receptorMembership_read
 
@@ -1695,6 +1723,14 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
             tango.Except.throw_exception("Attribute reading failure", log_msg,
                                          "read_availableReceptorIDs", tango.ErrSeverity.ERR)
+        except AttributeError as attr_err: 
+            for element in dir(attr_err): 
+                if element == "__doc__": 
+                    doc = getattr(attr_err, element)
+                    msg = "AttributeError: "  + str(doc)
+                    tango.Except.throw_exception("Attribute reading failure", msg,
+                                                 "read_availableREceptorIDs", 
+                                                 tango.ErrSeverity.ERR)
         return self._available_receptorIDs
         # PROTECTED REGION END #    //  CspMaster.vlbiBeamMembership_read
 

@@ -102,12 +102,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                     msg += " Desc: {}".format(errors[0].desc)
                     self._parent.dev_logging(msg, tango.LogLevel.LOG_ERROR)
                     if cmd == "Scan":
-                        self._obs_state = ObsState.READY.value
-                        self._obs_mode  = ObsMode.IDLE.value
+                        self._parent._obs_state = ObsState.READY.value
+                        self._parent._obs_mode  = ObsMode.IDLE.value
                     elif cmd == "ConfigureScan":
                         # On ConfigureScan failure the state is reset to IDLE
-                        self._obs_state = ObsState.IDLE.value
-                        self._obs_mode  = ObsMode.IDLE.value
+                        self._parent._obs_state = ObsState.IDLE.value
+                        self._parent._obs_mode  = ObsMode.IDLE.value
                     else:
                         msg = "Unhandled command {} on device {}".format(cmd, device)
                         self._parent.dev_logging(msg, tango.LogLevel.LOG_WARN)
@@ -907,7 +907,21 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     def delete_device(self):
         # PROTECTED REGION ID(CspSubarray.delete_device) ENABLED START #
-        pass
+
+        #release the allocated event resources
+        for fqdn in self._se_subarrays_fqdn:
+            # initialize the list for each dictionary key-name
+            for event_id in self._se_subarray_event_id[fqdn]:
+                try:
+                    self._se_subarrays_proxies[fqdn].unsubscribe_event(event_id)
+                    self._se_subarray_event_id[fqdn].remove(event_id)
+                except tango.DevFailed as df:
+                    msg = "Unsubscribe event failure:" + df.args[0].desc
+                    self.dev_logging(msg, tango.LogLevl.LOG_ERROR)
+        # clear the subarrays list and dictionary            
+        self._se_subarrays_fqdn.clear()
+        self._se_subarrays_proxies.clear()
+
         # PROTECTED REGION END #    //  CspSubarray.delete_device
 
     # ------------------
@@ -1139,7 +1153,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         self._vcc = []
         try:
             assigned_receptors = self._se_subarrays_proxies[self._cbf_subarray_fqdn].receptors
-            if receptors:
+            if assigned_receptors:
                 for receptor_id in assigned_receptors: 
                     vcc_id = self._receptor_to_vcc_map[receptor_id]
                     self._vcc.append(vcc_id) 
