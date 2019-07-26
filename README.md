@@ -7,12 +7,13 @@
 * [Getting started](#getting-started)
 * [Prerequisities](#prerequisities)
 * [Run on local host](#how-to-run-on-local-host)
-* [Run in containers](#how-to-run-in-containers)
-* [Running tests](#running-tests)
     * [Start the devices](#start-the-devices)
     * [Configure the devices](#configure-the-devices) 
+* [Run in containers](#how-to-run-in-docker-containers)
+* [Running tests](#running-tests)
 * [Known bugs](#known-bugs)
 * [Troubleshooting](#troubleshooting)
+* [License](#license)
 
 ## Description
 
@@ -146,6 +147,10 @@ To run the test into docker containers issue the command
 <code><pre>make test</pre></code>  
 from the root project directory.
 
+## Known bugs
+
+*
+
 ## Troubleshooting
 
 If the CSPMaster State and healthState attributes are not correctly updated, please check the configuration of the following attributes of the CbfMaster device:
@@ -159,10 +164,8 @@ If a TANGO client doesn't correctly update the CSPMaster device State and health
 * cbfState
 * cbfHealthState
 
-Please follow the istruction in chapter(#configure) to setup the `polling` and `change events` of an attribute.
+Please follow the instructions [here](#configure-the-devices) to setup the `polling` and `change events` of an attribute.
 
-## Knonw bugs
-
-### License 
+## License 
 See the LICENSE file for details.
 
