@@ -232,6 +232,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                               Use defaul values", tango.LogLevel.LOG_WARN)
 
     def __get_maxnum_of_receptors(self):
+        """
+        Get the maximum number of receptors that can be used for observations.
+        This number can be less than 197.
+        """
 
         self._receptors_maxnum = const.NUM_OF_RECEPTORS
         capability_dict = {}
@@ -240,6 +244,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             proxy.ping()
             vcc_to_receptor = proxy.vccToReceptor
             self._vcc_to_receptor_map = dict([int(ID) for ID in pair.split(":")] for pair in vcc_to_receptor)
+            # get the number of each Capability type allocated by CBF
             cbf_max_capabilities = proxy.maxCapabilities
             for capability in cbf_max_capabilities:
                 cap_type, cap_num = capability.split(':')
@@ -251,7 +256,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
 
         except AttributeError as attr_err:
-            log_msg = "AttributeError: " + str(attr_err)
+            log_msg = "Error reading{}: {}".format(str(attr_err.args[0]), attr_err.__doc__)
             self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
         except tango.DevFailed as df:
             log_msg = "Error: " + str(df.args[0].reason)
@@ -314,7 +319,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 #for item in df.args:
                 log_msg = "Failure in connection to " + str(fqdn) + \
                           " device: " + str(df.args[0].desc)
-                self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
+                self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
 
     def __is_subelement_available(self, subelement_name):
         """
@@ -1056,7 +1061,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         self._admin_mode = AdminMode.ONLINE.value
 
         # initialize attribute values
-        self._progress_command = 0;
+        self._progress_command = 0
         # sub-element State,healthState and adminMode initialization
         self._cbf_state        = tango.DevState.UNKNOWN
         self._cbf_health_state = HealthState.UNKNOWN.value
@@ -1089,8 +1094,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # initialize list with CSP sub-element FQDNs
         self._se_fqdn = []
         self._se_fqdn.append(self.CspMidCbf)
-        self._se_fqdn.append(self.CspMidPss)
-        self._se_fqdn.append(self.CspMidPst)
+        #self._se_fqdn.append(self.CspMidPss)
+        #self._se_fqdn.append(self.CspMidPst)
 
         # flag to signal sub-element switch-off request
         self._se_to_switch_off = {}
@@ -1103,8 +1108,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         self._se_event_id = {}
         # Try connection with sub-elements
         self.__connect_to_subelements()
+        # initialize class attributes related to CBF receptors capabilities
+        self._vcc_to_receptor_map = {}
+        self._receptorsMembership = []
         self.__get_maxnum_of_receptors()
-        # connect to Subarray
         # create TANGO Groups to handle SearchBeams, TimingBeams and VlbiBeams
         self.__create_search_beam_group()
         self.__create_timing_beam_group()
@@ -1117,18 +1124,48 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION END #    //  CspMaster.always_executed_hook
 
     def delete_device(self):
+        """
+        Method called on stop/reinit of the device.
+        Release all the allocated resources.
+        """
         # PROTECTED REGION ID(CspMaster.delete_device) ENABLED START #
         for fqdn in self._se_fqdn:
-            for event_id in self._se_event_id[fqdn]:
-                try:
-                    self._se_proxies[fqdn].unsubscribe_event(event_id)
-                    self._se_event_id[fqdn].remove(event_id)
-                except tango.DevFailed as df:
-                    msg = "Unsubscribe event failure: " + str(df.args[0].desc)
-                    self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
-                    
-        self._se_proxies.clear()
+            try:
+                event_to_remove = []
+                for event_id in self._se_event_id[fqdn]:
+                    try: 
+                        self._se_proxies[fqdn].unsubscribe_event(event_id)
+                        event_to_remove.append(event_id)
+                    # NOTE: in PyTango unsubscription of not-existing event id raises a KeyError 
+                    # exception not a DevFailed !!
+                    except KeyError as key_err:
+                        msg = "Can't retrieve the information of key {}".format(key_err)
+                        self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                    except tango.DevFailed as df:
+                        msg = "Failure reason:" + str(df.args[0].reason) + " Desc:" + str(df.args[0].desc)
+                        self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                # remove the events id from the list
+                for k in event_to_remove: 
+                    self._se_event_id[fqdn].remove(k)
+                # check if there are still some registered events. What to do in this case??
+                if self._se_event_id[fqdn]:
+                    msg = "Still subscribed events:".format(self._se_event_id)
+                    self.dev_logging(msg, tango.LogLevel.LOG_WARN)
+                else:
+                    # remove the dictionary element
+                    self._se_event_id.pop(fqdn)
+            except KeyError as key_err:
+                msg = " Can't retrieve the information of key {}".format(key_err)
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+        # clear any list and dict 
         self._se_fqdn.clear()
+        self._se_proxies.clear()
+        self._vcc_to_receptor_map.clear()
+        self._receptorsMembership.clear()
+        self._searchBeamsMembership.clear()
+        self._timingBeamsMembership.clear()
+        self._vlbiBeamsMembership.clear()
+        self._se_to_switch_off.clear()
         # PROTECTED REGION END #    //  CspMaster.delete_device
 
     # PROTECTED REGION ID#    //  CspMaster private methods
@@ -1310,6 +1347,11 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             except tango.DevFailed as df: 
                 tango.Except.throw_exception("Command failed", str(df.args[0].desc),
                                              "Set cbf admin mode", tango.ErrSeverity.ERR)
+            except KeyError as key_err:
+                msg = "Can't retrieve the information of key {}".format(key_err)
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.throw_exception("Command failed", mg,
+                                             "Set cbf admin mode", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.cbfAdminMode_write
 
     def read_pssAdminMode(self):
@@ -1423,15 +1465,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             tango.Except.throw_exception("Attribute reading failure", df.args[0].desc,
                                          "read_availableCapabilities", tango.ErrSeverity.ERR)
         except AttributeError as attr_err: 
-            for element in dir(attr_err): 
-                if element == "__doc__": 
-                    doc = getattr(attr_err, element)
-                    #if attr == "args":    
-                    #    args = getattr(attr_err, element)
-                    msg = "AttributeError: "  + str(doc)
-                    tango.Except.throw_exception("Attribute reading failure", msg,
-                                                 "read_availableCapabilities", 
-                                                 tango.ErrSeverity.ERR)
+            msg = "Error in reading {}: {} ".format(str(attr_err.args[0]), attr_err.__doc__)
+            tango.Except.throw_exception("Attribute reading failure", msg,
+                                         "read_availableCapabilities", 
+                                         tango.ErrSeverity.ERR)
         return utils.convert_dict_to_list(self._available_capabilities)
         # PROTECTED REGION END #    //  CspMaster.availableCapabilities_read
 
@@ -1558,9 +1595,9 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         if self.CspSubarrays:
             return self.CspSubarrays
         else:
-            log_msg = "CspSubarrays device property not define"
-            self.dev_logging(log_msg, int(tango.LogLevel.LOG_WARN))
-            tango.Except.throw_error("Attribute reading failure", log_msg,
+            log_msg = "CspSubarrays device property not defined"
+            self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+            tango.Except.throw_exception("Attribute reading failure", log_msg,
                                      "read_cspSubarrayAddress", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.cspSubarrayAddress_read
 
@@ -1581,10 +1618,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         else :
             log_msg = "SearchBeams device property not assigned", 
             self.dev_logging(log_msg, int(tango.LogLevel.LOG_WARN))
-            tango.Except.throw_error("Attribute reading failure", log_msg,
-                                     "read_searchBeamCapAddress", tango.ErrSeverity.ERR)
-            return ' '
-
+            tango.Except.throw_exception("Attribute reading failure", log_msg,
+                                         "read_searchBeamCapAddress", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.searchBeamCapAddress_read
 
     def read_timingBeamCapAddress(self):
@@ -1592,9 +1627,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         if self.TimingBeams: 
             return self.TimingBeams
         else :
-            self.dev_logging("TimingBeams device property not assigned", 
-                              int(tango.LogLevel.LOG_WARN))
-            return ' '
+            log_msg = "TimingBeams device property not assigned", 
+            self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+            tango.Except.throw_exception("Attribute reading failure", log_msg,
+                                         "read_timingBeamCapAddress", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.timingBeamCapAddress_read
 
     def read_vlbiCapAddress(self):
@@ -1606,9 +1642,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         if self.VlbiBeams: 
             return self.VlbiBeams
         else :
-            self.dev_logging("VlbiBeams device property not assigned", 
-                              int(tango.LogLevel.LOG_WARN))
-            return ' '
+            log_msg = "VlbiBeams device property not assigned", 
+            self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+            tango.Except.throw_exception("Attribute reading failure", log_msg,
+                                         "read_vlbiBeamCapAddress", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.vlbiCapAddress_read
 
     def read_receptorMembership(self):
@@ -1624,21 +1661,24 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 proxy = self._se_proxies[self.CspMidCbf]
                 proxy.ping()
                 vcc_membership = proxy.reportVccSubarrayMembership
-                for vcc_id in range(len(vcc_membership)): 
-                    receptorID = self._vcc_to_receptor_map[vcc_id + 1]
-                    self._receptorsMembership[receptorID - 1] = vcc_membership[vcc_id]
+                vcc_id_list = list(self._vcc_to_receptor_map.keys())
+                for vcc_id in vcc_id_list:
+                    receptorID = self._vcc_to_receptor_map[vcc_id]
+                    self._receptorsMembership[receptorID - 1] = vcc_membership[vcc_id - 1]
             except tango.DevFailed as df: 
                 tango.Except.re_throw_exception(df, "CommandFailed",
                                                     "read_receptorsMembership failed", 
                                                     "Command()")
+            except KeyError as key_err: 
+                msg = "Can't retrieve the information of key {}".format(key_err)
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.throw_exception("Attribute reading failure", msg,
+                                             "read_receptorMembership", tango.ErrSeverity.ERR)
             except AttributeError as attr_err: 
-                for element in dir(attr_err): 
-                    if element == "__doc__": 
-                        doc = getattr(attr_err, element)
-                        msg = "AttributeError: "  + str(doc)
-                        tango.Except.throw_exception("Attribute reading failure", msg,
-                                                     "read_receptorMembership", 
-                                                     tango.ErrSeverity.ERR)
+                msg = "Error in reading {}: {} ".format(str(attr_err.args[0]), attr_err.__doc__)
+                tango.Except.throw_exception("Attribute reading failure", msg,
+                                             "read_receptorMembership", 
+                                             tango.ErrSeverity.ERR)
         return self._receptorsMembership
         # PROTECTED REGION END #    //  CspMaster.receptorMembership_read
 
@@ -1693,27 +1733,41 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                     command execution.
         """
         # PROTECTED REGION ID(CspMaster.availableReceptorIDs_read) ENABLED START #
+
         self._available_receptorIDs = []
         try:
             proxy = self._se_proxies[self.CspMidCbf]
             proxy.ping()
             vcc_state = proxy.reportVCCState
+            print("vcc_state:", vcc_state)
             vcc_membership = proxy.reportVccSubarrayMembership
-            for vcc_id in range(self._receptors_maxnum):
-                if vcc_state[vcc_id] not in [tango.DevState.UNKNOWN]:
-                    # skip the vcc already assigned to a sub-array
-                    if vcc_membership[vcc_id] != 0:
-                        continue
-                    # OSS: valid receptorIDs are in [1,197] range
-                    # receptorID = 0 means the link connection between 
-                    # the receptor and the VCC is off
-                    receptorID = self._vcc_to_receptor_map[vcc_id + 1]
-                    if receptorID > 0:
-                        self._available_receptorIDs.append(receptorID)
-                    else:
-                        log_msg = "Link problem with receptor connected\
-                                to Vcc {}".format(vcc_id + 1)
-                        self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+            print("vcc_membership:", vcc_membership)
+            # get the list with the IDs of the available VCC
+            #for vcc_id in range(self._receptors_maxnum):
+            for vcc_id in list(self._vcc_to_receptor_map.keys()):
+                try:
+                    if vcc_state[vcc_id - 1] not in [tango.DevState.UNKNOWN]:
+                        # skip the vcc already assigned to a sub-array
+                        if vcc_membership[vcc_id - 1] != 0:
+                            continue
+                        # OSS: valid receptorIDs are in [1,197] range
+                        # receptorID = 0 means the link connection between 
+                        # the receptor and the VCC is off
+                        receptorID = self._vcc_to_receptor_map[vcc_id]
+                        if receptorID > 0:
+                            self._available_receptorIDs.append(receptorID)
+                        else:
+                            log_msg = "Link problem with receptor connected\
+                                    to Vcc {}".format(vcc_id + 1)
+                            self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+                except KeyError as key_err:
+                    log_msg = "No key {} found while accessing VCC {}".format(str(key_err), vcc_id)
+                    self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+                    print(log_msg)
+                except IndexError as idx_error:
+                    log_msg = "Error accessing VCC element {}: {}".format(vcc_id, str(idx_error))
+                    self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+                    print(log_msg)
         except KeyError as key_err:
             log_msg = "Can't retrieve the information of key {}".format(key_err)
             tango.Except.throw_exception("Attribute reading failure", log_msg,
@@ -1724,13 +1778,11 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             tango.Except.throw_exception("Attribute reading failure", log_msg,
                                          "read_availableReceptorIDs", tango.ErrSeverity.ERR)
         except AttributeError as attr_err: 
-            for element in dir(attr_err): 
-                if element == "__doc__": 
-                    doc = getattr(attr_err, element)
-                    msg = "AttributeError: "  + str(doc)
-                    tango.Except.throw_exception("Attribute reading failure", msg,
-                                                 "read_availableREceptorIDs", 
-                                                 tango.ErrSeverity.ERR)
+            msg = "Error in reading {}: {} ".format(str(attr_err.args[0]), attr_err.__doc__)
+            tango.Except.throw_exception("Attribute reading failure", msg,
+                                         "read_availableReceptorIDs", 
+                                         tango.ErrSeverity.ERR)
+        print("available_receptorIDs:", self._available_receptorIDs)
         return self._available_receptorIDs
         # PROTECTED REGION END #    //  CspMaster.vlbiBeamMembership_read
 

@@ -27,12 +27,10 @@ sys.path.insert(0, os.path.abspath(path))
 # Tango imports
 import tango
 from tango import DevState
-#from tango.test_context import DeviceTestContext
 import pytest
 
 #Local imports
-#from CspSubarray import CspSubarray
-#from global_enum import HealthState, AdminMode
+#from CspSubarray.CspSubarray import CspSubarray
 from global_enum import ObsState
 
 # Device test case
@@ -58,32 +56,23 @@ class TestCspSubarray(object):
         """
         receptors_list = csp_master.availableReceptorIDs
         assert receptors_list
-        random_list = []
-        receptor_to_assign = []
-        #number_of_receptors = len(receptors_list)
-        for i in range(1,198):
-            if i not in receptors_list:
-                random_list.append(i)
-            if len(random_list) > 3:
+        invalid_receptor_to_assign = []
+        # try to add 3 invalid receptors
+        for id_num in range(1,198):
+            if id_num not in receptors_list:
+                invalid_receptor_to_assign.append(id_num)
+            if len(invalid_receptor_to_assign) > 3:
                 break
-        for receptor_id in random_list:
-            if receptor_id not in receptors_list:
-                receptor_to_assign.append(receptor_id)
-        with pytest.raises(tango.DevFailed) as df:
-            csp_subarray01.AddReceptors(receptor_to_assign)
-        if df:
-            err_msg = str(df.value.args[0].desc)
-            assert err_msg.rstrip() in ["AttributeError: subarrayMembership", "IndexError: list index out of range"]
-            #assert "AttributeError: subarrayMembership" in str(df.value.args[0].desc) or  assert "IndexError: list index out of range" in str(df.value.args[0].desc)
-        else:    
-            receptors = csp_subarray01.receptors     
-            assert random_list == list(receptors)
+        csp_subarray01.AddReceptors(invalid_receptor_to_assign)
+        time.sleep(2)
+        receptors = csp_subarray01.receptors     
+        assert not receptors
              
     def test_add_valid_receptor_ids(self, csp_subarray01, csp_master):
         """
         Test the assignment of valid receptors to a CspSubarray
         """
-        # read the list of available receptorIDs (the read operation
+        # get the list of available receptorIDs (the read operation
         # returns a tuple!)
         receptor_list = csp_master.availableReceptorIDs
         # assert the tuple is not empty
@@ -93,7 +82,7 @@ class TestCspSubarray(object):
         time.sleep(2)
         # read the list of assigned receptors
         receptors = csp_subarray01.receptors     
-        assert receptor_list == receptors
+        assert set(receptor_list) == set(receptors)
 
     def test_add_already_assigned_receptor_ids(self, csp_subarray01, csp_master):
         """
@@ -102,11 +91,11 @@ class TestCspSubarray(object):
         # read the list of receptors allocated tothe subarray
         assigned_receptors = csp_subarray01.receptors     
         assert assigned_receptors
-        receptors_to_add = [assigned_receptors[0], assigned_receptors[1]]
+        receptors_to_add = [assigned_receptors[0]]
         csp_subarray01.AddReceptors(receptors_to_add)
+        time.sleep(2)
         receptors = csp_subarray01.receptors
         assert receptors == assigned_receptors
-
 
     def test_State_after_receptors_assignment(self, csp_subarray01):
         """
@@ -121,7 +110,7 @@ class TestCspSubarray(object):
         state = csp_subarray01.state()
         assert state == DevState.ON
 
-    def test_remove_receptors(self, csp_subarray01):
+    def test_remove_receptors(self, csp_subarray01, csp_master):
         """
         Test the partial deallocation of receptors from a
         CspSubarray.
@@ -135,10 +124,44 @@ class TestCspSubarray(object):
         receptor_to_remove = []
         receptor_to_remove.append(assigned_receptors[0])
         csp_subarray01.RemoveReceptors(receptor_to_remove)
+        time.sleep(5)
+        assigned_receptors = csp_subarray01.receptors     
+        final_number_of_receptors = len(assigned_receptors)
+        assert (init_number_of_receptors - final_number_of_receptors) == 1
+
+    def test_assign_valid_and_invalid_receptors(self, csp_subarray01, csp_master):
+        """
+        Test the partial deallocation of receptors from a
+        CspSubarray.
+        """
+        # read the list of assigned receptors and check it's not
+        # empty
+        receptors_to_add = []
+        assigned_receptors = csp_subarray01.receptors 
+        num_of_initial_receptors = len(assigned_receptors)
+        assert assigned_receptors 
+        # add valid receptors to the list of resources to assign
+        available_receptors = csp_master.availableReceptorIDs
+        for id_num in available_receptors:
+            receptors_to_add.append(id_num)
+        num_of_valid_receptors = len(receptors_to_add)
+        # add 3 invalid receptor
+        iteration = 0
+        for id_num in range(1, 198):
+            #skip the assigned receptors
+            if id_num in assigned_receptors:
+                continue
+            else:
+                receptors_to_add.append(id_num)
+                iteration += 1
+                if iteration == 3: 
+                    break
+        assert receptors_to_add
+        csp_subarray01.AddReceptors(receptors_to_add)
         time.sleep(2)
         assigned_receptors = csp_subarray01.receptors
         final_number_of_receptors = len(assigned_receptors)
-        assert (init_number_of_receptors - final_number_of_receptors) == 1
+        assert final_number_of_receptors == (num_of_initial_receptors + num_of_valid_receptors)
 
     def test_remove_all_receptors(self, csp_subarray01):
         """
@@ -183,15 +206,29 @@ class TestCspSubarray(object):
         time.sleep(2)
         subarray_state = csp_subarray01.State()
         assert subarray_state == tango.DevState.ON
-        receptors = csp_subarray01.receptors
-        print(receptors)
         filename = os.path.join(commons_pkg_path, "test_ConfigureScan_basic.json")
         f = open(filename)
         csp_subarray01.ConfigureScan(f.read().replace("\n", ""))
         f.close()
-        time.sleep(10)
+        time.sleep(5)
         obs_state = csp_subarray01.obsState
         assert obs_state == ObsState.READY.value
+
+    def test_start_scan(self, csp_subarray01):
+        obs_state = csp_subarray01.obsState
+        assert obs_state == ObsState.READY.value
+        csp_subarray01.Scan(" ")
+        time.sleep(2)
+        obs_state = csp_subarray01.obsState
+        assert obs_state == ObsState.SCANNING.value
+
+    def test_end_scan(self, csp_subarray01):
+        obs_state = csp_subarray01.obsState
+        assert obs_state == ObsState.SCANNING.value
+        csp_subarray01.EndScan()
+        time.sleep(2)
+        obs_state = csp_subarray01.obsState
+        assert obs_state == ObsState.READY
 
         
 

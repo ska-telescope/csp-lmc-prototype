@@ -34,7 +34,7 @@ sys.path.insert(0, commons_pkg_path)
 # Additional import
 # PROTECTED REGION ID(CspMaster.additionnal_import) ENABLED START #
 #
-import global_enum as const
+#import global_enum as const
 from global_enum import HealthState, AdminMode, ObsState, ObsMode
 from skabase.SKASubarray import SKASubarray
 import json
@@ -50,78 +50,78 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     """
     # PROTECTED REGION ID(CspSubarray.class_variable) ENABLED START #
 
-    class CommandCallBack:
-        """
-        Class with a method named *cmd_ended*.
-        
-        The Callback is supplied when the caller issues an asynchronous command: the *cmd_end* callback 
-        method gets immediately executed when the command returns.
-
-        Important:
-           To use the push model (the one with the callback parameter), the global TANGO model has to
-           be changed to PUSH_CALLBACK. Do this with the tango.:class:`ApiUtil().set_asynch_cb_sub_model`
-        """
-
-        def __init__(self, parent):
-            self._parent = parent   # the main class
-
-        def cmd_ended(self, evt):
-            """
-            Method immediately executed when the asynchronous invoked command returns.
-
-            Args:
-                evt: A CmdDoneEvent object with information about the device, the command name and
-                     errors.
-            Returns:
-                None
-            """
-
-            # NOTE: if we try to access to evt.cmd_name or other paramters, the callback crashes with
-            # this error:
-            # terminate called after throwing an instance of 'boost::python::error_already_set'
-            err    = True
-            device =''
-            cmd    = ''
-            errors = ''
-            try :
-                for attr in dir(evt):
-                    if attr == "cmd_name":
-                        cmd = getattr(evt, attr)
-                    if attr == "device":
-                        device = getattr(evt, attr)
-                    if attr == "err":
-                        err = getattr(evt, attr)
-                    if attr == "errors":
-                        if err:
-                            errors = getattr(evt, attr)
-                if err == False:
-                    msg = "Device {} is processing command {}".format(device, cmd)
-                    self._parent.dev_logging(msg, tango.LogLevel.LOG_INFO)
-                else :
-                    msg = "Error in executing command {} ended on device {}.\n".format(cmd,device)
-                    msg += " Desc: {}".format(errors[0].desc)
-                    self._parent.dev_logging(msg, tango.LogLevel.LOG_ERROR)
-                    if cmd == "Scan":
-                        self._parent._obs_state = ObsState.READY.value
-                        self._parent._obs_mode  = ObsMode.IDLE.value
-                    elif cmd == "ConfigureScan":
-                        # On ConfigureScan failure the state is reset to IDLE
-                        self._parent._obs_state = ObsState.IDLE.value
-                        self._parent._obs_mode  = ObsMode.IDLE.value
-                    else:
-                        msg = "Unhandled command {} on device {}".format(cmd, device)
-                        self._parent.dev_logging(msg, tango.LogLevel.LOG_WARN)
-            except tango.DevFailed as df:
-                msg = "CommandCallback cmd_ended failure - desc: {} reason: {}".format(df.args[0].desc, df.args[0].reason) 
-                self._parent.dev_logging(msg, tango.LogLevel.LOG_ERROR)
-            except Exception as ex:
-                msg = "CommandCallBack cmd_ended general exception: {}".format(str(ex))
-                self._parent.dev_logging(msg, tango.LogLevel.LOG_ERROR)
-
-
     # ---------------
     # Event Callback functions
     # ---------------
+    def cmd_ended(self, evt):
+        """
+        Method immediately executed when the asynchronous invoked command returns.
+
+
+        Args:
+            evt: A CmdDoneEvent object. This class is used to pass data to the callback method in
+            asynchronous callback model for command execution.
+
+            It has the following members:
+                - device     : (DeviceProxy) The DeviceProxy object on which the call was executed.
+                - cmd_name   : (str) The command name
+                - argout_raw : (DeviceData) The command argout
+                - argout     : The command argout
+                - err        : (bool) A boolean flag set to true if the command failed. False otherwise
+                - errors     : (sequence<DevError>) The error stack
+                - ext      
+        Returns:
+            None
+        """
+        # NOTE: if we try to access to evt.cmd_name or other paramters, sometime the callback crashes with
+        # this error:
+        # terminate called after throwing an instance of 'boost::python::error_already_set'
+        #
+        err    = True
+        device = ''
+        cmd    = ''
+        errors = ''
+        # Can happen evt empty??
+        if not evt:
+            self.dev_logging("cmd_ended callback: evt is empty!!", tango.LogLevel.LOG_ERRO)
+        try :
+            for attr in dir(evt):
+                if attr == "cmd_name":
+                    cmd = getattr(evt, attr)
+                if attr == "device":
+                    device = getattr(evt, attr)
+                if attr == "err":
+                    err = getattr(evt, attr)
+                if attr == "errors":
+                    if err:
+                        errors = getattr(evt, attr)
+            if err == False:
+                msg = "Device {} is processing command {}".format(device, cmd)
+                # TODO: update the valid_scan_configuration attribute. If the command 
+                # is running the configuration has been validated
+                # if cmd == "ConfigureScan":
+                # .......
+                self.dev_logging(msg, tango.LogLevel.LOG_INFO)
+            else :
+                msg = "Error in executing command {} ended on device {}.\n".format(cmd,device)
+                msg += " Desc: {}".format(errors[0].desc)
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                if cmd == "Scan":
+                    self._obs_state = ObsState.READY.value
+                    self._obs_mode  = ObsMode.IDLE.value
+                elif cmd == "ConfigureScan":
+                    # On ConfigureScan failure the state is reset to IDLE
+                    self._obs_state = ObsState.IDLE.value
+                    self._obs_mode  = ObsMode.IDLE.value
+                else:
+                    msg = "Unhandled command {} on device {}".format(cmd, device)
+                    self.dev_logging(msg, tango.LogLevel.LOG_WARN)
+        except tango.DevFailed as df:
+            msg = "CommandCallback cmd_ended failure - desc: {} reason: {}".format(df.args[0].desc, df.args[0].reason) 
+            self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+        except Exception as ex:
+            msg = "CommandCallBack cmd_ended general exception: {}".format(str(ex))
+            self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
 
     def scm_change_callback(self, evt):
         """
@@ -141,6 +141,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 if "healthstate" in evt.attr_name:
                     self._cbf_subarray_health_state = evt.attr_value.value
                 elif "obsstate" in evt.attr_name: 
+                    #look for transition from SCANNING to READY/IDLE
+                    if self._cbf_subarray_obs_state == ObsState.SCANNING.value:
+                        if evt.attr_value.value in [ObsState.READY.value, ObsState.IDLE.value]:
+                            self.dev_logging("Scan ended", tango.LogLevel.LOG_INFO)
                     self._cbf_subarray_obs_state = evt.attr_value.value
                 elif "state" in  evt.attr_name:
                     self._cbf_subarray_state = evt.attr_value.value
@@ -160,24 +164,24 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 #
                 log_msg = item.reason + ": on attribute " + str(evt.attr_name)
                 self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+                # NOTE: got if a command execution takes more than 3 sec. (TANGO TIMEOUT default value)
                 if "API_CommandTimeout" in item.reason:
                     print("Command Timeout out")
 
     # Class private methods
-
     def __connect_to_subarrays(self):
         """
         *Class private method.*
 
-        Establish connection with each sub-element sub-array.
-        If connection succeeds, the CspSubarrays device subscribes the State, healthState 
-        and adminMode attributes of each Sub-element sub-array and registers a callback function
+        Establish connection with each sub-element subarray.
+        If connection succeeds, the CspSubarray device subscribes the State, healthState 
+        and adminMode attributes of each Sub-element subarray and registers a callback function
         to handle the events. Exceptions are logged.
 
         Returns:
             None
         Raises:
-            tango.DevFailed: raises an execption if connection with a sub-element 
+            tango.DevFailed: raises an exception if connection with a sub-element 
             subarray fails
         """
 
@@ -224,14 +228,11 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         """
         *Class private method.*
 
-        Establish connection with the CSP sub-element master to get information about:
+        Establish connection with the CSP Master and Sub-element Master devices to get information about:
 
-        * the CBF Master address
+        * the CBF/PSS/PST Master address
 
-        * the max number of CSP and CBF capabilities for each type
-
-        Establish connection with the sub-element Master devices to get information about
-        the support capabilities.
+        * the max number of CBF capabilities for each supported capability type
 
         Returns:
             None
@@ -252,10 +253,13 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 self._cbfMasterProxy = tango.DeviceProxy(self._cbfAddress)
                 self._cbfMasterProxy.ping()
                 cbf_capabilities = self._cbfMasterProxy.maxCapabilities
-                vcc_to_receptor = self._cbfMasterProxy.vccToReceptor
-                self._vcc_to_receptor_map = dict([int(ID) for ID in pair.split(":")] for pair in vcc_to_receptor)
+                #vcc_to_receptor = self._cbfMasterProxy.vccToReceptor
+                #self._vcc_to_receptor_map = dict([int(ID) for ID in pair.split(":")] for pair in vcc_to_receptor)
+                # build the list of receptor ids
                 receptor_to_vcc = self._cbfMasterProxy.receptorToVcc
                 self._receptor_to_vcc_map = dict([int(ID) for ID in pair.split(":")] for pair in receptor_to_vcc)
+                # build the list of the installed receptors
+                self._receptor_id_list = list(self._receptor_to_vcc_map.keys())
                 for i in range(len(cbf_capabilities)):
                     cap_type, cap_num = cbf_capabilities[i].split(':')
                     self._cbf_capabilities[cap_type] = int(cap_num)
@@ -283,7 +287,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         *Class private method.*
 
         Check if the sub-element subarray is exported in the TANGO DB. 
-        If the subarray device is not present in the list of the connected subarrays, a 
+        If the subarray device is not present in the list of the connected subarrays, the
         connection with the device is performed.
 
         Args:
@@ -294,13 +298,13 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         try:
             proxy = self._se_subarrays_proxies[subarray_name]
             proxy.ping()
-        except KeyError as key_err: 
+        except KeyError: 
             # Raised when a mapping (dictionary) key is not found in the set of existing keys.
             # no proxy registered for the subarray device
             proxy = tango.DeviceProxy(subarray_name)
             proxy.ping()
             self._se_subarrays_proxies[subarray_name] = proxy
-        except tango.DevFailed as df:
+        except tango.DevFailed:
             return False
         return True
 
@@ -355,7 +359,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # analyze only IMAGING mode.
         #TODO: ObsMode should be defined as a mask because we can have more
         # than one obs_mode active for a sub-array
-
 
     # PROTECTED REGION END #    //  CspSubarray.class_variable
 
@@ -825,7 +828,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         self._health_state = HealthState.UNKNOWN.value
         self._admin_mode   = AdminMode.ONLINE.value
         # NOTE: need to adjust SKAObsDevice class because some of its
-        # attributes (such as obs_state, obs_mode nad command_progress) are not 
+        # attributes (such as obs_state, obs_mode and command_progress) are not 
         # visibile from the derived classes!!
         self._obs_mode     = ObsMode.IDLE.value
         self._obs_state    = ObsState.IDLE.value
@@ -876,8 +879,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # set storage and element logging level
         self._storage_logging_level = int(tango.LogLevel.LOG_INFO)
         self._element_logging_level = int(tango.LogLevel.LOG_INFO)
-        self._command_cb = self.CommandCallBack(self)
-
         # build the sub-element sub-array FQDNs
         if self._subarray_id < 10:
             self._cbf_subarray_fqdn = self.CbfSubarrayPrefix + "0" + str(self._subarray_id)
@@ -890,9 +891,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             self.__connect_to_master()
             self.__connect_to_subarrays()
         except tango.DevFailed as df:    
-            for item in df.args:
-                log_msg = "Error in {}: {}". format(item.origin, item.reason)
-                self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+            log_msg = "Error in {}: {}". format(df.args[0].origin, df.args[0].desc)
+            self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
 
         # to use the push model in command_inout_asynch (the one with the callback parameter), 
         # change the global TANGO model to PUSH_CALLBACK. 
@@ -910,14 +910,36 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
         #release the allocated event resources
         for fqdn in self._se_subarrays_fqdn:
-            # initialize the list for each dictionary key-name
-            for event_id in self._se_subarray_event_id[fqdn]:
-                try:
-                    self._se_subarrays_proxies[fqdn].unsubscribe_event(event_id)
-                    self._se_subarray_event_id[fqdn].remove(event_id)
-                except tango.DevFailed as df:
-                    msg = "Unsubscribe event failure:" + df.args[0].desc
-                    self.dev_logging(msg, tango.LogLevl.LOG_ERROR)
+            event_to_remove = []
+            try:
+                for event_id in self._se_subarray_event_id[fqdn]:
+                    try:
+                        self._se_subarrays_proxies[fqdn].unsubscribe_event(event_id)
+                        #self._se_subarray_event_id[fqdn].remove(event_id)
+                        # in Pyton3 can't remove the element from the dictionary while looping on it.
+                        # Store the unsubscribed events in a temporary list and remove them later.
+                        event_to_remove.append(event_id)
+                    except tango.DevFailed as df:
+                        msg = "Unsubscribe event failure.Reason: {}. Desc: {}".format(df.args[0].reason, df.args[0].desc)
+                        self.dev_logging(msg, tango.LogLevl.LOG_ERROR)
+                    except KeyError as key_err:
+                        # NOTE: in PyTango unsubscription of a not-existing event id raises a KeyError 
+                        # exception not a DevFailed!!
+                        msg = "Unsubscribe event failure. Reason:" + str(key_err)
+                        self.dev_logging(msg, tango.LogLevl.LOG_ERROR)
+                # remove the events from the list
+                for k in event_to_remove:
+                    self._se_subarray_event_id[fqdn].remove(k)
+                # check if there are still some registered events. What to do in this case??
+                if self._se_subarray_event_id[fqdn]:
+                    msg = "Still subscribed events:".format(self._se_subarray_event_id)
+                    self.dev_logging(msg, tango.LogLevel.LOG_WARN)
+                else:
+                    # delete the dictionary entry 
+                    self._se_subarray_event_id.pop(fqdn)
+            except KeyError as key_err:
+                msg = " Can't retrieve the information of key {}".format(key_err)
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
         # clear the subarrays list and dictionary            
         self._se_subarrays_fqdn.clear()
         self._se_subarrays_proxies.clear()
@@ -1159,11 +1181,11 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                     self._vcc.append(vcc_id) 
         except KeyError as key_err:
             msg ="No {} found".format(key_err)
-            tango.Except.re_throw_exception("Read attribute failure", msg,
-                                            "read_vcc", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Read attribute failure", msg,
+                                         "read_vcc", tango.ErrSeverity.ERR)
         except tango.DevFailed as df:
-            tango.Except.re_throw_exception("Read attribute failure", df.args[0].desc,
-                                            "read_vcc", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Read attribute failure", df.args[0].desc,
+                                         "read_vcc", tango.ErrSeverity.ERR)
         return self._vcc
         # PROTECTED REGION END #    //  CspSubarray.vcc_read
 
@@ -1332,7 +1354,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             try:     
                 proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
                 # forward asynchrnously the command to the CbfSubarray
-                proxy.command_inout_asynch("EndScan", self._command_cb)
+                proxy.command_inout_asynch("EndScan", self.cmd_ended)
             except tango.DevFailed as df:
                 for item in df.args:
                     log_msg = item.desc
@@ -1341,6 +1363,11 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                                              "CspSubarray EndScan command failed", 
                                              "Command()",
                                              tango.ErrSeverity.ERR)
+            except KeyError as key_err:
+                msg = " Can't retrieve the information of key {}".format(key_err)
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.throw_exception("Command failed", msg, 
+                                             "EndScan", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.EndScan
 
     @command(
@@ -1372,7 +1399,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             try:     
                 proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
                 # forward the command to the CbfSubarray asynchrnously
-                proxy.command_inout_asynch("Scan", argin, self._command_cb)
+                proxy.command_inout_asynch("Scan", argin, self.cmd_ended)
                 self._obs_state = ObsState.SCANNING.value
             except tango.DevFailed as df:
                 for item in df.args:
@@ -1382,6 +1409,11 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                                              "CspSubarray Scan command failed", 
                                              "Command()",
                                              tango.ErrSeverity.ERR)
+            except KeyError as key_err:
+                msg = " Can't retrieve the information of key {}".format(key_err)
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.throw_exception("Command failed", msg, 
+                                             "Scan", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.Scan
 
     @command(
@@ -1405,19 +1437,17 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                     is caught during command execution.
         """
         # PROTECTED REGION ID(CspSubarray.AddReceptors) ENABLED START #
-        # the list with subarray affiliation of each receptor
-        # OSS: num_of_vcc is the max number of VCCs instantiate for this element. 
-        # So it may be num_of_vcc < 197. The vcc_id of the 
-        # instantiated VCC capabilities are ALWAYS assigned starting from 1 up to 
-        # num_of_vcc. Each vcc_id map to a vcc_fqdn inside CbfMaster, for example 
-        # we can have the following situation:
-        # vcc_id = 1 -> mid_csp_cbf/vcc/vcc_005
-        # vcc_id = 2 -> mid_csp_cbf/vcc/vcc_011
+        # Each vcc_id map to a vcc_fqdn inside CbfMaster, for example:
+        # vcc_id = 1 -> mid_csp_cbf/vcc/vcc_001
+        # vcc_id = 2 -> mid_csp_cbf/vcc/vcc_002
         # .....
-        # vcc_id = 17 -> mid_csp_cbf/vcc/vcc_191
+        # vcc_id = 17 -> mid_csp_cbf/vcc/vcc_017
+        # vcc_id and receptor_id is not the same. The map between vcc_id and receptor_id is built by CbfMaster
+        # and exported as attribute.
+        # The max number of VCC allocated is defined by the VCC property of the CBF Master.
 
-        #Check if the AddReceptors command can be executed. Receptors can be assigned to a subarray
-        #only when its obsState is IDLE or READY. 
+        # Check if the AddReceptors command can be executed. Receptors can be assigned to a subarray
+        # only when its obsState is IDLE or READY. 
         if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
             #get the obs_state label
             for obs_state in ObsState:
@@ -1425,59 +1455,52 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                     log_msg = "Subarray obs_state is {}, not IDLE or READY".format(obs_state.name)
                     tango.Except.throw_exception("Command failed", log_msg,
                                                  "AddReceptors", tango.ErrSeverity.ERR)
+        # the list of available receptor IDs. This number is mantained by the CspMaster 
+        # and reported on request.            
+        available_receptors = []
+        # the list of receptor to assign to the subarray
+        receptor_to_assign = []
         try:
-            num_of_vcc = self._cbf_capabilities["VCC"]
-            receptor_membership = [0] * num_of_vcc
-            # the list of receptor to assign to the subarray
-            receptor_to_assign = []
-            # connect to CbfMaster to get the list of all VCCs affilitiation and build 
-            # the corresponding receptorId affiliation list
-            if not self._cbfMasterProxy:
-                self._cbfMasterProxy = tango.DeviceProxy(self._cbfAddress)
-            # check if device is connected
-            self._cbfMasterProxy.ping()
-            vcc_membership = self._cbfMasterProxy.reportVCCSubarrayMembership
-            # TODO: get the  list of available receptors
-            # available_receptors = cspMasterProxy.availableReceptorIDs
-            # vccID range is [1, 197]!!
-            # vcc_id range is [0,196]!!
-            for vcc_id in range(num_of_vcc):
-                # get the associated receptor ID: this value can be any value in 
-                # the range [1,197]!!
-                receptorID = self._vcc_to_receptor_map[vcc_id + 1]
-                receptor_membership[receptorID - 1] = vcc_membership[vcc_id]
-        except KeyError as key_err:
-            log_msg = "Can't access to CbfMaster {} information".format(str(key_err))
-            self.dev_logging(str(key_err), tango.LogLevel.LOG_ERROR)
-            if not self._cbf_capabilities :
-                tango.Except.throw_exception("Command failed", log_msg,
-                                             "AddReceptors", tango.ErrSeverity.ERR)
+            # access to CspMaster to get information about the list of available receptors 
+            # and the receptors affiliation to subarrays.
+            cspMasterProxy = tango.DeviceProxy(self.CspMaster)
+            cspMasterProxy.ping()
+            available_receptors = cspMasterProxy.availableReceptorIDs
+            # ATT: need to check if available_receptors is None: this happens when all
+            # the provided receptors are assigned.
+            if not available_receptors:
+                log_msg = "No available receptor to add to subarray {}".format(self._subarray_id)
+                self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
+                return
+            receptor_membership = cspMasterProxy.receptorMembership
         except tango.DevFailed as df:
-            for item in df.args:
-                if "Failed to connect to device" in item.desc:
-                    self._cbfMasterProxy = 0
-            tango.Except.throw_exception("Command failed", df.args[0].desc,
+            msg = "Failure in getting receptors information:" + str(df.args[0].reason)
+            tango.Except.throw_exception("Command failed", msg,
+                                         "AddReceptors", tango.ErrSeverity.ERR)
+        except AttributeError as attr_err:
+            msg = "Failure in reading {}: {}".format(str(attr_err.args[0]), attr_err.__doc__)
+            tango.Except.throw_exception("Command failed", msg,
                                          "AddReceptors", tango.ErrSeverity.ERR)
         for receptorId in argin:
-            # check if the specified recetorID is valid, that is a number
-            # in the range [1-197]
-            # TODO if receptorId in available_receptors:
-            if receptorId in range(1, const.NUM_OF_RECEPTORS + 1):
-                # check if the required receptor is already assigned
-                if receptor_membership[receptorId - 1] in list(range(1,17)):
+            # check if the specified receptor id is a valid number (that is, belongs to the list
+            # of provided receptors)
+            if receptorId in self._receptor_id_list:
+                # check if the receptor id is one of the availbale receptor Ids
+                if receptorId in available_receptors:
+                    receptor_to_assign.append(receptorId)
+                else:
+                    # retrieve the subarray owner
                     sub_id = receptor_membership[receptorId - 1]
                     log_msg = "Receptor " + str(receptorId) + \
                               " already assigned to subarray " + str(sub_id)
                     self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-                else :
-                    receptor_to_assign.append(receptorId)
             else:
-                log_msg = "Receptor " + str(receptorId) + " invalid value"
+                log_msg = "Invalid receptor id:" + str(receptorId)
                 self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
 
         # check if the list of receptors to assign is empty
         if not receptor_to_assign: 
-            log_msg = "The required receptors are already assigned to the subarray"
+            log_msg = "The required receptors are already assigned to a subarray"
             self.dev_logging(log_msg, tango.LogLevel.LOG_INFO)
             return  
         # check if the CspSubarray is already connected to the CbfSubarray
@@ -1485,13 +1508,22 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         if self.__is_subarray_available(self._cbf_subarray_fqdn):
             try:     
                 proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
+                # remove possible receptor repetition
+                tmp = set(receptor_to_assign)
+                receptor_to_assign = list(tmp)
                 # forward the command to the CbfSubarray
                 proxy.command_inout("AddReceptors", receptor_to_assign)
+            except KeyError as key_err:
+                msg = " Can't retrieve the information of key {}".format(key_err)
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.throw_exception("Command failed", msg, 
+                                             "AddReceptors", tango.ErrSeverity.ERR)
             except tango.DevFailed as df:
+                log_msg = "AddReceptor command failure."
                 for item in df.args:
-                    log_msg = item.desc
-                    self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
-                    tango.Except.re_throw_exception(df, "Command failed", 
+                    log_msg += "Reason: {}. Desc: {}".format(item.reason, item.desc)
+                self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.re_throw_exception(df, "Command failed", 
                                              "CspSubarray AddReceptors command failed", 
                                              "Command()",
                                              tango.ErrSeverity.ERR)
@@ -1544,7 +1576,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         if self.__is_subarray_available(self._cbf_subarray_fqdn):
             try:
                 proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
-                # read fron Cbfubarray the list of assigned receptors
+                # read from CbfSubarray the list of assigned receptors
                 receptors = proxy.receptors
                 # check if the list of assigned receptors is empty.
                 if not receptors:
@@ -1557,6 +1589,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                         receptors_to_remove.append(receptor_id)
                 # forward the command to CbfSubarray
                 proxy.RemoveReceptors(receptors_to_remove)
+                receptors = proxy.receptors
             except tango.DevFailed as df:
                 log_msg = "RemoveReceptors:" + df.args[0].desc
                 self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
@@ -1608,11 +1641,15 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 proxy.command_inout("RemoveAllReceptors")
                 #self._vcc = []
             except tango.DevFailed as df:
-                log_msg = "RemoveAllReceptors:" + df.args[0].desc
+                log_msg = "RemoveAllReceptors failure. Reason: {} Desc: {}".format(df.args[0].reason, df.args[0].desc)
                 self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
                 tango.Except.re_throw_exception(df, "Command failed", 
                         "CspSubarray RemoveAllReceptors command failed", 
                         "Command()", tango.ErrSeverity.ERR)
+            except KeyError as key_err:
+                log_msg = "No key {} found".format(str(key_err))
+                tango.Except.throw_exception("Command failed", log_msg,
+                                             "RemoveAllReceptors", tango.ErrSeverity.ERR)
         else:
             log_msg = "Subarray " + str(self._cbf_subarray_fqdn) + " not registered!"
             self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
@@ -1808,10 +1845,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             proxy.ping()
             self._obs_state = ObsState.CONFIGURING.value
             # use asynchrnous model
-            proxy.command_inout_asynch("ConfigureScan", argin, self._command_cb) 
+            # in this case the obsMode and the valid scan configuraiton are set
+            # at command end 
+            proxy.command_inout_asynch("ConfigureScan", argin, self.cmd_ended) 
             #proxy.command_inout("ConfigureScan", argin) 
-            self._obs_mode = proxy.obsMode
-            self._valid_scan_configuration = argin
+            #self._obs_mode = proxy.obsMode
+            #self._valid_scan_configuration = argin
         except tango.DevFailed as df:
             log_msg = ''
             for item in df.args:
