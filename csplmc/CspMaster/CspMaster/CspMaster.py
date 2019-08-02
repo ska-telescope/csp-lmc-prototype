@@ -1853,7 +1853,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         for device_name in device_list:
             try:
                 device_proxy = self._se_proxies[device_name]
-                device_proxy.command_inout("On", "")
+                device_proxy.command_inout("On")
             except KeyError as error:
                 # throw an exception only if:
                 # - no proxy found for the only specified input device
@@ -1934,7 +1934,7 @@ If the array length is > 1, each array element specifies the FQDN of the\
         for device_name in device_list:
             try:
                 device_proxy = self._se_proxies[device_name]
-                device_proxy.command_inout("Off", "")
+                device_proxy.command_inout("Off")
                 self._se_to_switch_off[device_name] = True
             except KeyError as error:
                 err_msg = "No proxy for device" + str(error)
@@ -1995,7 +1995,7 @@ If the array length is > 1, each array element specifies the FQDN of the\
         for device_name in device_list:
             try:
                 device_proxy = self._se_proxies[device_name]
-                device_proxy.command_inout("Standby", "")
+                device_proxy.command_inout("Standby")
             except KeyError as error:
                 # throw an exception only if:
                 # - no proxy found for the only specified input device

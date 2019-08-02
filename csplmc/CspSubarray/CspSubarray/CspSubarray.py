@@ -106,6 +106,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 msg = "Error in executing command {} ended on device {}.\n".format(cmd,device)
                 msg += " Desc: {}".format(errors[0].desc)
                 self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
+                # these values take on the CbfSubarray's values
+                """
                 if cmd == "Scan":
                     self._obs_state = ObsState.READY.value
                     self._obs_mode  = ObsMode.IDLE.value
@@ -116,6 +118,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 else:
                     msg = "Unhandled command {} on device {}".format(cmd, device)
                     self.dev_logging(msg, tango.LogLevel.LOG_WARN)
+                """
         except tango.DevFailed as df:
             msg = "CommandCallback cmd_ended failure - desc: {} reason: {}".format(df.args[0].desc, df.args[0].reason) 
             self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
@@ -324,6 +327,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             return
         if self._cbf_subarray_state == tango.DevState.ON:
             self.set_state(tango.DevState.ON)
+        if self._cbf_subarray_state == tango.DevState.DISABLE:
+            self.set_state(tango.DevState.OFF)
 
         if self._pss_subarray_health_state == HealthState.OK.value and\
            self._pst_subarray_health_state == HealthState.OK.value and\
@@ -349,12 +354,15 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # OSS: when obs_mode is set, its value should be considered to set the final 
         # obs_state of the sub-array
         #if self._cbf_subarray_obs_state == ObsState.READY.value and self._obs_mode == ObsMode.IMAGING.value:
-        if self._cbf_subarray_obs_state == ObsState.READY.value :
+        if self._cbf_subarray_obs_state == ObsState.READY.value:
             self._obs_state = ObsState.READY.value
         #if self._cbf_subarray_obs_state == ObsState.IDLE.value and self._obs_mode == ObsMode.IMAGING.value:
         if self._cbf_subarray_obs_state == ObsState.IDLE.value:
             self._obs_state = ObsState.IDLE.value
             self._obs_mode = ObsMode.IDLE.value
+        else:
+            # for CONFIGURING and SCANNING
+            self._obs_state = self._cbf_subarray_obs_state
 
         # analyze only IMAGING mode.
         #TODO: ObsMode should be defined as a mask because we can have more
@@ -1371,7 +1379,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # PROTECTED REGION END #    //  CspSubarray.EndScan
 
     @command(
-    dtype_in=('str',), 
+        dtype_in='str',
+        doc_in="Activation time of the scan, as seconds since the Linux epoch"
     )
     @DebugIt()
     def Scan(self, argin):
@@ -1400,7 +1409,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
                 # forward the command to the CbfSubarray asynchrnously
                 proxy.command_inout_asynch("Scan", argin, self.cmd_ended)
-                self._obs_state = ObsState.SCANNING.value
+                # self._obs_state = ObsState.SCANNING.value
             except tango.DevFailed as df:
                 for item in df.args:
                     log_msg = item.desc
@@ -1843,7 +1852,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         try:
             proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
             proxy.ping()
-            self._obs_state = ObsState.CONFIGURING.value
+            # self._obs_state = ObsState.CONFIGURING.value
             # use asynchrnous model
             # in this case the obsMode and the valid scan configuraiton are set
             # at command end 
