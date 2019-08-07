@@ -1350,7 +1350,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             except KeyError as key_err:
                 msg = "Can't retrieve the information of key {}".format(key_err)
                 self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
-                tango.Except.throw_exception("Command failed", mg,
+                tango.Except.throw_exception("Command failed", msg,
                                              "Set cbf admin mode", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.cbfAdminMode_write
 
@@ -1739,9 +1739,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             proxy = self._se_proxies[self.CspMidCbf]
             proxy.ping()
             vcc_state = proxy.reportVCCState
-            print("vcc_state:", vcc_state)
             vcc_membership = proxy.reportVccSubarrayMembership
-            print("vcc_membership:", vcc_membership)
             # get the list with the IDs of the available VCC
             #for vcc_id in range(self._receptors_maxnum):
             for vcc_id in list(self._vcc_to_receptor_map.keys()):
@@ -1763,11 +1761,9 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 except KeyError as key_err:
                     log_msg = "No key {} found while accessing VCC {}".format(str(key_err), vcc_id)
                     self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-                    print(log_msg)
                 except IndexError as idx_error:
                     log_msg = "Error accessing VCC element {}: {}".format(vcc_id, str(idx_error))
                     self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-                    print(log_msg)
         except KeyError as key_err:
             log_msg = "Can't retrieve the information of key {}".format(key_err)
             tango.Except.throw_exception("Attribute reading failure", log_msg,
@@ -1782,7 +1778,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             tango.Except.throw_exception("Attribute reading failure", msg,
                                          "read_availableReceptorIDs", 
                                          tango.ErrSeverity.ERR)
-        print("available_receptorIDs:", self._available_receptorIDs)
         return self._available_receptorIDs
         # PROTECTED REGION END #    //  CspMaster.vlbiBeamMembership_read
 
