@@ -323,12 +323,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         """
         if self._cbf_subarray_state == tango.DevState.OFF: 
             self.set_state(tango.DevState.OFF)
-            self._health_state = HealthState.DEGRADED.value   
             return
         if self._cbf_subarray_state == tango.DevState.ON:
             self.set_state(tango.DevState.ON)
         if self._cbf_subarray_state == tango.DevState.DISABLE:
-            self.set_state(tango.DevState.OFF)
+            self.set_state(tango.DevState.DISABLE)
+            self._health_state = HealthState.DEGRADED.value   
 
         if self._pss_subarray_health_state == HealthState.OK.value and\
            self._pst_subarray_health_state == HealthState.OK.value and\
@@ -1364,10 +1364,11 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 # forward asynchrnously the command to the CbfSubarray
                 proxy.command_inout_asynch("EndScan", self.cmd_ended)
             except tango.DevFailed as df:
+                log_msg = ''
                 for item in df.args:
-                    log_msg = item.desc
-                    self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
-                    tango.Except.re_throw_exception(df, "Command failed", 
+                    log_msg += item.reason + " " + item.desc
+                self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.re_throw_exception(df, "Command failed", 
                                              "CspSubarray EndScan command failed", 
                                              "Command()",
                                              tango.ErrSeverity.ERR)
@@ -1376,6 +1377,11 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
                 tango.Except.throw_exception("Command failed", msg, 
                                              "EndScan", tango.ErrSeverity.ERR)
+        else:
+            log_msg = "Subarray " + str(self._cbf_subarray_fqdn) + " not registered!"
+            self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.throw_exception("Command failed", log_msg,
+                                         "EndScan", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.EndScan
 
     @command(
@@ -1411,10 +1417,11 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 proxy.command_inout_asynch("Scan", argin, self.cmd_ended)
                 # self._obs_state = ObsState.SCANNING.value
             except tango.DevFailed as df:
+                log_msg = ''
                 for item in df.args:
-                    log_msg = item.desc
-                    self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
-                    tango.Except.re_throw_exception(df, "Command failed", 
+                    log_msg += item.reason + " " + item.desc
+                self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+                tango.Except.re_throw_exception(df, "Command failed", 
                                              "CspSubarray Scan command failed", 
                                              "Command()",
                                              tango.ErrSeverity.ERR)
@@ -1423,6 +1430,11 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
                 tango.Except.throw_exception("Command failed", msg, 
                                              "Scan", tango.ErrSeverity.ERR)
+        else:
+            log_msg = "Subarray " + str(self._cbf_subarray_fqdn) + " not registered!"
+            self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.throw_exception("Command failed", log_msg,
+                                         "Scan", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.Scan
 
     @command(
@@ -1456,12 +1468,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # The max number of VCC allocated is defined by the VCC property of the CBF Master.
 
         # Check if the AddReceptors command can be executed. Receptors can be assigned to a subarray
-        # only when its obsState is IDLE or READY. 
-        if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
+        # only when its obsState is IDLE. 
+        if self._obs_state != ObsState.IDLE.value:
             #get the obs_state label
             for obs_state in ObsState:
                 if obs_state == self._obs_state: 
-                    log_msg = "Subarray obs_state is {}, not IDLE or READY".format(obs_state.name)
+                    log_msg = "Command AaddReceptors not allowed when subarray ObsState is {}".format(obs_state.name)
                     tango.Except.throw_exception("Command failed", log_msg,
                                                  "AddReceptors", tango.ErrSeverity.ERR)
         # the list of available receptor IDs. This number is mantained by the CspMaster 
@@ -1565,18 +1577,18 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         Returns:
             None
         Raises:
-            tango.DevFailed: raised if the subarray *obState* attribute is not IDLE or READY, or \
+            tango.DevFailed: raised if the subarray *obState* attribute is not IDLE, or \
                     when an exception is caught during command execution.
         """
         # PROTECTED REGION ID(CspSubarray.RemoveReceptors) ENABLED START #
 
         # Check if the RemoveReceptors command can be executed. Receptors can be removed from a subarray
         # only when its obsState is IDLE or READY. 
-        if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
+        if self._obs_state != ObsState.IDLE.value:
             #get the obs_state label
             for obs_state in ObsState:
                 if obs_state == self._obs_state: 
-                    log_msg = "Subarray obs_state is {}, not IDLE or READY".format(obs_state.name)
+                    log_msg = "Command RemoveReceptors not allowed when subarray ObsState is {}".format(obs_state.name)
                     tango.Except.throw_exception("Command failed", log_msg,
                                                  "RemoveReceptors", tango.ErrSeverity.ERR)
 
@@ -1630,11 +1642,11 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
         # Check if the RemoveAllReceptors command can be executed. Receptors can be removed from a subarray
         # only when its obsState is IDLE or READY. 
-        if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
+        if self._obs_state != ObsState.IDLE.value:
             #get the obs_state label
             for obs_state in ObsState:
                 if obs_state == self._obs_state: 
-                    log_msg = "Subarray obs_state is {}, not IDLE or READY".format(obs_state.name)
+                    log_msg = "Command RemoveAllReceptors not allowed when subarray ObsState is {}".format(obs_state.name)
                     tango.Except.throw_exception("Command failed", log_msg,
                                                  "RemoveAllReceptors", tango.ErrSeverity.ERR)
         proxy = 0
@@ -1644,7 +1656,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 # check if the list of assigned receptors is empty
                 receptors = proxy.receptors
                 if not receptors:
-                    self.dev_logging("RemoveReceptors: no receptor to remove", tango.LogLevel.LOG_INFO)
+                    self.dev_logging("RemoveAllReceptors: no receptor to remove", tango.LogLevel.LOG_INFO)
                     return
                 # forward the command to the CbfSubarray
                 proxy.command_inout("RemoveAllReceptors")
@@ -2054,6 +2066,46 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # PROTECTED REGION ID(CspSubarray.RemoveVlbiBeams) ENABLED START #
         pass
         # PROTECTED REGION END #    //  CspSubarray.RemoveVlbiBeams
+
+    @command(
+    )
+    @DebugIt()
+    def EndSB(self):
+        """
+        *Class method*
+
+        Set the subarray ObsState to IDLE.
+        
+        Raises 
+            tango.DevFailed exception if the configuration is not valid or if an exception\
+                    is caught during command execution.
+        """
+        # PROTECTED REGION ID(CspSubarray.EndSB) ENABLED START #
+        if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
+            for obs_state in ObsState:
+                if obs_state == self._obs_state: 
+                    log_msg = "Subarray is in {} state, not IDLE or READY".format(obs_state.name)
+                    tango.Except.throw_exception("Command failed", log_msg,
+                                                 "Scan", tango.ErrSeverity.ERR)
+        # check connection with CbfSubarray
+        if not self.__is_subarray_available(self._cbf_subarray_fqdn):
+            log_msg = "Subarray " + str(self._cbf_subarray_fqdn) + " not registered!"
+            self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.throw_exception("Command failed", log_msg,
+                                         "EndSB execution", tango.ErrSeverity.ERR)
+        try:
+            proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
+            proxy.ping()
+            proxy.command_inout_asynch("EndSB") 
+        except tango.DevFailed as df:
+            log_msg = ''
+            for item in df.args:
+                log_msg += item.reason + " " + item.desc
+            self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.re_throw_exception(df, "Command failed", 
+                    "CspSubarray EndSB command failed", 
+                    "Command()", tango.ErrSeverity.ERR)
+        # PROTECTED REGION END #    //  CspSubarray.EndSB
 
 # ----------
 # Run server
