@@ -38,7 +38,7 @@ from global_enum import ObsState
 
 class TestCspSubarray(object):
 
-    def test_State(self, csp_subarray01):
+    def test_State(self, csp_subarray01, csp_master):
         """
         Test for State after device startup.
         The CspSubarray State at start is OFF.  
@@ -46,7 +46,15 @@ class TestCspSubarray(object):
         csp_subarray01.Init()
         time.sleep(2)
         state = csp_subarray01.state()
+        assert state in [DevState.DISABLE]
+        #switch-on the CspMaster 
+        csp_master_state = csp_master.state()
+        assert csp_master_state == DevState.STANDBY
+        csp_master.On("")
+        time.sleep(2)
+        state = csp_subarray01.state()
         assert state in [DevState.OFF]
+        
 
     def test_add_invalid_receptor_ids(self, csp_subarray01, csp_master):
         """
@@ -230,5 +238,36 @@ class TestCspSubarray(object):
         obs_state = csp_subarray01.obsState
         assert obs_state == ObsState.READY
 
+    def test_remove_receptors_when_ready(self, csp_subarray01):
+        """
+        Test the complete deallocation of receptors from a
+        CspSubarray when the subarray ObsMode is READY.
+        """
+        obs_state = csp_subarray01.obsState
+        assert obs_state == ObsState.READY
+        with pytest.raises(tango.DevFailed) as df:
+            csp_subarray01.RemoveAllReceptors()
+        if df:
+            err_msg = str(df.value.args[0].desc)
+            assert "Command RemoveAllReceptors not allowed" in err_msg
         
+    def test_remove_receptors_when_idle(self, csp_subarray01):
+        """
+        Test the complete deallocation of receptors from a
+        CspSubarray when the subarray from ObsMode READY transits to
+        IDLE.
+        """
+        obs_state = csp_subarray01.obsState
+        assert obs_state == ObsState.READY
+        # command transition to IDLE
+        csp_subarray01.EndSB()
+        time.sleep(3)
+        obs_state = csp_subarray01.obsState
+        assert obs_state == ObsState.IDLE
+        csp_subarray01.RemoveAllReceptors()
+        time.sleep(3)
+        subarray_state = csp_subarray01.state()
+        assert subarray_state == tango.DevState.OFF
+        assert obs_state == ObsState.IDLE
+
 

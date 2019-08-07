@@ -31,7 +31,7 @@ from tango import DevState
 import pytest
 
 #Local imports
-#from CspMaster.CspMaster import CspMaster
+from CspMaster.CspMaster import CspMaster
 #from global_enum import HealthState, AdminMode
 from global_enum import AdminMode
 
@@ -43,6 +43,8 @@ class TestCspMaster(object):
     def test_State(self, csp_master, cbf_master):
         """Test for State after initialization """
         # reinitalize Csp Master and CbfMaster devices
+        cbf_master.Init()
+        time.sleep(3)
         csp_state = csp_master.state()
         assert csp_state in [DevState.STANDBY, DevState.INIT, DevState.DISABLE]
 
@@ -77,59 +79,14 @@ class TestCspMaster(object):
     def test_subelement_address(self, csp_master):
         """Test for report state of SearchBeam Capabilitities"""
         cbf_addr = csp_master.cbfMasterAddress
-        assert cbf_addr == "mid_csp_cbf/sub_elt/master"
+        cbf_addr_property = csp_master.get_property("CspMidCbf")["CspMidCbf"][0]
+        assert cbf_addr == cbf_addr_property
         pss_addr = csp_master.pssMasterAddress
-        assert pss_addr == "mid_csp_pss/sub_elt/master"
+        pss_addr_property = csp_master.get_property("CspMidPss")["CspMidPss"][0]
+        assert pss_addr == pss_addr_property
         pst_addr = csp_master.pstMasterAddress
-        assert pst_addr == "mid_csp_pst/sub_elt/master"
-
-    def test_On_invalid_argument(self, csp_master):
-        """Test for the execution of the On command with a wrong input argument"""
-        with pytest.raises(tango.DevFailed) as df:
-            argin = ["cbf", ]
-            csp_master.On(argin)
-        assert "No proxy found for device" in str(df.value)
-
-    def test_On_valid_state(self, csp_master, cbf_master):
-        """
-        Test for execution of On command when the CbfTestMaster is in the right state
-        """
-        #reinit CSP and CBFTest master devices
-        cbf_master.Init()
-        time.sleep(2)
-        # sleep for a while to wait state transition
-        # check CspMaster state
-        csp_master.Init()
-        assert csp_master.State() == DevState.STANDBY
-        # issue the "On" command on CbfMaster device
-        argin = ["mid_csp_cbf/sub_elt/master",]
-        csp_master.On(argin)
-        time.sleep(3)
-        assert csp_master.state() == DevState.ON
-
-    def test_On_invalid_state(self, csp_master, cbf_master):
-        """
-        Test for the execution of the On command when the CbfMaster 
-        is in an invalid state
-        """
-        #reinit CSP and CBF master devices
-        cbf_master.Init()
-        csp_master.Init()
-        # sleep for a while to wait for state transitions
-        time.sleep(3)
-        assert csp_master.cspCbfState == DevState.STANDBY
-        # issue the command to switch off the CbfMaster
-        #argin=["",]
-        argin = ["mid_csp_cbf/sub_elt/master",]
-        csp_master.Off(argin)
-        # wait for the state transition from STANDBY to OFF
-        time.sleep(3)
-        assert csp_master.cspCbfState == DevState.OFF
-        # issue the command to switch on the CbfMaster device
-        with pytest.raises(tango.DevFailed) as df:
-            argin = ["mid_csp_cbf/sub_elt/master", ]
-            csp_master.On(argin)
-        assert "Command On not allowed" in str(df.value.args[0].desc)
+        pst_addr_property = csp_master.get_property("CspMidPst")["CspMidPst"][0]
+        assert pst_addr == pst_addr_property
 
     def test_properties(self, csp_master):
         capability_list = ['SearchBeam:1500', 'TimingBeam:16', 'VlbiBeam:20','Subarray:16']
@@ -189,5 +146,133 @@ class TestCspMaster(object):
         assert  num_of_beam == len(vlbi_beam_state)
         expected_search_beam = [tango.DevState.UNKNOWN for i in range(num_of_beam)]
         assert tuple(expected_search_beam) == vlbi_beam_state
+
+    def test_receptors_available_ids(self, csp_master):
+        list_of_receptors = csp_master.availableReceptorIDs
+        assert len(list_of_receptors) > 0 
+
+    def test_available_capabilities(self, csp_master):
+        available_cap = csp_master.availableCapabilities
+        assert len(available_cap) > 0 
+
+    def test_On_invalid_argument(self, csp_master):
+        """Test for the execution of the On command with a wrong input argument"""
+        with pytest.raises(tango.DevFailed) as df:
+            argin = ["cbf", ]
+            csp_master.On(argin)
+        assert "No proxy found for device" in str(df.value)
+
+    def test_On_valid_state(self, csp_master, cbf_master):
+        """
+        Test for execution of On command when the CbfTestMaster is in the right state
+        """
+        #reinit CSP and CBFTest master devices
+        cbf_master.Init()
+        time.sleep(2)
+        # sleep for a while to wait state transition
+        # check CspMaster state
+        csp_master.Init()
+        assert csp_master.State() == DevState.STANDBY
+        # issue the "On" command on CbfMaster device
+        argin = ["mid_csp_cbf/sub_elt/master",]
+        csp_master.On(argin)
+        time.sleep(3)
+        assert csp_master.state() == DevState.ON
+
+    def test_On_invalid_state(self, csp_master, cbf_master):
+        """
+        Test for the execution of the On command when the CbfMaster 
+        is in an invalid state
+        """
+        #reinit CSP and CBF master devices
+        cbf_master.Init()
+        csp_master.Init()
+        # sleep for a while to wait for state transitions
+        time.sleep(3)
+        assert csp_master.cspCbfState == DevState.STANDBY
+        # issue the command to switch off the CbfMaster
+        #argin=["",]
+        argin = ["mid_csp_cbf/sub_elt/master",]
+        csp_master.Off(argin)
+        # wait for the state transition from STANDBY to OFF
+        time.sleep(3)
+        assert csp_master.cspCbfState == DevState.OFF
+        # issue the command to switch on the CbfMaster device
+        with pytest.raises(tango.DevFailed) as df:
+            argin = ["mid_csp_cbf/sub_elt/master", ]
+            csp_master.On(argin)
+        assert "Command On not allowed" in str(df.value.args[0].desc)
+
+    def test_Standby_invalid_argument(self, csp_master, cbf_master):
+        """Test for the execution of the Standby command with a wrong input argument"""
+        #reinit CSP and CBF master devices
+        cbf_master.Init()
+        #csp_master.Init()
+        # sleep for a while to wait for state transitions
+        time.sleep(3)
+        csp_master.On("")
+        time.sleep(3)
+        with pytest.raises(tango.DevFailed) as df:
+            argin = ["cbf", ]
+            csp_master.Standby(argin)
+        assert "No proxy found for device" in str(df.value)
+
+    def test_Standby_valid_state(self, csp_master, cbf_master):
+        """
+        Test for execution of On command when the CbfTestMaster is in the right state
+        """
+        assert csp_master.State() == DevState.ON
+        # issue the "Standby" command on CbfMaster device
+        argin = ["mid_csp_cbf/sub_elt/master",]
+        csp_master.Standby(argin)
+        time.sleep(3)
+        assert csp_master.state() == DevState.STANDBY
+
+    def test_Off_invalid_argument(self, csp_master):
+        """Test for the execution of the Off command with a wrong input argument"""
+        csp_state = csp_master.State()
+        argin = ["cbf", ]
+        csp_master.Off(argin)
+        #at present time the code does not raise any exception
+        assert csp_state == csp_master.State()
+
+    def test_Off_invalid_state(self, csp_master, cbf_master):
+        """
+        Test for the execution of the Off command when the CbfMaster 
+        is in an invalid state
+        """
+        cbf_master.Init()
+        #csp_master.Init()
+        # sleep for a while to wait for state transitions
+        time.sleep(3)
+        assert csp_master.State() == DevState.STANDBY
+        csp_master.On("")
+        time.sleep(3)
+        assert csp_master.State() == DevState.ON
+        # issue the command to switch off the CSP
+        with pytest.raises(tango.DevFailed) as df:
+            csp_master.Off("")
+        assert "Command Off not allowed" in str(df.value.args[0].desc)
+
+    def test_Off_valid_state(self, csp_master, cbf_master):
+        """
+        Test for execution of On command when the CbfTestMaster is in the right state
+        """
+        #reinit CSP and CBFTest master devices
+        cbf_master.Init()
+        #csp_master.Init()
+        time.sleep(2)
+        assert csp_master.State() == DevState.STANDBY
+        # issue the "Off" command on CbfMaster device
+        csp_master.Off("")
+        time.sleep(3)
+        assert csp_master.state() == DevState.OFF
+    
+    def test_reinit_csp_master(self, csp_master, cbf_master):
+        #reinit CSP and CBFTest master devices
+        cbf_master.Init()
+        #csp_master.Init()
+        time.sleep(2)
+        assert csp_master.State() == DevState.STANDBY 
 
 
