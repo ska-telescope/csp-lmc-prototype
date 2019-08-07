@@ -124,7 +124,7 @@
       </argout>
       <status abstract="false" inherited="true" concrete="true"/>
     </commands>
-    <commands name="EndSB" description="Change obsState to IDLE." execMethod="end_sb" displayLevel="OPERATOR" polledPeriod="0">
+    <commands name="EndScan" description="Change obsState to IDLE." execMethod="end_sb" displayLevel="OPERATOR" polledPeriod="0">
       <argin description="">
         <type xsi:type="pogoDsl:VoidType"/>
       </argin>
@@ -306,6 +306,15 @@
     </commands>
     <commands name="RemoveVlbiBeams" description="Remove the specified Timing Beams from the sub-array." execMethod="remove_vlbi_beams" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
       <argin description="The list of Timing Beams IDs to remove from the sub-array.">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argin>
+      <argout description="">
+        <type xsi:type="pogoDsl:VoidType"/>
+      </argout>
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </commands>
+    <commands name="EndSB" description="Set the subarray obsState to IDLE." execMethod="go_to_idle" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+      <argin description="">
         <type xsi:type="pogoDsl:VoidType"/>
       </argin>
       <argout description="">
