@@ -310,6 +310,9 @@
                             "VLBIAddress": [
                                 "mid_csp_cbf/fsp_vlbi/01"
                             ],
+                            "FspSubarray": [
+                                "mid_csp_cbf/fspSubarray/01_01"
+                            ],
                             "polled_attr": [
                                 "adminmode", 
                                 "1000", 
@@ -420,6 +423,9 @@
                             ], 
                             "VLBIAddress": [
                                 "mid_csp_cbf/fsp_vlbi/02"
+                            ],
+                            "FspSubarray": [
+                                "mid_csp_cbf/fspSubarray/02_01"
                             ],
                             "polled_attr": [
                                 "adminmode", 
@@ -532,6 +538,9 @@
                             "VLBIAddress": [
                                 "mid_csp_cbf/fsp_vlbi/03"
                             ],
+                            "FspSubarray": [
+                                "mid_csp_cbf/fspSubarray/03_01"
+                            ],
                             "polled_attr": [
                                 "adminmode", 
                                 "1000", 
@@ -642,6 +651,9 @@
                             ], 
                             "VLBIAddress": [
                                 "mid_csp_cbf/fsp_vlbi/04"
+                            ],
+                            "FspSubarray": [
+                                "mid_csp_cbf/fspSubarray/04_01"
                             ],
                             "polled_attr": [
                                 "adminmode", 
