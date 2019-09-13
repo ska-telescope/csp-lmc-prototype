@@ -13,6 +13,7 @@
 import sys
 import os
 import time
+import random
 
 # Path
 file_path = os.path.dirname(os.path.abspath(__file__))
@@ -54,7 +55,6 @@ class TestCspSubarray(object):
         time.sleep(2)
         state = csp_subarray01.state()
         assert state in [DevState.OFF]
-        
 
     def test_add_invalid_receptor_ids(self, csp_subarray01, csp_master):
         """
@@ -129,10 +129,11 @@ class TestCspSubarray(object):
         assert assigned_receptors 
         init_number_of_receptors = len(assigned_receptors)
         assert init_number_of_receptors > 1
+        i = random.randrange(1,4,1)
         receptor_to_remove = []
-        receptor_to_remove.append(assigned_receptors[0])
+        receptor_to_remove.append(i)
         csp_subarray01.RemoveReceptors(receptor_to_remove)
-        time.sleep(5)
+        time.sleep(4)
         assigned_receptors = csp_subarray01.receptors     
         final_number_of_receptors = len(assigned_receptors)
         assert (init_number_of_receptors - final_number_of_receptors) == 1

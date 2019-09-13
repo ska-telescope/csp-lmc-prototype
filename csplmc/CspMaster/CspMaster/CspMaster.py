@@ -1043,7 +1043,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     The subarray affiliation of the Mid CBF VCC TANGO Devices.\n
     *Type*:  an array of DevUShort.
 
-    *__root_att*: /mid_csp_cbf/sub_elt/master/vccMembership
+    *__root_att*: /mid_csp_cbf/sub_elt/master/reportVCCSubarrayMembership
     """
 
     # ---------------
@@ -1149,7 +1149,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                     self._se_event_id[fqdn].remove(k)
                 # check if there are still some registered events. What to do in this case??
                 if self._se_event_id[fqdn]:
-                    msg = "Still subscribed events:".format(self._se_event_id)
+                    msg = "Still subscribed events: {}".format(self._se_event_id)
                     self.dev_logging(msg, tango.LogLevel.LOG_WARN)
                 else:
                     # remove the dictionary element

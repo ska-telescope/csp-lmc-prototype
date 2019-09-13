@@ -31,7 +31,7 @@ from tango import DevState
 import pytest
 
 #Local imports
-from CspMaster.CspMaster import CspMaster
+#from CspMaster.CspMaster import CspMaster
 #from global_enum import HealthState, AdminMode
 from global_enum import AdminMode
 

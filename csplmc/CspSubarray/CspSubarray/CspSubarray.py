@@ -940,7 +940,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                     self._se_subarray_event_id[fqdn].remove(k)
                 # check if there are still some registered events. What to do in this case??
                 if self._se_subarray_event_id[fqdn]:
-                    msg = "Still subscribed events:".format(self._se_subarray_event_id)
+                    msg = "Still subscribed events: {}".format(self._se_subarray_event_id)
                     self.dev_logging(msg, tango.LogLevel.LOG_WARN)
                 else:
                     # delete the dictionary entry 
