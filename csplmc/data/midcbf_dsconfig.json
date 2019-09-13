@@ -311,7 +311,8 @@
                                 "mid_csp_cbf/fsp_vlbi/01"
                             ],
                             "FspSubarray": [
-                                "mid_csp_cbf/fspSubarray/01_01"
+                                "mid_csp_cbf/fspSubarray/01_01",
+                                "mid_csp_cbf/fspSubarray/01_02"
                             ],
                             "polled_attr": [
                                 "adminmode", 
@@ -425,7 +426,8 @@
                                 "mid_csp_cbf/fsp_vlbi/02"
                             ],
                             "FspSubarray": [
-                                "mid_csp_cbf/fspSubarray/02_01"
+                                "mid_csp_cbf/fspSubarray/02_01",
+                                "mid_csp_cbf/fspSubarray/02_02"
                             ],
                             "polled_attr": [
                                 "adminmode", 
@@ -539,7 +541,8 @@
                                 "mid_csp_cbf/fsp_vlbi/03"
                             ],
                             "FspSubarray": [
-                                "mid_csp_cbf/fspSubarray/03_01"
+                                "mid_csp_cbf/fspSubarray/03_01",
+                                "mid_csp_cbf/fspSubarray/03_02"
                             ],
                             "polled_attr": [
                                 "adminmode", 
@@ -653,7 +656,8 @@
                                 "mid_csp_cbf/fsp_vlbi/04"
                             ],
                             "FspSubarray": [
-                                "mid_csp_cbf/fspSubarray/04_01"
+                                "mid_csp_cbf/fspSubarray/04_01",
+                                "mid_csp_cbf/fspSubarray/04_02"
                             ],
                             "polled_attr": [
                                 "adminmode", 

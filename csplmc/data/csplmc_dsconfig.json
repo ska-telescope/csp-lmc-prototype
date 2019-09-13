@@ -189,15 +189,69 @@
                         }
                     }
                 }
-            }
-        }, 
-        "CspTelState": {
-            "csp": {
-                "CspTelState": {
-                    "mid_csp/elt/telstate": {
+            },
+            "sub2": {
+                "CspSubarray": {
+                    "mid_csp/elt/subarray_02": {
                         "attribute_properties": {
+                            "adminMode": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "healthState": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "obsState": {
+                                "abs_change": [
+                                    "-1", 
+                                    "1"
+                                ]
+                            }, 
+                            "receptors": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/subarray_02/receptors"
+                                ]
+                            }, 
+                            "vccHealthState": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/subarray_02/vccHealthState"
+                                ]
+                            }, 
+                            "vccState": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/subarray_02/vccState"
+                                ]
+                            },
+                            "cbfOutputLink": {
+                                "__root_att": [
+                                    "mid_csp_cbf/sub_elt/subarray_02/outputLinksDistribution"
+                                ]
+                            } 
                         }, 
                         "properties": {
+                            "CspMaster": [
+                                "mid_csp/elt/master"
+                            ], 
+                            "SubID": [
+                                "2"
+                            ], 
+                            "polled_attr": [
+                                "state", 
+                                "1000", 
+                                "healthstate", 
+                                "1000", 
+                                "adminmode", 
+                                "1000", 
+                                "obsstate", 
+                                "1000",
+                                "obsmode", 
+                                "1000"
+                            ]
                         }
                     }
                 }

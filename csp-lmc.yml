@@ -44,6 +44,23 @@ services:
     volumes_from:
       - rsyslog-csplmc:rw
 
+  cspsubarray02:
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
+    network_mode: ${NETWORK_MODE}
+    container_name: ${CONTAINER_NAME_PREFIX}cspsubarray02
+    depends_on:
+      - csp_dsconfig
+      - cspmaster
+      - rsyslog-csplmc
+    environment:
+      - TANGO_HOST=${TANGO_HOST}
+    command: >
+      sh -c "wait-for-it.sh ${TANGO_HOST} --timeout=30 --strict --
+             retry --max=5 -- tango_admin --ping-device mid_csp/elt/master &&\
+             /venv/bin/python /app/csplmc/CspSubarray/CspSubarray/CspSubarray.py sub2"
+    volumes_from:
+      - rsyslog-csplmc:rw
+
   cspmaster:
     image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/csplmc:latest
     network_mode: ${NETWORK_MODE}
