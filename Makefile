@@ -10,6 +10,7 @@
 # DOCKER_REGISTRY_USER and PROJECT to give a final Docker tag of
 # nexus.engageska-portugal.pt/tango-example/csplmc
 #
+
 DOCKER_REGISTRY_USER:=ska-docker
 PROJECT = csplmc
 
@@ -23,7 +24,8 @@ include .make/Makefile.mk
 #
 # IMAGE_TO_TEST defines the tag of the Docker image to test
 #
-IMAGE_TO_TEST = $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):latest
+#IMAGE_TO_TEST = $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):latest
+IMAGE_TO_TEST = $(DEFAULT_TAG)
 
 #
 # CACHE_VOLUME is the name of the Docker volume used to cache eggs and wheels
@@ -121,13 +123,13 @@ make = tar -c test-harness/ | \
 	   make TANGO_HOST=$(TANGO_HOST) $1"
 
 test: DOCKER_RUN_ARGS = --volumes-from=$(BUILD)
-test: build up ## test the application
-#test: up ## test the application
+test: up ## test the application
+	@echo "BUILD: $(BUILD)"
 	$(INIT_CACHE)
 	$(call make,test); \
 	  status=$$?; \
 	  rm -fr build; \
-	  #docker-compose $(COMPOSE_FILE_ARGS) logs;\
+          #docker-compose $(COMPOSE_FILE_ARGS) logs;
 	  docker cp $(BUILD):/build .; \
 	  docker rm -f -v $(BUILD); \
 	  $(MAKE) down; \

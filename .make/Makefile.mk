@@ -13,6 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+
 ifeq ($(strip $(PROJECT)),)
   NAME=$(shell basename $(CURDIR))
 else
@@ -31,8 +32,14 @@ endif
 
 IMAGE=$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(NAME)
 
+#VERSION = release version + git sha
 VERSION=$(shell . $(RELEASE_SUPPORT) ; getVersion)
+
+#TAG = project name + release version
 TAG=$(shell . $(RELEASE_SUPPORT); getTag)
+
+#DEFAULT_TAG = image name + VERSION
+DEFAULT_TAG=$(IMAGE):$(VERSION)
 
 SHELL=/bin/bash
 
@@ -53,30 +60,27 @@ pre-push:
 post-push:
 
 docker-build: .release
+	@echo "VERSION:$(VERSION)"
+	@echo "Building image: $(IMAGE):$(VERSION)"
 	docker build $(DOCKER_BUILD_ARGS) -t $(IMAGE):$(VERSION) $(DOCKER_BUILD_CONTEXT) -f $(DOCKER_FILE_PATH) --build-arg DOCKER_REGISTRY_HOST=$(DOCKER_REGISTRY_HOST) --build-arg DOCKER_REGISTRY_USER=$(DOCKER_REGISTRY_USER)
 	@DOCKER_MAJOR=$(shell docker -v | sed -e 's/.*version //' -e 's/,.*//' | cut -d\. -f1) ; \
 	DOCKER_MINOR=$(shell docker -v | sed -e 's/.*version //' -e 's/,.*//' | cut -d\. -f2) ; \
-	if [ $$DOCKER_MAJOR -eq 1 ] && [ $$DOCKER_MINOR -lt 10 ] ; then \
-		echo docker tag -f $(IMAGE):$(VERSION) $(IMAGE):latest ;\
-		docker tag -f $(IMAGE):$(VERSION) $(IMAGE):latest ;\
-	else \
-		echo docker tag $(IMAGE):$(VERSION) $(IMAGE):latest ;\
-		docker tag $(IMAGE):$(VERSION) $(IMAGE):latest ; \
-	fi
-
-.release:
-	@echo "release=0.0.0" > .release
-	@echo "tag=$(NAME)-0.0.0" >> .release
-	@echo INFO: .release created
-	@cat .release
 
 release: check-status check-release build push
 
 push: pre-push do-push post-push  ## push the image to the Docker registry
 
-do-push:
-#	docker push $(IMAGE):$(VERSION)
-	docker push $(IMAGE):latest
+do-push: ## Push the image tagged as :$(VERSION)
+	@echo -e "Pushing: $(IMAGE):$(VERSION)"
+	docker push $(IMAGE):$(VERSION)
+
+tag_latest: do-push ## Tag the images as latest
+	@echo "Tagging: $(DEFAULT_TAG) -> $(IMAGE):latest"
+	@docker tag $(DEFAULT_TAG) $(IMAGE):latest
+
+push_latest: tag_latest ## Push the image tagged as :latest
+	@echo "Pushing: $(IMAGE):latest"
+	@docker push $(IMAGE):latest
 
 snapshot: build push
 
