@@ -1904,7 +1904,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             # use asynchrnous model
             # in this case the obsMode and the valid scan configuraiton are set
             # at command end 
-            self.dev_logging("Call to ConfigureScan", tango.LogLevel.LOG_ERROR)
             proxy.command_inout_asynch("ConfigureScan", argin, self.cmd_ended) 
             #proxy.command_inout("ConfigureScan", argin) 
             #self._obs_mode = proxy.obsMode
