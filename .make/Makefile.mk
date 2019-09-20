@@ -35,11 +35,15 @@ IMAGE=$(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(NAME)
 #VERSION = release version + git sha
 VERSION=$(shell . $(RELEASE_SUPPORT) ; getVersion)
 
+#BASE_VERSION
+BASE_VERSION=$(shell . $(RELEASE_SUPPORT) ; getRelease)
+
 #TAG = project name + release version
 TAG=$(shell . $(RELEASE_SUPPORT); getTag)
 
-#DEFAULT_TAG = image name + VERSION
-DEFAULT_TAG=$(IMAGE):$(VERSION)
+#DEFAULT_TAG = image name + BASE_VERSION
+DEFAULT_TAG=$(IMAGE):$(BASE_VERSION)
+
 
 SHELL=/bin/bash
 
@@ -60,19 +64,29 @@ pre-push:
 post-push:
 
 docker-build: .release
-	@echo "VERSION:$(VERSION)"
 	@echo "Building image: $(IMAGE):$(VERSION)"
 	docker build $(DOCKER_BUILD_ARGS) -t $(IMAGE):$(VERSION) $(DOCKER_BUILD_CONTEXT) -f $(DOCKER_FILE_PATH) --build-arg DOCKER_REGISTRY_HOST=$(DOCKER_REGISTRY_HOST) --build-arg DOCKER_REGISTRY_USER=$(DOCKER_REGISTRY_USER)
 	@DOCKER_MAJOR=$(shell docker -v | sed -e 's/.*version //' -e 's/,.*//' | cut -d\. -f1) ; \
 	DOCKER_MINOR=$(shell docker -v | sed -e 's/.*version //' -e 's/,.*//' | cut -d\. -f2) ; \
+	if [ $$DOCKER_MAJOR -eq 1 ] && [ $$DOCKER_MINOR -lt 10 ] ; then \
+		echo docker tag -f $(IMAGE):$(VERSION) $(IMAGE):latest ;\
+		docker tag -f $(IMAGE):$(VERSION) $(IMAGE):latest ;\
+	else \
+		echo docker tag $(IMAGE):$(VERSION) $(IMAGE):latest ;\
+		docker tag $(IMAGE):$(VERSION) $(IMAGE):latest ; \
+	fi
 
 release: check-status check-release build push
 
 push: pre-push do-push post-push  ## push the image to the Docker registry
 
-do-push: ## Push the image tagged as :$(VERSION)
+do-push: ## Push the image tagged as $(IMAGE):$(VERSION) and $(DEFAULT_TAG)
+	@echo -e "Tagging: $(IMAGE):$(VERSION) -> $(DEFAULT_TAG)"
+	docker tag $(IMAGE):$(VERSION) $(DEFAULT_TAG)
 	@echo -e "Pushing: $(IMAGE):$(VERSION)"
 	docker push $(IMAGE):$(VERSION)
+	@echo -e "Pushing: $(DEFAULT_TAG)"
+	docker push $(DEFAULT_TAG)
 
 tag_latest: do-push ## Tag the images as latest
 	@echo "Tagging: $(DEFAULT_TAG) -> $(IMAGE):latest"

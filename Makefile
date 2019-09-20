@@ -24,8 +24,7 @@ include .make/Makefile.mk
 #
 # IMAGE_TO_TEST defines the tag of the Docker image to test
 #
-#IMAGE_TO_TEST = $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):latest
-IMAGE_TO_TEST = $(DEFAULT_TAG)
+IMAGE_TO_TEST = $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/$(PROJECT):latest
 
 #
 # CACHE_VOLUME is the name of the Docker volume used to cache eggs and wheels
