@@ -13,6 +13,7 @@
 import sys
 import os
 import time
+import numpy as np
 
 # Path
 file_path = os.path.dirname(os.path.abspath(__file__))
@@ -97,7 +98,7 @@ class TestCspMaster(object):
     def test_forwarded_attributes(self, csp_master, cbf_master):
         vcc_state = csp_master.reportVCCState
         vcc_state_cbf = cbf_master.reportVCCState
-        assert vcc_state == vcc_state_cbf
+        assert np.array_equal(vcc_state, vcc_state_cbf)
 
     def test_search_beams_states_at_init(self, csp_master):
         """ 
@@ -113,7 +114,7 @@ class TestCspMaster(object):
         search_beam_state = csp_master.reportSearchBeamState 
         assert  num_of_search_beam == len(search_beam_state)
         expected_search_beam = [tango.DevState.UNKNOWN for i in range(num_of_search_beam)]
-        assert tuple(expected_search_beam) == search_beam_state
+        assert np.array_equal(expected_search_beam, search_beam_state)
 
     def test_timing_beams_states_at_init(self, csp_master):
         """ 
@@ -129,7 +130,7 @@ class TestCspMaster(object):
         timing_beam_state = csp_master.reportTimingBeamState 
         assert  num_of_beam == len(timing_beam_state)
         expected_search_beam = [tango.DevState.UNKNOWN for i in range(num_of_beam)]
-        assert tuple(expected_search_beam) == timing_beam_state
+        assert np.array_equal(expected_search_beam, timing_beam_state)
 
     def test_vlbi_beams_states_at_init(self, csp_master):
         """ 
@@ -145,11 +146,21 @@ class TestCspMaster(object):
         vlbi_beam_state = csp_master.reportVlbiBeamState 
         assert  num_of_beam == len(vlbi_beam_state)
         expected_search_beam = [tango.DevState.UNKNOWN for i in range(num_of_beam)]
-        assert tuple(expected_search_beam) == vlbi_beam_state
+        assert np.array_equal(expected_search_beam, vlbi_beam_state)
 
     def test_receptors_available_ids(self, csp_master):
+        max_capabilities = csp_master.maxCapabilities
+        num_of_receptors = 0
         list_of_receptors = csp_master.availableReceptorIDs
-        assert len(list_of_receptors) > 0 
+        for max_capability in max_capabilities: 
+            capability_type, max_capability_instances = max_capability.split(":")
+            if capability_type == 'Receptors':
+                num_of_receptors = int(max_capability_instances)
+                break
+        if num_of_receptors > 0:
+            assert len(list_of_receptors) > 0 
+        else:
+            assert np.array_equal(list_of_receptors, [0])
 
     def test_available_capabilities(self, csp_master):
         available_cap = csp_master.availableCapabilities
@@ -166,7 +177,7 @@ class TestCspMaster(object):
         """
         Test for execution of On command when the CbfTestMaster is in the right state
         """
-        #reinit CSP and CBFTest master devices
+        #reinit CSP and CBF master devices
         cbf_master.Init()
         time.sleep(2)
         # sleep for a while to wait state transition

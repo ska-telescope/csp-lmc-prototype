@@ -14,6 +14,7 @@ import sys
 import os
 import time
 import random
+import numpy as np
 
 # Path
 file_path = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +36,7 @@ import pytest
 from global_enum import ObsState
 
 # Device test case
-@pytest.mark.usefixtures("csp_master", "csp_subarray01", "cbf_subarray01")
+@pytest.mark.usefixtures("csp_master", "csp_subarray01", "cbf_subarray01", "csp_subarray02")
 
 class TestCspSubarray(object):
 
@@ -63,7 +64,7 @@ class TestCspSubarray(object):
         The AddReceptors method fails raising a tango.DevFailed exception.
         """
         receptors_list = csp_master.availableReceptorIDs
-        assert receptors_list
+        assert receptors_list.all()
         invalid_receptor_to_assign = []
         # try to add 3 invalid receptors
         for id_num in range(1,198):
@@ -74,7 +75,7 @@ class TestCspSubarray(object):
         csp_subarray01.AddReceptors(invalid_receptor_to_assign)
         time.sleep(2)
         receptors = csp_subarray01.receptors     
-        assert not receptors
+        assert len(receptors) == 0
              
     def test_add_valid_receptor_ids(self, csp_subarray01, csp_master):
         """
@@ -84,7 +85,7 @@ class TestCspSubarray(object):
         # returns a tuple!)
         receptor_list = csp_master.availableReceptorIDs
         # assert the tuple is not empty
-        assert receptor_list
+        assert receptor_list.all()
         csp_subarray01.AddReceptors(receptor_list)
         # sleep a while to wait for attribute updated
         time.sleep(2)
@@ -98,12 +99,12 @@ class TestCspSubarray(object):
         """
         # read the list of receptors allocated tothe subarray
         assigned_receptors = csp_subarray01.receptors     
-        assert assigned_receptors
+        assert len(assigned_receptors) > 0
         receptors_to_add = [assigned_receptors[0]]
         csp_subarray01.AddReceptors(receptors_to_add)
         time.sleep(2)
         receptors = csp_subarray01.receptors
-        assert receptors == assigned_receptors
+        assert np.array_equal(receptors,assigned_receptors)
 
     def test_State_after_receptors_assignment(self, csp_subarray01):
         """
@@ -113,7 +114,7 @@ class TestCspSubarray(object):
         # read the list of assigned receptors and check it's not
         # empty
         assigned_receptors = csp_subarray01.receptors     
-        assert assigned_receptors
+        assert len(assigned_receptors)> 0
         # read the CspSubarray State
         state = csp_subarray01.state()
         assert state == DevState.ON
@@ -126,7 +127,7 @@ class TestCspSubarray(object):
         # read the list of assigned receptors and check it's not
         # empty
         assigned_receptors = csp_subarray01.receptors     
-        assert assigned_receptors 
+        assert len(assigned_receptors) > 0
         init_number_of_receptors = len(assigned_receptors)
         assert init_number_of_receptors > 1
         i = random.randrange(1,4,1)
@@ -148,7 +149,7 @@ class TestCspSubarray(object):
         receptors_to_add = []
         assigned_receptors = csp_subarray01.receptors 
         num_of_initial_receptors = len(assigned_receptors)
-        assert assigned_receptors 
+        assert len(assigned_receptors) > 0 
         # add valid receptors to the list of resources to assign
         available_receptors = csp_master.availableReceptorIDs
         for id_num in available_receptors:
@@ -165,7 +166,7 @@ class TestCspSubarray(object):
                 iteration += 1
                 if iteration == 3: 
                     break
-        assert receptors_to_add
+        assert len(receptors_to_add) > 0
         csp_subarray01.AddReceptors(receptors_to_add)
         time.sleep(2)
         assigned_receptors = csp_subarray01.receptors
@@ -181,11 +182,11 @@ class TestCspSubarray(object):
         # read the list of assigned receptors and check it's not
         # empty
         assigned_receptors = csp_subarray01.receptors     
-        assert assigned_receptors
+        assert len(assigned_receptors) > 0
         csp_subarray01.RemoveAllReceptors()
         time.sleep(2)
         assigned_receptors = csp_subarray01.receptors
-        assert not assigned_receptors
+        assert len(assigned_receptors) == 0
         time.sleep(2)
         assert csp_subarray01.state() == DevState.OFF
 
@@ -207,7 +208,7 @@ class TestCspSubarray(object):
         receptor_list = csp_master.availableReceptorIDs
         time.sleep(2)
         # assert the tuple is not empty
-        assert receptor_list
+        assert ((len(receptor_list) > 0) and (receptor_list[0] != 0))
         # assign only receptors [1,4] for which the configuration addresses are provided in
         # the configuration JSON file
         receptors_to_assign = [1,4]
@@ -235,7 +236,7 @@ class TestCspSubarray(object):
         obs_state = csp_subarray01.obsState
         assert obs_state == ObsState.SCANNING.value
         csp_subarray01.EndScan()
-        time.sleep(2)
+        time.sleep(3)
         obs_state = csp_subarray01.obsState
         assert obs_state == ObsState.READY
 
@@ -270,5 +271,4 @@ class TestCspSubarray(object):
         subarray_state = csp_subarray01.state()
         assert subarray_state == tango.DevState.OFF
         assert obs_state == ObsState.IDLE
-
 

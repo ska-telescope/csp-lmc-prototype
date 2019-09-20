@@ -1059,6 +1059,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         self.set_state(tango.DevState.INIT)
         self._health_state = HealthState.UNKNOWN.value
         self._admin_mode = AdminMode.ONLINE.value
+        self._available_receptorIDs = []
 
         # initialize attribute values
         self._progress_command = 0
@@ -1451,11 +1452,13 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         try:
             proxy = tango.DeviceProxy(self.get_name())
             available_receptors = proxy.availableReceptorIDs
-            if available_receptors is not None:
-                self._available_capabilities["Receptors"] = len(available_receptors)
-            else:
-                self._available_capabilities["Receptors"] = 0
-
+            #oss: if there is no available receptor, this call returns an array
+            # [0] whose length is 1 (not 0)
+            if len(available_receptors) >= 1:
+                if available_receptors[0] == 0:
+                    self._available_capabilities["Receptors"] = 0
+                else:    
+                    self._available_capabilities["Receptors"] = len(available_receptors)
             #TODO: update when also PSS and PST will be available
             self._available_capabilities["SearchBeam"] = const.NUM_OF_SEARCH_BEAMS
             self._available_capabilities["TimingBeam"] = const.NUM_OF_TIMING_BEAMS
@@ -1733,7 +1736,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                     command execution.
         """
         # PROTECTED REGION ID(CspMaster.availableReceptorIDs_read) ENABLED START #
-
         self._available_receptorIDs = []
         try:
             proxy = self._se_proxies[self.CspMidCbf]
@@ -1741,7 +1743,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             vcc_state = proxy.reportVCCState
             vcc_membership = proxy.reportVccSubarrayMembership
             # get the list with the IDs of the available VCC
-            #for vcc_id in range(self._receptors_maxnum):
             for vcc_id in list(self._vcc_to_receptor_map.keys()):
                 try:
                     if vcc_state[vcc_id - 1] not in [tango.DevState.UNKNOWN]:
@@ -1778,6 +1779,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             tango.Except.throw_exception("Attribute reading failure", msg,
                                          "read_availableReceptorIDs", 
                                          tango.ErrSeverity.ERR)
+        if len(self._available_receptorIDs) == 0:
+            return [0]
         return self._available_receptorIDs
         # PROTECTED REGION END #    //  CspMaster.vlbiBeamMembership_read
 

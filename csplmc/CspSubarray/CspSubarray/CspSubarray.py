@@ -1489,7 +1489,22 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             available_receptors = cspMasterProxy.availableReceptorIDs
             # ATT: need to check if available_receptors is None: this happens when all
             # the provided receptors are assigned.
-            if not available_receptors:
+            # NB: if the Tango attribute is read-only (as in the case of availableReceptorIDs) the read
+            # method returns a None type. If the Tango attribute is RW the read methods returns an empty
+            # tuple (whose length is 0)
+
+            #!!!!!!!!!!!!!!!!!
+            # 09/20/2019
+            # NB: the previous statement is true for the images of Tango and Pytango
+            # 9.2.5, with PyTango not compiled with numpy support!!!
+            # After moving to TANGO and PyTango 9.3 (new images, PyTango has benne compiled with numpy support!) 
+            # if there is no available receptor the call to cspMasterProxy.availableReceptorIDs returns an array= [0]. 
+            # The length of the array is 1 and its value is 0.
+            # Checks on available_receptors need to be changed (see below).
+            #!!!!!!!!!!!!!!!!!
+            
+            #if not available_receptors:  
+            if available_receptors[0] == 0: # this means NO available receptors!
                 log_msg = "No available receptor to add to subarray {}".format(self._subarray_id)
                 self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
                 return
@@ -1599,8 +1614,18 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
                 # read from CbfSubarray the list of assigned receptors
                 receptors = proxy.receptors
+                #!!!!!!!!!!!!!!!!!
+                # 09/20/2019 ATT:  New images for TANGO and PyTango images has been released. PyTango 
+                # is now compiled with th numpy support. In this case the proxy.receptors call does no more 
+                # return an empty tuple but an empty numpy array. 
+                # Checks on receptors content need to be changed (see below)
+                # NB: the receptors attribute implemented by the CbfSubarray is declared as RW. In this case the
+                # read method returns an empty numpy array ([]) whose length is 0
+                #!!!!!!!!!!!!!!!!!
+
                 # check if the list of assigned receptors is empty.
-                if not receptors:
+                #if not receptors:
+                if len(receptors) == 0:
                     self.dev_logging("RemoveReceptors: no receptor to remove", tango.LogLevel.LOG_INFO)
                     return
                 receptors_to_remove = []
@@ -1655,7 +1680,16 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
                 # check if the list of assigned receptors is empty
                 receptors = proxy.receptors
-                if not receptors:
+                #!!!!!!!!!!!!!!!!!
+                # 09/20/2019 ATT:  New images for TANGO and PyTango images has been released. PyTango 
+                # is now compiled with th numpy support. In this case the proxy.receptors call does no more 
+                # return an empty tuple but an empty numpy array. 
+                # Checks on receptors content need to be changed (see below)
+                # NB: the receptors attribute implemented by the CbfSubarray is declared as RW. In this case the
+                # read method returns an empty numpy array ([]) whose length is 0
+                #!!!!!!!!!!!!!!!!!
+                #if not receptors:
+                if len(receptors) == 0:
                     self.dev_logging("RemoveAllReceptors: no receptor to remove", tango.LogLevel.LOG_INFO)
                     return
                 # forward the command to the CbfSubarray
@@ -1739,8 +1773,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             # for test purpose we load the json configuration from an
             # external file.
             # TO REMOVE!!
-            if (argin == "load"):
-                filename = os.path.join(commons_pkg_path, "test_ConfigureScan_basic.json")
+            if "load" in argin:
+                # skip the 'load' chars and remove spaces from the filename
+                fn = (argin[4:]).strip()
+                filename = os.path.join(commons_pkg_path, fn)
                 with open(filename) as json_file:
                     #load the file into a dictionary
                     argin_dict = json.load(json_file)
@@ -1868,6 +1904,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             # use asynchrnous model
             # in this case the obsMode and the valid scan configuraiton are set
             # at command end 
+            self.dev_logging("Call to ConfigureScan", tango.LogLevel.LOG_ERROR)
             proxy.command_inout_asynch("ConfigureScan", argin, self.cmd_ended) 
             #proxy.command_inout("ConfigureScan", argin) 
             #self._obs_mode = proxy.obsMode
