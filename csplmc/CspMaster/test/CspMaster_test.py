@@ -149,7 +149,7 @@ class TestCspMaster(object):
         assert np.array_equal(expected_search_beam, vlbi_beam_state)
 
     def test_receptors_available_ids(self, csp_master):
-        max_capabilities = csp_master.maxCapabilities
+        max_capabilities = csp_master.availableCapabilities
         num_of_receptors = 0
         list_of_receptors = csp_master.availableReceptorIDs
         for max_capability in max_capabilities: 
@@ -157,6 +157,7 @@ class TestCspMaster(object):
             if capability_type == 'Receptors':
                 num_of_receptors = int(max_capability_instances)
                 break
+        
         if num_of_receptors > 0:
             assert len(list_of_receptors) > 0 
         else:
