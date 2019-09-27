@@ -64,13 +64,6 @@
                 [13393, 0],
                 [14137, 0]
             ]
-        },
-        {
-            "fspID": 2,
-            "functionMode": "CORR",
-            "frequencySliceID": 20,
-            "corrBandwidth": 0,
-            "integrationTime": 1400
         }
     ]
 }
