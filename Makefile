@@ -142,8 +142,8 @@ ifneq ($(NETWORK_MODE),host)
 	docker network inspect $(NETWORK_MODE) &> /dev/null || ([ $$? -ne 0 ] && docker network create $(NETWORK_MODE))
 endif
 	#$(DOCKER_COMPOSE_ARGS) docker-compose $(COMPOSE_FILE_ARGS) pull
-	#pull only the mid-cbf-mcs image
-	docker pull $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/mid-cbf-mcs:latest
+	#to pull only the mid-cbf-mcs image remove comment on row below.
+	#docker pull $(DOCKER_REGISTRY_HOST)/$(DOCKER_REGISTRY_USER)/mid-cbf-mcs:latest
 	$(DOCKER_COMPOSE_ARGS) docker-compose -f csp-tangodb.yml up -d
 	# put a sleep to wait TANGO DB 
 	@sleep 10
