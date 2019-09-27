@@ -1619,8 +1619,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         if self.SearchBeams: 
             return self.SearchBeams
         else :
-            log_msg = "SearchBeams device property not assigned", 
-            self.dev_logging(log_msg, int(tango.LogLevel.LOG_WARN))
+            log_msg = "SearchBeams device property not assigned"
+            self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
             tango.Except.throw_exception("Attribute reading failure", log_msg,
                                          "read_searchBeamCapAddress", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.searchBeamCapAddress_read
@@ -1630,7 +1630,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         if self.TimingBeams: 
             return self.TimingBeams
         else :
-            log_msg = "TimingBeams device property not assigned", 
+            log_msg = "TimingBeams device property not assigned"
             self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
             tango.Except.throw_exception("Attribute reading failure", log_msg,
                                          "read_timingBeamCapAddress", tango.ErrSeverity.ERR)
@@ -1645,7 +1645,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         if self.VlbiBeams: 
             return self.VlbiBeams
         else :
-            log_msg = "VlbiBeams device property not assigned", 
+            log_msg = "VlbiBeams device property not assigned" 
             self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
             tango.Except.throw_exception("Attribute reading failure", log_msg,
                                          "read_vlbiBeamCapAddress", tango.ErrSeverity.ERR)
