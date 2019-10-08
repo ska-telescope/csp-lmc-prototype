@@ -2132,7 +2132,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         try:
             proxy = self._se_subarrays_proxies[self._cbf_subarray_fqdn]
             proxy.ping()
-            proxy.command_inout_asynch("EndSB") 
+            proxy.command_inout_asynch("EndSB", self.cmd_ended) 
         except tango.DevFailed as df:
             log_msg = ''
             for item in df.args:
