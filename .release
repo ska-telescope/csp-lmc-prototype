@@ -9,7 +9,7 @@
 """Release information for Python Package"""
 
 name = """tangods-cspmaster"""
-version = "0.2.0"
+version = "0.2.1"
 version_info = version.split(".")
 description = """SKA Csp Master TANGO Device Server"""
 author = "E.G"
@@ -18,5 +18,5 @@ license = """BSD-3-Clause"""
 url = """www.tango-controls.org"""
 copyright = """"""
 
-release=0.2.0
-tag=csplmc-prototype-0.2.0
+release=0.2.1
+tag=csplmc-prototype-0.2.1

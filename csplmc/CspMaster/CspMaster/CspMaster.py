@@ -1779,6 +1779,14 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             tango.Except.throw_exception("Attribute reading failure", msg,
                                          "read_availableReceptorIDs", 
                                          tango.ErrSeverity.ERR)
+        # !!!
+        # 2019-10-18
+        # NOTE: with the new TANGO/PyTango images release (PyTango 9.3.1, TANGO 9.3.3, numpy 1.17.2)
+        # the issue of "DeviceAttribute object has no attribute 'value'" has been resolved. Now
+        # a TANGO RO attribute initializaed to an empty list (see self._available_receptorIDs), 
+        # returns a NoneType object, as happed before with PyTango 9.2.5, TANGO 9.2.5 images.
+        # The beaviour now is coherent, but I don't revert to the old code: this methods keep returning
+        # an array with one element = 0 when no receptors are available.
         if len(self._available_receptorIDs) == 0:
             return [0]
         return self._available_receptorIDs

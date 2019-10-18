@@ -1497,8 +1497,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             # 09/20/2019
             # NB: the previous statement is true for the images of Tango and Pytango
             # 9.2.5, with PyTango not compiled with numpy support!!!
-            # After moving to TANGO and PyTango 9.3 (new images, PyTango has benne compiled with numpy support!) 
-            # if there is no available receptor the call to cspMasterProxy.availableReceptorIDs returns an array= [0]. 
+            # After moving to TANGO and PyTango 9.3.0 (new images, PyTango has been compiled with numpy support!) 
+            # if there is no available receptor the call to cspMasterProxy.availableReceptorIDs returns 
+            # an array= [0]. 
             # The length of the array is 1 and its value is 0.
             # Checks on available_receptors need to be changed (see below).
             #!!!!!!!!!!!!!!!!!
