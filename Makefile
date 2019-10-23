@@ -12,7 +12,7 @@
 #
 
 DOCKER_REGISTRY_USER:=ska-docker
-PROJECT = csplmc
+PROJECT = csplmc-fault
 
 #
 # include makefile to pick up the standard Make targets, e.g., 'make build'

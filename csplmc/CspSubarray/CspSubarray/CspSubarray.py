@@ -802,6 +802,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     *_root_att*: mid_csp_cbf/sub_elt/subarray_N/cbfOutputLinksDistribution
     """
 
+    injectFailConfigure = attribute(name="injectFailConfigure",label="injectFailConfigure",
+        forwarded=True
+    )
+
     #
     # These attributes are not defined in CbfMaster.
     #fspState = attribute(name="fspState", label="fspState",

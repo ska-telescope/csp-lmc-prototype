@@ -124,7 +124,7 @@
       </argout>
       <status abstract="false" inherited="true" concrete="true"/>
     </commands>
-    <commands name="EndScan" description="Change obsState to IDLE." execMethod="end_sb" displayLevel="OPERATOR" polledPeriod="0">
+    <commands name="EndScan" description="Change obsState to IDLE." execMethod="end_scan" displayLevel="OPERATOR" polledPeriod="0">
       <argin description="">
         <type xsi:type="pogoDsl:VoidType"/>
       </argin>
@@ -313,14 +313,14 @@
       </argout>
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
     </commands>
-    <commands name="EndSB" description="Set the subarray obsState to IDLE." execMethod="go_to_idle" displayLevel="OPERATOR" polledPeriod="0" isDynamic="false">
+    <commands name="EndSB" description="Set the subarray obsState to IDLE." execMethod="end_sb" displayLevel="OPERATOR" polledPeriod="0">
       <argin description="">
         <type xsi:type="pogoDsl:VoidType"/>
       </argin>
       <argout description="">
         <type xsi:type="pogoDsl:VoidType"/>
       </argout>
-      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+      <status abstract="false" inherited="true" concrete="true" concreteHere="true"/>
     </commands>
     <attributes name="activationTime" attType="Scalar" rwType="READ" displayLevel="OPERATOR" polledPeriod="1000" maxX="" maxY="" allocReadMember="true">
       <dataType xsi:type="pogoDsl:DoubleType"/>
@@ -637,6 +637,9 @@
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
     </forwardedAttributes>
     <forwardedAttributes name="cbfOutputLink" label="cbfOutputLink">
+      <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
+    </forwardedAttributes>
+    <forwardedAttributes name="injectFailConfigure" label="injectFailConfigure">
       <status abstract="false" inherited="false" concrete="true" concreteHere="true"/>
     </forwardedAttributes>
     <states name="ON" description="This state could have been called OK or OPERATIONAL. It means that the device is in its operational state. (E.g. the power supply is giving its nominal current, th motor is ON and ready to move, the instrument is operating). This state is modified by the Attribute alarm checking of the DeviceImpl:dev_state method. i.e. if the State is ON and one attribute has its quality factor to ATTR_WARNING or ATTR_ALARM, then the State is modified to ALARM.">

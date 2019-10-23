@@ -53,7 +53,7 @@ services:
 
 
   cbfsubarray01:
-    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs-fault:latest
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}cbfsubarray01
     depends_on:
@@ -75,7 +75,7 @@ services:
 
 
   cbfsubarray02:
-    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs-fault:latest
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}cbfsubarray02
     depends_on:
@@ -97,7 +97,7 @@ services:
 
 
   vcc001:
-    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs-fault:latest
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}vcc001
     depends_on:
@@ -118,7 +118,7 @@ services:
 
 
   vcc002:
-    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs-fault:latest
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}vcc002
     depends_on:
@@ -139,7 +139,7 @@ services:
 
 
   vcc003:
-    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs-fault:latest
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}vcc003
     depends_on:
@@ -160,7 +160,7 @@ services:
 
 
   vcc004:
-    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs-fault:latest
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}vcc004
     depends_on:
@@ -181,7 +181,7 @@ services:
 
 
   fsp01:
-    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs-fault:latest
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}fsp01
     depends_on:
@@ -230,7 +230,7 @@ services:
 
 
   fsp04:
-    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs:latest
+    image: ${DOCKER_REGISTRY_HOST}/${DOCKER_REGISTRY_USER}/mid-cbf-mcs-fault:latest
     network_mode: ${NETWORK_MODE}
     container_name: ${CONTAINER_NAME_PREFIX}fsp04
     depends_on:

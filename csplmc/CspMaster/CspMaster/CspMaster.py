@@ -17,6 +17,10 @@ from __future__ import absolute_import
 import sys
 import os
 from future.utils import with_metaclass
+import threading 
+import datetime
+import time
+import json
 # PROTECTED REGION END# //CspMaster.standardlibray_import
 
 # tango imports
@@ -332,14 +336,14 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         Args:
             subelement_name : the FQDN of the sub-element
         Returns:
-            True if the connection with the subarray is established, False otherwise
+            True if the connection with the sub-element master is established, False otherwise
         """
         try:
             proxy = self._se_proxies[subelement_name]
             proxy.ping()
         except KeyError as key_err: 
             # Raised when a mapping (dictionary) key is not found in the set of existing keys.
-            # no proxy registered for the suelement device
+            # no proxy registered for the subelement device
             proxy = tango.DeviceProxy(subelement_name)
             proxy.ping()
             self._se_proxies[subelement_name] = proxy
@@ -1045,6 +1049,9 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     *__root_att*: /mid_csp_cbf/sub_elt/master/reportVCCSubarrayMembership
     """
+    injectFailConfigure = attribute(name="injectFailConfigure", label="injectFailConfigure",
+        forwarded=True
+    )
 
     # ---------------
     # General methods
@@ -1117,6 +1124,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         self.__create_search_beam_group()
         self.__create_timing_beam_group()
         self.__create_vlbi_beam_group()
+        starting_time = datetime.datetime.now()
+        self.dev_logging("CspMaster started at time:{}".format(starting_time), tango.LogLevel.LOG_ERROR)
         # PROTECTED REGION END #    //  CspMaster.init_device
 
     def always_executed_hook(self):
@@ -2029,6 +2038,101 @@ If the array length is > 1, each array element specifies the FQDN of the\
             tango.Except.throw_exception("Command failed", err_msg,
                                          "Standby command execution", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.Standby
+
+    def __hangup_device(self, device_name, command_name): 
+        """
+        Timer callback function
+        Args:
+            device_name: the subarray device name 
+            command_name: the admin command to execute on the device
+        """
+        try: 
+            # open a proxy to the dserver of the selected cbf subarray to send administrative commands
+            # DevRestart (device_name) : restart a device in a multi class server
+            # Kill: kill the device server
+            # RestartServer: restart the device server this command is not used because it soe not work: 
+            # it kills the server but it is not able to restart it
+            self.dev_logging("Issuing command {} to device {}".format(command_name, device_name),
+                             tango.LogLevel.LOG_WARN) 
+            # open a proxy to the selected device
+            proxy = tango.DeviceProxy(device_name)
+            self.dev_logging("Device Proxy:{}".format(proxy), 
+                             tango.LogLevel.LOG_WARN) 
+            proxy.ping()
+            # open a proxy to the adminstrative server
+            dserver_proxy = tango.DeviceProxy(proxy.adm_name())
+            self.dev_logging("dserver_proxy: {}".format(dserver_proxy),
+                             tango.LogLevel.LOG_WARN) 
+            dserver_proxy.ping()
+            self.dev_logging("Issuing command {} on {}".format(command_name,
+                             proxy.adm_name()), tango.LogLevel.LOG_WARN) 
+            if command_name == "DevRestart":
+                dserver_proxy.command_inout("DevRestart", device_name)
+            else:
+                dserver_proxy.command_inout_asynch(command_name)
+        except tango.DevFailed as df:
+            log_msg = ("hangup_device:" + 
+                       df.args[0].reason + 
+                       " " + df.args[0].desc
+                      )
+            self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+        except Exception as e:
+            self.dev_logging(str(e), tango.LogLevel.LOG_ERROR)
+
+    @command(
+    dtype_in='str',
+    )
+    @DebugIt()
+    def HangUpCspSubarray(self, argin):
+        """
+        *Class method*
+        Runtime failure Injection
+        The method uses a software trigger (timer) to inject a fault while the software is running.
+        Args:
+            argin: a Json string:
+            {"delay":5, "device_name":"mid_csp_cbf/sub_elt/subarray_01,"admin_cmd":"DevRestart"}
+            delay: the software trigger to inject failure is executed after this time (specified in sec)
+            device_name: the subarray device name
+            admin_cmd: the administration command to execute on the device
+        Returns:
+            None
+        Raises:
+            tango.DevFailed: if command fails
+
+        """
+        # PROTECTED REGION ID(CspMaster.HangUpCbfSubarray) ENABLED START #
+        # set default values for input arguments
+        try:
+            argin = json.loads(argin)
+        except json.JSONDecodeError:  # argument not a valid JSON object
+            msg = "Not valid JSON object"
+            tango.Except.throw_exception("HangUpSubarray command failed", msg,
+                                         "Command()", tango.ErrSeverity.ERR)
+        # retrieve information from the Json string
+        try:
+            command_name = argin["admin_cmd"]
+            device_name = argin["device_name"]
+            elapsed_time = int(argin["delay"])
+        except KeyError as key_err:
+            msg = "No key {} specified in input string!".format(str(key_err))
+            tango.Except.throw_exception("HangUpSubarray command failed", msg,
+                                         "Command()", tango.ErrSeverity.ERR)
+
+        if command_name.lower() not in ["kill", "devrestart"]:
+            msg = "Invalid command {}".format(command_name)
+            tango.Except.throw_exception("Command failed", msg, "Command()", tango.ErrSeverity.ERR)
+        if device_name not in ['mid_csp/elt/subarray_01', 'mid_csp/elt/subarray_02', 
+                'mid_csp_cbf/sub_elt/subarray_01', 'mid_csp_cbf/sub_elt/subarray_02']:
+            msg = "Invalid device_name {}".format(device_name)
+            tango.Except.throw_exception("Command failed", 
+                                         "HangUpCspSubarray failure:invalid device name",
+                                         "Command()", tango.ErrSeverity.ERR)
+        self.dev_logging("Calling timer function {} {} {}".format(elapsed_time, 
+                         device_name, command_name), tango.LogLevel.LOG_WARN)
+        thread = threading.Timer(elapsed_time, self.__hangup_device, 
+                                 [device_name, command_name])
+        thread.start()
+        # PROTECTED REGION END #    //  CspMaster.HangUpCbfSubarray
 
 # ----------
 # Run server
