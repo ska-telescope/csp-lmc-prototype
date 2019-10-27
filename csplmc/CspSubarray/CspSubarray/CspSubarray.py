@@ -19,6 +19,7 @@ from __future__ import absolute_import
 import sys
 import os
 from future.utils import with_metaclass
+import datetime
 # PROTECTED REGION END# //CspMaster.standardlibray_import
 
 # tango imports
@@ -805,6 +806,13 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     injectFailConfigure = attribute(name="injectFailConfigure",label="injectFailConfigure",
         forwarded=True
     )
+    """
+    Enable/Disable runtime failure during subarray configuration.
+    
+    *Forwarded attribute*
+
+    *_root_att*: mid_csp_cbf/sub_elt/subarray_N/injectFailConfigure
+    """
 
     #
     # These attributes are not defined in CbfMaster.
@@ -839,6 +847,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         self.set_state(tango.DevState.INIT)
         self._health_state = HealthState.UNKNOWN.value
         self._admin_mode   = AdminMode.ONLINE.value
+        # set storage and element logging level
+        self._storage_logging_level = int(tango.LogLevel.LOG_INFO)
+        self._element_logging_level = int(tango.LogLevel.LOG_INFO)
+
+        self.dev_logging("Init device at time:{}".format(datetime.datetime.now()),
+                         tango.LogLevel.LOG_WARN)
         # NOTE: need to adjust SKAObsDevice class because some of its
         # attributes (such as obs_state, obs_mode and command_progress) are not 
         # visibile from the derived classes!!
@@ -888,9 +902,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # initialize proxy to PstMaster device
         self._pstMasterProxy = 0
         self._pstAddress = ''
-        # set storage and element logging level
-        self._storage_logging_level = int(tango.LogLevel.LOG_INFO)
-        self._element_logging_level = int(tango.LogLevel.LOG_INFO)
         # build the sub-element sub-array FQDNs
         if self._subarray_id < 10:
             self._cbf_subarray_fqdn = self.CbfSubarrayPrefix + "0" + str(self._subarray_id)
@@ -919,16 +930,28 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     def delete_device(self):
         # PROTECTED REGION ID(CspSubarray.delete_device) ENABLED START #
-
+        self.dev_logging("Deleteing device at time:{}".format(datetime.datetime.now()),
+                         tango.LogLevel.LOG_WARN)
         #release the allocated event resources
         for fqdn in self._se_subarrays_fqdn:
             event_to_remove = []
             try:
+                # issue the EndSB command on the Subarray of all the sub-elements
+                self.dev_logging("Call EndSB on dubarray {}".format(fqdn),
+                                 tango.LogLevel.LOG_WARN)
+                self._se_subarrays_proxies[fqdn].EndSb()
+                # issue the ReleaseAllReceptors on the Cbf Subarray
+                # NOTE: the CbfSubarray EndSb() method releases all the FSP
+                # devices assigned to the subarray.
+                if "mid_csp_cbf" in fqdn.split('/'):
+                    self._se_subarrays_proxies[fqdn].RemoveAllReceptors()
+                    self.dev_logging("Call RemoveAllReceptors on subarray {}".format(fqdn), 
+                                         tango.LogLevel.LOG_WARN)
                 for event_id in self._se_subarray_event_id[fqdn]:
                     try:
                         self._se_subarrays_proxies[fqdn].unsubscribe_event(event_id)
                         #self._se_subarray_event_id[fqdn].remove(event_id)
-                        # in Pyton3 can't remove the element from the dictionary while looping on it.
+                        # in Python3 can't remove the element from the dictionary while looping on it.
                         # Store the unsubscribed events in a temporary list and remove them later.
                         event_to_remove.append(event_id)
                     except tango.DevFailed as df:
@@ -949,13 +972,15 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                 else:
                     # delete the dictionary entry 
                     self._se_subarray_event_id.pop(fqdn)
+            except tango.DevFailed as df:
+                msg = "Error in {}: {}". format(df.args[0].origin, df.args[0].desc)
+                self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
             except KeyError as key_err:
                 msg = " Can't retrieve the information of key {}".format(key_err)
                 self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
         # clear the subarrays list and dictionary            
         self._se_subarrays_fqdn.clear()
         self._se_subarrays_proxies.clear()
-
         # PROTECTED REGION END #    //  CspSubarray.delete_device
 
     # ------------------
