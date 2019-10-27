@@ -1049,10 +1049,6 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     *__root_att*: /mid_csp_cbf/sub_elt/master/reportVCCSubarrayMembership
     """
-    injectFailConfigure = attribute(name="injectFailConfigure", label="injectFailConfigure",
-        forwarded=True
-    )
-
     # ---------------
     # General methods
     # ---------------
@@ -2069,7 +2065,7 @@ If the array length is > 1, each array element specifies the FQDN of the\
             if command_name == "DevRestart":
                 dserver_proxy.command_inout("DevRestart", device_name)
             else:
-                dserver_proxy.command_inout_asynch(command_name)
+                dserver_proxy.command_inout(command_name)
         except tango.DevFailed as df:
             log_msg = ("hangup_device:" + 
                        df.args[0].reason + 
