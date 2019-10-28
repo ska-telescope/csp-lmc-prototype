@@ -930,23 +930,27 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     def delete_device(self):
         # PROTECTED REGION ID(CspSubarray.delete_device) ENABLED START #
-        self.dev_logging("Deleteing device at time:{}".format(datetime.datetime.now()),
+        self.dev_logging("Deleting device at time:{}".format(datetime.datetime.now()),
                          tango.LogLevel.LOG_WARN)
         #release the allocated event resources
         for fqdn in self._se_subarrays_fqdn:
             event_to_remove = []
             try:
                 # issue the EndSB command on the Subarray of all the sub-elements
-                self.dev_logging("Call EndSB on dubarray {}".format(fqdn),
+                # NOTE: the EndSB() method is executed only if the Subarray ObState is 
+                #       in [READY, IDLE]
+                # TODO: handle the cases with Subarray ObState in [CONFIGURING, SCANNING]
+                #       (abort configuration/scan?)
+                self.dev_logging("Call EndSB on subarray {}".format(fqdn),
                                  tango.LogLevel.LOG_WARN)
-                self._se_subarrays_proxies[fqdn].EndSb()
+                self._se_subarrays_proxies[fqdn].EndSB()
                 # issue the ReleaseAllReceptors on the Cbf Subarray
                 # NOTE: the CbfSubarray EndSb() method releases all the FSP
                 # devices assigned to the subarray.
                 if "mid_csp_cbf" in fqdn.split('/'):
                     self._se_subarrays_proxies[fqdn].RemoveAllReceptors()
-                    self.dev_logging("Call RemoveAllReceptors on subarray {}".format(fqdn), 
-                                         tango.LogLevel.LOG_WARN)
+                    self.dev_logging("Call RemoveAllReceptors on subarray {}".format(fqdn),
+                                     tango.LogLevel.LOG_WARN)
                 for event_id in self._se_subarray_event_id[fqdn]:
                     try:
                         self._se_subarrays_proxies[fqdn].unsubscribe_event(event_id)
@@ -1361,6 +1365,20 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     # Commands
     # --------
 
+    def is_EndScan_allowed(self):
+        """
+        *TANGO is_allowed method*: filter the external request depending on the current device state.\n
+        Check if the Scan method can be issued on the subarray.\n
+        The Scan() method can be issue on a subarray if its *State* is ON.
+
+        Returns:
+            True if the command can be executed, otherwise False
+        """
+        #TODO: checks other states?
+        if self.get_state() in [tango.DevState.ON]:
+            return True
+        return False
+
     @command(
     )
     @DebugIt()
@@ -1412,6 +1430,21 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             tango.Except.throw_exception("Command failed", log_msg,
                                          "EndScan", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.EndScan
+
+    def is_Scan_allowed(self):
+        """
+        *TANGO is_allowed method*: filter the external request depending on the current device state.\n
+        Check if the Scan method can be issued on the subarray.\n
+        A scan configuration can be performed when the subarray *State* is ON (that is, \
+        at least one receptor is assigned to it)
+
+        Returns:
+            True if the command can be executed, otherwise False
+        """
+        #TODO: checks other states?
+        if self.get_state() in [tango.DevState.ON]:
+            return True
+        return False
 
     @command(
         dtype_in='str',
@@ -1465,6 +1498,19 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             tango.Except.throw_exception("Command failed", log_msg,
                                          "Scan", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.Scan
+
+    def is_AddReceptors_allowed(self):
+        """
+        *TANGO is_allowed method*: filter the external request depending on the current device state.\n
+        Check if the AddReceptors method can be issued on the subarray.\n
+        Receptors can be added to a Subarray when its *State* is OFF or ON.
+
+        Returns:
+            True if the command can be executed, otherwise False
+        """
+        if self.dev_state() in [tango.DevState.OFF, tango.DevState.ON]:
+            return True
+        return False
 
     @command(
     dtype_in=('uint16',), 
@@ -1607,6 +1653,19 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                                          "AddReceptors", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.AddReceptors
 
+    def is_RemoveReceptors_allowed(self):
+        """
+        *TANGO is_allowed method*: filter the external request depending on the current device state.\n
+        Check if the ConfigureScan method can be issued on the subarray.\n
+        Resources can be removed from a subarray when its *State* is ON-
+
+        Returns:
+            True if the command can be executed, otherwise False
+        """
+        if self.get_state() in [tango.DevState.ON]:
+            return True
+        return False
+
     @command(
     dtype_in=('uint16',), 
     doc_in="The list with the receptor IDs to remove", 
@@ -1628,7 +1687,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # PROTECTED REGION ID(CspSubarray.RemoveReceptors) ENABLED START #
 
         # Check if the RemoveReceptors command can be executed. Receptors can be removed from a subarray
-        # only when its obsState is IDLE or READY. 
+        # only when its obsState is IDLE. 
         if self._obs_state != ObsState.IDLE.value:
             #get the obs_state label
             for obs_state in ObsState:
@@ -1679,6 +1738,19 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                                          "RemoveReceptors", tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspSubarray.RemoveReceptors
 
+    def is_RemoveAllReceptors_allowed(self):
+        """
+        *TANGO is_allowed method*: filter the external request depending on the current device state.\n
+        Check if the ConfigureScan method can be issued on the subarray.\n
+        Resources can be removed from a subarray when its *State* is ON-
+
+        Returns:
+            True if the command can be executed, otherwise False
+        """
+        if self.get_state() in [tango.DevState.ON]:
+            return True
+        return False
+
     @command(
     )
     @DebugIt()
@@ -1696,7 +1768,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # PROTECTED REGION ID(CspSubarray.RemoveAllReceptors) ENABLED START #
 
         # Check if the RemoveAllReceptors command can be executed. Receptors can be removed from a subarray
-        # only when its obsState is IDLE or READY. 
+        # only when its obsState is IDLE. 
         if self._obs_state != ObsState.IDLE.value:
             #get the obs_state label
             for obs_state in ObsState:
@@ -1753,9 +1825,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             True if the command can be executed, otherwise False
         """
         #TODO: checks other states?
-        if self.get_state() in [tango.DevState.OFF]:
-            return False
-        return True
+        if self.get_state() in [tango.DevState.ON]:
+            return True
+        return False
 
     @command(
     dtype_in='str', 
@@ -2132,6 +2204,19 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # PROTECTED REGION ID(CspSubarray.RemoveVlbiBeams) ENABLED START #
         pass
         # PROTECTED REGION END #    //  CspSubarray.RemoveVlbiBeams
+
+    def is_EndSB_allowed(self): 
+        """
+        *TANGO is_allowed method*: filter the external request depending on the current device state.\n
+        Check if the EndSB method can be issued on the subarray.\n
+        The EndSB method cab be issue on a subarrays when its *State* is ON-
+
+        Returns:
+            True if the command can be executed, otherwise False
+        """
+        if self.dev_state() in [tango.DevState.ON]:
+            return True
+        return False
 
     @command(
     )
