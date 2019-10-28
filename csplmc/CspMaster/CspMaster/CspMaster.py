@@ -2043,11 +2043,11 @@ If the array length is > 1, each array element specifies the FQDN of the\
             command_name: the admin command to execute on the device
         """
         try: 
-            # open a proxy to the dserver of the selected cbf subarray to send administrative commands
+            # open a proxy to the dserver of the selected cbf subarray to send
+            # administrative commands
             # DevRestart (device_name) : restart a device in a multi class server
             # Kill: kill the device server
-            # RestartServer: restart the device server this command is not used because it soe not work: 
-            # it kills the server but it is not able to restart it
+            # RestartServer: restart the device server
             self.dev_logging("Issuing command {} to device {}".format(command_name, device_name),
                              tango.LogLevel.LOG_WARN) 
             # open a proxy to the selected device
@@ -2062,10 +2062,16 @@ If the array length is > 1, each array element specifies the FQDN of the\
             dserver_proxy.ping()
             self.dev_logging("Issuing command {} on {}".format(command_name,
                              proxy.adm_name()), tango.LogLevel.LOG_WARN) 
-            if command_name == "DevRestart":
+            # check for the admin command to execute
+            if command_name.lower() == "devrestart":
                 dserver_proxy.command_inout("DevRestart", device_name)
+            elif command_name.lower() == "restartserver":
+                dserver_proxy.command_inout("RestartServer")
+            elif command_name.lower() == "kill":
+                dserver_proxy.command_inout("Kill")
             else:
-                dserver_proxy.command_inout(command_name)
+                log_msg = ("hangup_device: Received invalid command{}".format(command_name)) 
+                self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
         except tango.DevFailed as df:
             log_msg = ("hangup_device:" + 
                        df.args[0].reason + 
@@ -2083,18 +2089,25 @@ If the array length is > 1, each array element specifies the FQDN of the\
         """
         *Class method*
         Runtime failure Injection
-        The method uses a software trigger (timer) to inject a fault while the software is running.
+        The method uses a software trigger (timer) to inject a fault while 
+        the software is running.
         Args:
             argin: a Json string:
-            {"delay":5, "device_name":"mid_csp_cbf/sub_elt/subarray_01,"admin_cmd":"DevRestart"}
-            delay: the software trigger to inject failure is executed after this time (specified in sec)
-            device_name: the subarray device name
-            admin_cmd: the administration command to execute on the device
+            {"delay":5, "device_name":"mid_csp_cbf/sub_elt/subarray_01,
+             "admin_cmd":"DevRestart"}
+            delay: the software trigger to inject failure is executed 
+                   after this time (specified in sec)
+            device_name: the subarray device name.
+                       Accepted values are:'mid_csp/elt/subarray_01',
+                               'mid_csp/elt/subarray_02',
+                               'mid_csp_cbf/sub_elt/subarray_01',
+                               'mid_csp_cbf/sub_elt/subarray_02'
+            admin_cmd: the administration command to execute on the device.
+                       Accepted values are: Kill, DevRestart, RestartServer
         Returns:
             None
         Raises:
             tango.DevFailed: if command fails
-
         """
         # PROTECTED REGION ID(CspMaster.HangUpCbfSubarray) ENABLED START #
         # set default values for input arguments
@@ -2114,11 +2127,15 @@ If the array length is > 1, each array element specifies the FQDN of the\
             tango.Except.throw_exception("HangUpSubarray command failed", msg,
                                          "Command()", tango.ErrSeverity.ERR)
 
-        if command_name.lower() not in ["kill", "devrestart"]:
+        if command_name.lower() not in ["kill", "devrestart", "restartserver"]:
             msg = "Invalid command {}".format(command_name)
-            tango.Except.throw_exception("Command failed", msg, "Command()", tango.ErrSeverity.ERR)
-        if device_name not in ['mid_csp/elt/subarray_01', 'mid_csp/elt/subarray_02', 
-                'mid_csp_cbf/sub_elt/subarray_01', 'mid_csp_cbf/sub_elt/subarray_02']:
+            tango.Except.throw_exception("Command failed", msg, "Command()", 
+                                         tango.ErrSeverity.ERR)
+        if device_name not in ['mid_csp/elt/subarray_01',
+                               'mid_csp/elt/subarray_02',
+                               'mid_csp_cbf/sub_elt/subarray_01',
+                               'mid_csp_cbf/sub_elt/subarray_02'
+                               ]:
             msg = "Invalid device_name {}".format(device_name)
             tango.Except.throw_exception("Command failed", 
                                          "HangUpCspSubarray failure:invalid device name",
