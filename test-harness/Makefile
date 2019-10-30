@@ -5,7 +5,7 @@
 SHELL = /bin/bash
 .SHELLFLAGS = -o pipefail -c
 
-all: test
+all: test lint
 
 # wait for the device to be available before beginning the test
 # A temporary volume is mounted at /build when 'make test' is executing.
@@ -20,7 +20,6 @@ test:
 	retry --max=10 -- tango_admin --ping-device mid_csp/elt/subarray_02
 	cd /app/csplmc/CspSubarray && python setup.py test | tee setup_py_test.stdout
 	cd /app/csplmc/CspMaster && python setup.py test | tee setup_py_test.stdout
-	cd /app && ./code-analysis.sh | tee code_analysis.stdout
 	if [ -d /build ]; then \
 		mv /app/csplmc/CspMaster/setup_py_test.stdout /build/csp_master_setup_test.stdout; \
 		mv /app/csplmc/CspMaster/htmlcov /build/csp_master_htmlcov; \
@@ -28,7 +27,20 @@ test:
 		mv /app/csplmc/CspSubarray/setup_py_test.stdout /build/csp_subarray_setup_test.stdout; \
 		mv /app/csplmc/CspSubarray/htmlcov /build/csp_subarray_htmlcov; \
 		mv /app/csplmc/CspSubarray/coverage.xml /build/csp_subarray_coverage.xml; \
+	fi;
+lint:
+	retry --max=10 -- tango_admin --ping-device mid_csp_cbf/sub_elt/master
+	retry --max=10 -- tango_admin --ping-device mid_csp_cbf/sub_elt/subarray_01
+	retry --max=10 -- tango_admin --ping-device mid_csp_cbf/sub_elt/subarray_02
+	retry --max=10 -- tango_admin --ping-device mid_csp/elt/master
+	retry --max=10 -- tango_admin --ping-device mid_csp/elt/subarray_01
+	retry --max=10 -- tango_admin --ping-device mid_csp/elt/subarray_02
+	# pylint needs to run twice
+	cd /app && pylint -f colorized csplmc| tee code_analysis.stdout; \
+	cd /app && pylint csplmc > lint_output.xml; \
+	if [ -d /build ]; then \
 		mv /app/code_analysis.stdout /build/csplmc_code_analysis.stdout; \
+		mv /app/lint_output.xml /build/lint_output.xml; \
 	fi;
 
-.PHONY: all test
+.PHONY: all test lint

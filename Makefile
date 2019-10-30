@@ -122,7 +122,7 @@ make = tar -c test-harness/ | \
 	   make TANGO_HOST=$(TANGO_HOST) $1"
 
 test: DOCKER_RUN_ARGS = --volumes-from=$(BUILD)
-test: up ## test the application
+test: build up ## test the application
 	@echo "BUILD: $(BUILD)"
 	$(INIT_CACHE)
 	$(call make,test); \
@@ -133,6 +133,15 @@ test: up ## test the application
 	  docker rm -f -v $(BUILD); \
 	  $(MAKE) down; \
 	  exit $$status
+
+lint: DOCKER_RUN_ARGS = --volumes-from=$(BUILD) 
+lint: build up ## lint the application (static code analysis)
+	$(INIT_CACHE)
+	$(call make,lint); \
+	status=$$?; \
+	docker cp $(BUILD):/build .; \
+	$(MAKE) down; \
+	exit $$status	  
 
 pull:  ## download the application image
 	docker pull $(IMAGE_TO_TEST)

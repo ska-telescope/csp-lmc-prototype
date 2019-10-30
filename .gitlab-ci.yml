@@ -36,6 +36,7 @@ test:
   script:
     - make build
     - make test
+    - make lint
   artifacts:
     paths:
       - build
@@ -53,11 +54,16 @@ pages:
   dependencies: 
      - test
   script:
-   - mkdir .public
+   - mkdir -p .public/reports  
    - cp build/csp*.* .public
    - cp -r build/csp_master_htmlcov/* .public
    - cp -r build/csp_subarray_htmlcov/* .public
+   - cp temp/ci-metrics-mock.json ci-metrics.json
+   - cp build/lint_output.xml .public/reports
+   - cp build/csp_master_coverage.xml .public/reports
+   - cp build/csp_subarray_coverage.xml .public/reports
    - mv .public public
+   - curl -s https://gitlab.com/ska-telescope/ci-metrics-utilities/raw/master/scripts/ci-badges-func.sh | sh
   artifacts:
     paths:
       - public
