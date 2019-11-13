@@ -169,6 +169,11 @@ class TestCspMaster(object):
 
     def test_On_invalid_argument(self, csp_master):
         """Test for the execution of the On command with a wrong input argument"""
+        #NOTE: here adminMode is OFFLINE for  the previous test. To
+        # execute command on the device It has to be set to ONLINE
+        csp_master.adminMode = AdminMode.ONLINE.value
+        time.sleep(3)
+        assert csp_master.adminMode.value == AdminMode.ONLINE
         with pytest.raises(tango.DevFailed) as df:
             argin = ["cbf", ]
             csp_master.On(argin)

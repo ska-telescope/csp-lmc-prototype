@@ -13,7 +13,6 @@
 import sys
 import os
 import time
-import random
 
 # Path
 file_path = os.path.dirname(os.path.abspath(__file__))
@@ -41,9 +40,8 @@ class TestCspSubarray_two_devices(object):
 
     def test_add_receptors_to_sub1_and_sub2(self, csp_subarray01,csp_subarray02, csp_master, tm_leafnode1):
         """
-        Test the complete deallocation of receptors from a
-        CspSubarray when the subarray from ObsMode READY transits to
-        IDLE.
+        Test on allocation of receptors to two subarrays.
+        Both subarrays transit to State ON after assignment.
         """
         csp_subarray01.Init()
         time.sleep(2)
@@ -69,6 +67,9 @@ class TestCspSubarray_two_devices(object):
         assert csp_subarray02.state() == tango.DevState.ON
 
     def test_configureScan_sub1_and_sub2(self, csp_subarray01, csp_subarray02, csp_master):
+        """
+        Test scan configuration for two subarrays.
+        """
         assert csp_subarray01.state() == tango.DevState.ON  
         assert csp_subarray02.state() == tango.DevState.ON
         filename1 = os.path.join(commons_pkg_path, "test_ConfigureScan_basic.json")
@@ -85,6 +86,9 @@ class TestCspSubarray_two_devices(object):
         f2.close()
 
     def test_start_scan_sub1_and_sub2(self, csp_subarray01, csp_subarray02):
+        """
+        Test Scan method for two subarrays.
+        """
         assert csp_subarray01.obsState == ObsState.READY.value
         assert csp_subarray02.obsState == ObsState.READY.value
         csp_subarray01.Scan(" ")
@@ -94,6 +98,9 @@ class TestCspSubarray_two_devices(object):
         assert csp_subarray02.obsState == ObsState.SCANNING.value
 
     def test_end_scan(self, csp_subarray01, csp_subarray02):
+        """
+        Test EndScan method for two subarrays.
+        """
         assert csp_subarray01.obsState == ObsState.SCANNING.value
         assert csp_subarray02.obsState == ObsState.SCANNING.value
         csp_subarray01.EndScan()

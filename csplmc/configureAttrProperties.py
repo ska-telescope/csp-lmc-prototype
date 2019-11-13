@@ -1,3 +1,6 @@
+# This script is used only when the CSP.LMC devices are run via
+# the start_prototype script.
+# Docker containers rely on dsconfig device to configure the TANGO Attribute properties.
 #!/usr/bin/env python
 from tango import AttributeProxy, ChangeEventInfo, AttributeInfoEx
 import json

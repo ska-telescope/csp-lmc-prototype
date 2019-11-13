@@ -1,3 +1,5 @@
+# This script is used only by the start_prototype script.
+# Docker containers rely on dsconfig device to configure the TANGO DB
 #!/usr/bin/env python
 from tango import Database, DbDevInfo
 from time import sleep

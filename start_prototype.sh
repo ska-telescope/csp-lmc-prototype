@@ -19,22 +19,6 @@ if [ $? -eq 0 ]; then
 	echo "Configuring Class/Device properties"
 	python csplmc/configureDevices.py 
 	sleep 2
-	# TANGO DB is running -> check for CbfTestMaster device existence
-	tango_admin --check-device mid_csp_cbf/sub_elt/master  >> /dev/null
-        if [ $? -eq 0 ]; then
-           echo "CbfTestMaster device already register in the TANGO DB"
-        else
-           echo  "Adding CbfTestMaster device to DB"
-	   tango_admin --add-server CbfTestMaster/test CbfTestMaster mid_csp_cbf/sub_elt/master
-	fi
-	echo "Starting the CbfTestMaster device"
-	python csplmc/CbfTestMaster/CbfTestMaster.py test >/dev/null 2>&1 &
-	pidof CbfTestMaster >> pid
-	if [ $? -lt 0 ]; then
-            echo "CbfTestMaster device failure"
-	else 
-	    sleep 1
-        fi 	    
 	# TANGO DB is running -> check for CspMaster device existence
 	tango_admin --check-device mid_csp/elt/master 
         if [ $? -eq 0 ]; then
@@ -44,10 +28,11 @@ if [ $? -eq 0 ]; then
 	   tango_admin --add-server CspMaster/csp CspMaster mid_csp/elt/master
 	fi
 	echo "Starting the CspMaster device"
-	python csplmc/CspMaster/CspMaster/CspMaster.py csp >/dev/null 2>&1 &
-	if [ $? -lt 0 ]; then
-            echo "CspMaster device failure"
-        fi 	    
+	# redirect standard error and standard output to a temporary file and on /dev/null
+	python csplmc/CspMaster/CspMaster/CspMaster.py csp  > tmp.txt 2>&1 >/dev/null &
+	sleep 3 
+        echo "$(<tmp.txt)"
+	rm tmp.txt
 	# check for CspSubarray1 device existence
 	tango_admin --check-device mid_csp/elt/subarray_01
         if [ $? -eq 0 ]; then
@@ -57,10 +42,11 @@ if [ $? -eq 0 ]; then
 	   tango_admin --add-server CspSubarray/sub1 CspSubarray mid_csp/elt/subarray_01
 	fi
 	echo "Starting the CspSubarray1 device"
-	python csplmc/CspSubarray/CspSubarray/CspSubarray.py sub1 >/dev/null 2>&1 &
-	if [ $? -lt 0 ]; then
-            echo "CspSubarray1 device failure"
-        fi 	    
+	# redirect standard error and standard output to a temporary file and on /dev/null
+	python csplmc/CspSubarray/CspSubarray/CspSubarray.py sub1  > tmp.txt 2>&1 >/dev/null &
+	sleep 3 
+        echo "$(< tmp.txt)"
+	rm tmp.txt
 	# check for jive tool 
         command_line="which $FILE"
 	return=`$command_line`

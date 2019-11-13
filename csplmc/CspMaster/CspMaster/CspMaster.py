@@ -17,6 +17,7 @@ from __future__ import absolute_import
 import sys
 import os
 from future.utils import with_metaclass
+from collections import defaultdict
 # PROTECTED REGION END# //CspMaster.standardlibray_import
 
 # tango imports
@@ -24,6 +25,7 @@ import tango
 from tango import DebugIt, EventType, DeviceProxy, AttrWriteType
 from tango.server import run, DeviceMeta, attribute, command, device_property
 
+# PROTECTED REGION ID (CspMaster.add_path) ENABLED START #
 # add the path to import global_enum package.
 file_path = os.path.dirname(os.path.abspath(__file__))
 commons_pkg_path = os.path.abspath(os.path.join(file_path, "../../commons"))
@@ -31,6 +33,7 @@ sys.path.insert(0, commons_pkg_path)
 #add the paht to import release file (!!)
 csplmc_path = os.path.abspath(os.path.join(file_path, "../../"))
 sys.path.insert(0, csplmc_path)
+# PROTECTED REGION END# //CspMaster.add_path
 
 # Additional import
 # PROTECTED REGION ID(CspMaster.additionnal_import) ENABLED START #
@@ -54,95 +57,59 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     # ---------------
     # Event Callback functions
     # ---------------
-    def seSCMCallback(self, evt):
+    def __seSCMCallback(self, evt):
         """
         Class private method.
-        Retrieve the values of the sub-element SCM attributes subscribed for change
-        event at device initialization.
+        Retrieve the values of the sub-element SCM attributes subscribed 
+        for change event at device initialization.
 
         :param evt: The event data
 
         :return: None
         """
-        unknown_device = False
-        if evt.err is False:
+        if not evt.err:
+            dev_name = evt.device.dev_name()
             try:
-                if "healthstate" in evt.attr_name:
-                    if self.CspMidCbf in evt.attr_name:
-                        self._cbf_health_state = evt.attr_value.value
-                    elif self.CspMidPss in evt.attr_name:
-                        self._pss_health_state = evt.attr_value.value
-                    elif self.CspMidPst in evt.attr_name:
-                        self._pst_health_state = evt.attr_value.value
+                if ((dev_name in self._se_fqdn) 
+                    and evt.attr_name.find(dev_name) > 0): 
+                    if evt.attr_value.name.lower() == "state": 
+                        self._se_state[dev_name] = evt.attr_value.value
+                    elif evt.attr_value.name.lower() == "healthstate":
+                        self._se_healthstate[dev_name] = evt.attr_value.value
+                    elif evt.attr_value.name.lower() == "adminmode":
+                        self._se_adminmode[dev_name] = evt.attr_value.value
                     else:
-                        # should NOT happen!
-                        unknown_device = True    
-                elif "state" in evt.attr_name:
-                    if self.CspMidCbf in evt.attr_name:
-                        self._cbf_state = evt.attr_value.value
-                    elif self.CspMidPss in evt.attr_name:
-                        self._pss_state = evt.attr_value.value
-                    elif self.CspMidPst in evt.attr_name:
-                        self._pst_state = evt.attr_value.value
-                    else:
-                        # should NOT happen!
-                        unknown_device = True    
-
-                elif "adminmode" in evt.attr_name: 
-                    if self.CspMidCbf in evt.attr_name:
-                        self._cbf_admin_mode = evt.attr_value.value
-                    elif self.CspMidPss in evt.attr_name:
-                            self._pss_admin_mode = evt.attr_value.value
-                    elif self.CspMidPst in evt.attr_name:
-                            self._pst_admin_mode = evt.attr_value.value
-                    else:
-                        # should NOT happen!
-                        unknown_device = True    
+                        log_msg = ("Attribute {} not still "
+                                   "handled".format(evt.attr_name))
+                        self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
                 else: 
-                    log_msg = "Attribute {} not still handled".format(evt.attr_name)
-                    self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-
-                if unknown_device == True:
-                    log_msg = "Unexpected change event for attribute: " + \
-                                  str(evt.attr_name)
+                    log_msg = ("Unexpected change event for"
+                               " attribute: {}".format(str(evt.attr_name)))
                     self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
                     return
 
-                log_msg = "New value for " + str(evt.attr_name) + " is " + \
-                          str(evt.attr_value.value) 
+                log_msg = "New value for {} is {}".format(str(evt.attr_name),
+                                                          str(evt.attr_value.value))
                 self.dev_logging(log_msg, tango.LogLevel.LOG_INFO)
                 # update CSP global state
-                if "state" in evt.attr_name:
+                if evt.attr_value.name.lower() in ["state","healthstate"]:
                     self.__set_csp_state()
             except tango.DevFailed as df:
-                self.dev_logging(str(df.args[0].desc), tango.LogLevel.LOG_ERR)
+                self.dev_logging(str(df.args[0].desc), tango.LogLevel.LOG_ERROR)
             except Exception as except_occurred:
-                self.dev_logging(str(except_occurred), tango.LogLevel.LOG_ERR)
+                self.dev_logging(str(except_occurred), tango.LogLevel.LOG_ERROR)
         else: 
             for item in evt.errors: 
                 # API_EventTimeout: if sub-element device not reachable it transits 
                 # to UNKNOWN state.
                 if item.reason == "API_EventTimeout":
-                    # CBF sub-element
-                    if self.CspMidCbf in evt.attr_name:
-                        self._cbf_state = tango.DevState.UNKNOWN
-                        self._cbf_health_state = HealthState.UNKNOWN.value
-                        if self._se_to_switch_off[self.CspMidCbf] == True:
-                            self._cbf_state = tango.DevState.OFF
-                    # PSS sub-element
-                    if self.CspMidPss in evt.attr_name:
-                        self._pss_state = tango.DevState.UNKNOWN
-                        self._pss_health_state = HealthState.UNKNOWN.value
-                        if self._se_to_switch_off[self.CspMidPss] == True:
-                            self._cbf_state = tango.DevState.OFF
-                    # PST sub-element
-                    if self.CspMidPst in evt.attr_name:
-                        self._pst_state = tango.DevState.UNKNOWN
-                        self._pst_health_state = HealthState.UNKNOWN.value
-                        if self._se_to_switch_off[self.CspMidPst] == True:
-                            self._cbf_state = tango.DevState.OFF
-                    # update the State and healthState of the CSP Element
-                    self.__set_csp_state()
+                    if evt.attr_name.find(dev_name) > 0: 
+                        self._se_state[dev_name] = tango.DevState.UNKNOWN
+                        self._se_healthstate[dev_name] = HealthState.UNKNOWN
+                        if self._se_to_switch_off[dev_name]:
+                            self._se_state[dev_name] = tango.DevState.OFF
+                        # update the State and healthState of the CSP Element
+                        self.__set_csp_state()
                 log_msg = item.reason + ": on attribute " + str(evt.attr_name)
                 self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
 
@@ -152,48 +119,56 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     def __set_csp_state(self):
         """
         Class private method.
-        Retrieve the State attribute of the CSP sub-elements and aggregate them to build 
-        up the CSP global state.
+        Retrieve the State attribute of the CSP sub-elements and aggregate 
+        them to build up the CSP global state.
 
         :param: None
 
         :return: None
         """
         self.__set_csp_health_state()
-        # CSP state reflects the status of CBF. Only if CBF is present CSP can work.
-        # The state of PSS and PST sub-elements only contributes to determine the CSP
-        # health state.
-        self.set_state(self._cbf_state)
+        # CSP state reflects the status of CBF. Only if CBF is present 
+        # CSP can work. The state of PSS and PST sub-elements only contributes
+        # to determine the CSP health state.
+        self.set_state(self._se_state[self.CspMidCbf])
 
     def __set_csp_health_state(self):
         """
         Class private method.
-        Retrieve the healthState attribute of the CSP sub-elements and aggregate them
-        to build up the CSP health state
+        Retrieve the healthState attribute of the CSP sub-elements and 
+        aggregate them to build up the CSP health state
 
         :param: None
 
         :return: None
         """
 
-        if (self._cbf_health_state == HealthState.OK.value) and \
-           (self._pst_health_state == HealthState.OK.value) and \
-           (self._pst_health_state == HealthState.OK.value):
-            self._health_state = HealthState.OK.value
-        elif (self._cbf_health_state == HealthState.UNKNOWN.value):
-            self._health_state = HealthState.UNKNOWN.value
-        elif (self._cbf_health_state == HealthState.FAILED.value):
-            self._health_state = HealthState.FAILED.value
+        # The whole CSP HealthState is OK only if:
+        # - all sub-elements are available 
+        # - each sub-element HealthState is OK
+        if (len(self._se_healthstate.values()) == 3 
+            and  list(self._se_healthstate.values()) == [HealthState.OK, 
+                                                         HealthState.OK, 
+                                                         HealthState.OK
+                                                        ]):
+             self._se_healthstate = HealthState.OK
+        # in all other case the HealthState depends on the CBF 
+        # sub-element HealthState
+        if self._se_healthstate[self.CspMidCbf] == HealthState.UNKNOWN:
+            self._health_state = HealthState.UNKNOWN
+        elif self._se_healthstate[self.CspMidCbf] == HealthState.FAILED:
+            self._health_state = HealthState.FAILED
         else:
-            self._health_state = HealthState.DEGRADED.value
+            self._health_state = HealthState.DEGRADED
 
-    def __get_maxnum_of_capabilities(self):
+    def __get_maxnum_of_beams_capabilities(self):
         """
         Class private method.
 
-        Retrieve the max number of CSP Capabilities for each capability type.\n
-        The couple [CapabilityType: num] is specified as TANGO Device Property.
-        Default values for Mid CSP are:\n
+        Retrieve the max number of CSP Capabilities for each capability
+        type.\n
+        The couple [CapabilityType: num] is specified as TANGO Device
+        Property. Default values for Mid CSP are:\n
         - Subarray      16 \n
         - SearchBeam  1500 \n
         - TimingBeam    16 \n
@@ -228,9 +203,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             except KeyError:  # not found in DB
                 self._subarrays_maxnum = const.NUM_OF_SUBARRAYS
         else:
-            self.dev_logging("MaxCapabilities device property not defined. \
-                              Use defaul values", tango.LogLevel.LOG_WARN)
-
+            self.dev_logging(("MaxCapabilities device property not defined."
+                              "Use defaul values"), tango.LogLevel.LOG_WARN)
     def __get_maxnum_of_receptors(self):
         """
         Get the maximum number of receptors that can be used for observations.
@@ -252,39 +226,50 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             self._receptors_maxnum = capability_dict["VCC"]
             self._receptorsMembership = [0]* self._receptors_maxnum
         except KeyError as key_err:
-            log_msg = "Error: no key found for " + str(key_err)
+            log_msg = "Error: no key found for {}".format(str(key_err))
             self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
 
         except AttributeError as attr_err:
-            log_msg = "Error reading{}: {}".format(str(attr_err.args[0]), attr_err.__doc__)
+            log_msg = "Error reading{}: {}".format(str(attr_err.args[0]),
+                                                   attr_err.__doc__)
             self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
         except tango.DevFailed as df:
             log_msg = "Error: " + str(df.args[0].reason)
             self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
 
-    def __init_capabilities(self):
+    def __init_beams_capabilities(self):
         """
         Class private method.
         Initialize the CSP capabilities State and Modes attributes.
         """
+        # get the max number of CSP Capabilities for each Csp capability type
+        self.__get_maxnum_of_beams_capabilities()
+        # set init values for SCM states of each beam capability type
         self._search_beams_state = [tango.DevState.UNKNOWN for i in range(self._search_beams_maxnum)]
-        self._timing_beams_state = [tango.DevState.UNKNOWN for i in range(self._timing_beams_maxnum)]
-        self._vlbi_beams_state = [tango.DevState.UNKNOWN for i in range(self._vlbi_beams_maxnum)]
-        self._search_beams_health_state = [HealthState.UNKNOWN for i in range(self._search_beams_maxnum)]
-        self._timing_beams_health_state = [HealthState.UNKNOWN for i in range(self._timing_beams_maxnum)]
-        self._vlbi_beams_health_state = [HealthState.UNKNOWN for i in range(self._vlbi_beams_maxnum)]
-        self._search_beams_admin = [AdminMode.ONLINE for i in range(self._search_beams_maxnum)]
-        self._timing_beams_admin = [AdminMode.ONLINE for i in range(self._timing_beams_maxnum)]
-        self._vlbi_beams_admin = [AdminMode.ONLINE for i in range(self._vlbi_beams_maxnum)]
-
+        self._timing_beams_state = [tango.DevState.UNKNOWN for i in range(self._timing_beams_maxnum)
+                                   ]
+        self._vlbi_beams_state = [tango.DevState.UNKNOWN for i in range(self._vlbi_beams_maxnum)
+                                 ]
+        self._search_beams_health_state = [HealthState.UNKNOWN for i in range(self._search_beams_maxnum)
+                                          ]
+        self._timing_beams_health_state = [HealthState.UNKNOWN for i in range(self._timing_beams_maxnum)
+                                          ]
+        self._vlbi_beams_health_state = [HealthState.UNKNOWN for i in range(self._vlbi_beams_maxnum)
+                                        ]
+        self._search_beams_admin = [AdminMode.ONLINE for i in range(self._search_beams_maxnum)
+                                   ]
+        self._timing_beams_admin = [AdminMode.ONLINE for i in range(self._timing_beams_maxnum)
+                                   ]
+        self._vlbi_beams_admin = [AdminMode.ONLINE for i in range(self._vlbi_beams_maxnum)
+                                 ]
 
     def __connect_to_subelements(self):
         """
         Class private method.
         Establish connection with each CSP sub-element.
-        If connection succeeds, the CspMaster device subscribes the State, healthState 
-        and adminMode attributes of each CSP Sub-element and registers a callback function
-        to handle the events (see seSCMCallback()).
+        If connection succeeds, the CspMaster device subscribes the State,
+        healthState and adminMode attributes of each CSP Sub-element and 
+        registers a callback function to handle the events (see __seSCMCallback()).
         Exceptions are logged.
 
         Returns:
@@ -304,46 +289,61 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 self._se_proxies[fqdn] = device_proxy
 
                 # Subscription of the sub-element State,healthState and adminMode
-                ev_id = device_proxy.subscribe_event("State", EventType.CHANGE_EVENT,
-                        self.seSCMCallback, stateless=True)
+                ev_id = device_proxy.subscribe_event("State",
+                                                     EventType.CHANGE_EVENT,
+                                                     self.__seSCMCallback,
+                                                     stateless=True)
                 self._se_event_id[fqdn].append(ev_id)
 
-                ev_id = device_proxy.subscribe_event("healthState", EventType.CHANGE_EVENT,
-                        self.seSCMCallback, stateless=True)
+                ev_id = device_proxy.subscribe_event("healthState", 
+                                                     EventType.CHANGE_EVENT,
+                                                     self.__seSCMCallback, 
+                                                     stateless=True)
                 self._se_event_id[fqdn].append(ev_id)
 
-                ev_id = device_proxy.subscribe_event("adminMode", EventType.CHANGE_EVENT,
-                        self.seSCMCallback, stateless=True)
+                ev_id = device_proxy.subscribe_event("adminMode", 
+                                                     EventType.CHANGE_EVENT, 
+                                                     self.__seSCMCallback,
+                                                     stateless=True)
                 self._se_event_id[fqdn].append(ev_id)
             except tango.DevFailed as df: 
                 #for item in df.args:
-                log_msg = "Failure in connection to " + str(fqdn) + \
-                          " device: " + str(df.args[0].desc)
+                log_msg = ("Failure in connection to {}"
+                           " device: {}".format(str(fqdn), str(df.args[0].desc)))
                 self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
+                # NOTE: if the exception is thrown, the Device server fails 
+                # and exit. In this case we rely on K8s/Docker restart policy 
+                # to restart the Device Server.
 
     def __is_subelement_available(self, subelement_name):
         """
         *Class private method.*
 
         Check if the sub-element is exported in the TANGO DB. 
-        If the device is not present in the list of the connected sub-elements, a 
-        connection with the device is performed.
+        If the device is not present in the list of the connected 
+        sub-elements, a connection with the device is performed.
 
         Args:
             subelement_name : the FQDN of the sub-element
         Returns:
-            True if the connection with the subarray is established, False otherwise
+            True if the connection with the subarray is established, 
+            False otherwise
         """
         try:
             proxy = self._se_proxies[subelement_name]
             proxy.ping()
         except KeyError as key_err: 
-            # Raised when a mapping (dictionary) key is not found in the set of existing keys.
-            # no proxy registered for the suelement device
+            # Raised when a mapping (dictionary) key is not found in the set 
+            # of existing keys.
+            # no proxy registered for the subelement device
+            msg = "Can't retrieve the information of key {}".format(key_err)
+            self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
             proxy = tango.DeviceProxy(subelement_name)
             proxy.ping()
             self._se_proxies[subelement_name] = proxy
         except tango.DevFailed as df:
+            msg = "Failure reason: {} Desc: {}".format(str(df.args[0].reason, df.args[0].desc))
+            self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
             return False
         return True
 
@@ -353,7 +353,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         Create a TANGO GROUP to get CSP SearchBeams Capabilities 
         information
         """
-        pass
+        return
 
     def __create_timing_beam_group(self):
         """
@@ -361,7 +361,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         Create a TANGO GROUP to get CSP TimingBeams Capabilities 
         information
         """
-        pass
+        return
 
     def __create_vlbi_beam_group(self):
         """
@@ -369,7 +369,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         Create a TANGO GROUP to get CSP Vlbi Beams Capabilities 
         information
         """
-        pass
+        return
 
 
     # PROTECTED REGION END #    //  CspMaster.class_variable
@@ -1052,41 +1052,31 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def init_device(self):
         SKAMaster.init_device(self)
-        self._build_state = '{}, {}, {}'.format(release.name, release.version,
-                                                release.description)
+        self._build_state = '{}, {}, {}'.format(release.name, release.version,release.description)
         self._version_id = release.version
         # PROTECTED REGION ID(CspMaster.init_device) ENABLED START #
-        self.set_state(tango.DevState.INIT)
-        self._health_state = HealthState.UNKNOWN.value
-        self._admin_mode = AdminMode.ONLINE.value
-        self._available_receptorIDs = []
-
-        # initialize attribute values
-        self._progress_command = 0
-        # sub-element State,healthState and adminMode initialization
-        self._cbf_state        = tango.DevState.UNKNOWN
-        self._cbf_health_state = HealthState.UNKNOWN.value
-        self._cbf_admin_mode   = AdminMode.ONLINE.value
-        self._pss_state        = tango.DevState.UNKNOWN
-        self._pss_health_state = HealthState.UNKNOWN.value 
-        # PssMaster not present: set it adminMode to OFFLINE
-        self._pss_admin_mode   = AdminMode.OFFLINE.value
-        self._pst_state        = tango.DevState.UNKNOWN
-        self._pst_health_state = HealthState.UNKNOWN.value
-        # PstMaster not present: set it adminMode to OFFLINE
-        self._pst_admin_mode   = AdminMode.OFFLINE.value
-
         # set storage and element logging level 
         self._storage_logging_level = int(tango.LogLevel.LOG_INFO)
         self._element_logging_level = int(tango.LogLevel.LOG_INFO)
+        # set init values for the CSP Element and Sub-element SCM states
+        self.set_state(tango.DevState.INIT)
+        self._health_state = HealthState.UNKNOWN
+        self._admin_mode = AdminMode.ONLINE
+        # use defaultdict to initialize the sub-element State,healthState 
+        # and adminMode. The dictionary uses as keys the sub-element
+        # fqdn, for example
+        # self._se_state[self.CspMidCbf]
+        # return the State value of the Mid Cbf sub-element.
+        self._se_state         = defaultdict(lambda: tango.DevState.UNKNOWN)
+        self._se_healthstate   = defaultdict(lambda: HealthState.UNKNOWN)
+        self._se_adminmode     = defaultdict(lambda: AdminMode.OFFLINE)
 
-        # evaluate the CSP element global State and healthState
-        #self.__set_csp_state()
+        # initialize attribute values
+        self._available_receptorIDs = []
+        self._progress_command = 0
 
-        # get the max number of CSP Capabilities for each Csp capability type
-        self.__get_maxnum_of_capabilities()
-        #initialize the CSP Capabilities State, healthState and adminMode
-        self.__init_capabilities()
+        #initialize the SCM states for CSP Search/Timing/Vlbi beams Capabilities 
+        self.__init_beams_capabilities()
         #initialize Csp capabilities subarray membership
         self._searchBeamsMembership = [0] * self._search_beams_maxnum
         self._timingBeamsMembership = [0] * self._timing_beams_maxnum
@@ -1094,9 +1084,16 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
         # initialize list with CSP sub-element FQDNs
         self._se_fqdn = []
+        #NOTE: 
+        # The normal behavior when a Device Property is created is:
+        # - a self.Property attribute is created in the Dev_Impl object
+        # - it takes a value from the Database if it has been defined.
+        # - if not, it takes the default value assigned in Pogo.
+        # - if no value is specified nowhere, the attribute is created 
+        #   with [] value.
         self._se_fqdn.append(self.CspMidCbf)
-        #self._se_fqdn.append(self.CspMidPss)
-        #self._se_fqdn.append(self.CspMidPst)
+        self._se_fqdn.append(self.CspMidPss)
+        self._se_fqdn.append(self.CspMidPst)
 
         # flag to signal sub-element switch-off request
         self._se_to_switch_off = {}
@@ -1104,16 +1101,32 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             self._se_to_switch_off[device_name] = False
         # initialize the dictionary with sub-element proxies
         self._se_proxies = {}
-        # dictionary with list of event ids/sub-element. Need to store the event
-        # ids for each sub-element to un-subscribe them at sub-element disconnection.
+        # dictionary with list of event ids/sub-element. Need to 
+        # store the event ids for each sub-element to un-subscribe 
+        # them at sub-element disconnection.
         self._se_event_id = {}
         # Try connection with sub-elements
         self.__connect_to_subelements()
         # initialize class attributes related to CBF receptors capabilities
         self._vcc_to_receptor_map = {}
         self._receptorsMembership = []
+        # NOTE: VCC (Receptors) and FSP capabilities are implemented at
+        #       CBF sub-element level. Need to evaluate if these capabilities
+        #       have to be implemented also at CSP level.
+        #       To retieve the information on the number of instances provided 
+        #       by CBF the CSP master has to connect to the Cbf Master. For this
+        #       reason the __get_maxnum_of_receptors() method gas to be called
+        #       after connection.
         self.__get_maxnum_of_receptors()
-        # create TANGO Groups to handle SearchBeams, TimingBeams and VlbiBeams
+        # TODO:
+        # report FSP number/availability
+        # for each FSP Master should report the resources for each 
+        # Processing Mode
+        # self.__get_maxnum_of_fsp()
+        # TODO :
+        # Create TANGO Groups to handle SearchBeams, TimingBeams and VlbiBeams.
+        # Master connects to the Beams Capabilities to retieve the information
+        # about the SCM values of each capability
         self.__create_search_beam_group()
         self.__create_timing_beam_group()
         self.__create_vlbi_beam_group()
@@ -1137,18 +1150,20 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                     try: 
                         self._se_proxies[fqdn].unsubscribe_event(event_id)
                         event_to_remove.append(event_id)
-                    # NOTE: in PyTango unsubscription of not-existing event id raises a KeyError 
-                    # exception not a DevFailed !!
+                    # NOTE: in PyTango unsubscription of not-existing event 
+                    # id raises a KeyError exception not a DevFailed !!
                     except KeyError as key_err:
                         msg = "Can't retrieve the information of key {}".format(key_err)
                         self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
                     except tango.DevFailed as df:
-                        msg = "Failure reason:" + str(df.args[0].reason) + " Desc:" + str(df.args[0].desc)
+                        msg = ("Failure reason: {} Desc: {}".format(str(df.args[0].reason),
+                                                                    str(df.args[0].desc)))
                         self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
                 # remove the events id from the list
                 for k in event_to_remove: 
                     self._se_event_id[fqdn].remove(k)
-                # check if there are still some registered events. What to do in this case??
+                # check if there are still some registered events. 
+                # What to do in this case??
                 if self._se_event_id[fqdn]:
                     msg = "Still subscribed events: {}".format(self._se_event_id)
                     self.dev_logging(msg, tango.LogLevel.LOG_WARN)
@@ -1194,13 +1209,13 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 device_proxy = self._se_proxies[fqdn]
                 device_proxy.adminMode = value
             except KeyError as kerr:
-                log_msg = "No proxy to device " + str(kerr)
+                log_msg = "No proxy to device {}".format(str(kerr))
                 self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
             except tango.DevFailed as df:
-                log_msg = "Failure in setting adminMode for device " + str(fqdn) + \
-                        ": " + str(df.args[0].reason)
+                log_msg = ("Failure in setting adminMode for device {}: {}".format(str(fqdn),
+                                                                                   str(df.args[0].reason)))
                 self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
-        #TODO: what happens if one sub-element fails? 
+        #TODO: what happens if one sub-element fails?
         self._admin_mode = value
         # PROTECTED REGION END #    //  CspMaster.adminMode_write
 
@@ -1223,7 +1238,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             The CBF Sub-element *State* attribute value.           
         """
         # PROTECTED REGION ID(CspMaster.cspCbfState_read) ENABLED START #
-        return self._cbf_state
+        return self._se_state[self.CspMidCbf]
         # PROTECTED REGION END #    //  CspMaster.cspCbfState_read
 
     def read_cspPssState(self):
@@ -1234,7 +1249,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             The PSS Sub-element *State* attribute value.           
         """
         # PROTECTED REGION ID(CspMaster.cspPssState_read) ENABLED START #
-        return self._pss_state
+        return self._se_state[self.CspMidPss]
         # PROTECTED REGION END #    //  CspMaster.cspPssState_read
 
     def read_cspPstState(self):
@@ -1245,7 +1260,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             The PST Sub-element *State* attribute value.           
         """
         # PROTECTED REGION ID(CspMaster.cspPstState_read) ENABLED START #
-        return self._pst_state
+        return self._se_state[self.CspMidPst]
         # PROTECTED REGION END #    //  CspMaster.cspPstState_read
 
     def read_cspCbfHealthState(self):
@@ -1256,7 +1271,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             The CBF Sub-element *healthState* attribute value.           
         """
         # PROTECTED REGION ID(CspMaster.cspCbfHealthState_read) ENABLED START #
-        return self._cbf_health_state
+        return self._se_healthstate[self.CspMidCbf]
         # PROTECTED REGION END #    //  CspMaster.cspCbfHealthState_read
 
     def read_cspPssHealthState(self):
@@ -1267,7 +1282,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             The PSS Sub-element *healthState* attribute value.           
         """
         # PROTECTED REGION ID(CspMaster.cspPssHealthState_read) ENABLED START #
-        return self._pss_health_state
+        return self._se_healthstate[self.CspMidPss]
         # PROTECTED REGION END #    //  CspMaster.cspPssHealthState_read
 
     def read_cspPstHealthState(self):
@@ -1278,7 +1293,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             The PST Sub-element *healthState* attribute value.           
         """
         # PROTECTED REGION ID(CspMaster.cspPstHealthState_read) ENABLED START #
-        return self._pst_health_state
+        return self._se_healthstate[self.CspMidPst]
         # PROTECTED REGION END #    //  CspMaster.cspPstHealthState_read
 
     def read_cbfMasterAddress(self):
@@ -1322,7 +1337,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             The CBF sub-element *adminMode* attribute value.
         """
         # PROTECTED REGION ID(CspMaster.pssAdminMode_read) ENABLED START #
-        return self._cbf_admin_mode
+        return self._se_adminmode[self.CspMidCbf]
         # PROTECTED REGION END #    //  CspMaster.cbfAdminMode_read
 
     def write_cbfAdminMode(self, value):
@@ -1363,7 +1378,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             The PSS sub-element *adminMode* attribute value.
         """
         # PROTECTED REGION ID(CspMaster.pssAdminMode_read) ENABLED START #
-        return self._pss_admin_mode
+        return self._se_adminmode[self.CspMidPss]
         # PROTECTED REGION END #    //  CspMaster.pssAdminMode_read
 
     def write_pssAdminMode(self, value):
@@ -1373,13 +1388,14 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         Set the PSS sub-element *adminMode* attribute value.
 
         Args:  
-            value: one of the administration mode value (ON-LINE,\
+            value: one of the administration mode value (ON-LINE, \
             OFF-LINE, MAINTENANCE, NOT-FITTED).
         Returns: 
             None
         Raises:
-            tango.DevFailed: raised when there is no DeviceProxy providing interface to the PSS sub-element\
-            Master, or an exception is caught in command execution.
+            tango.DevFailed: raised when there is no DeviceProxy providing 
+            interface to the PSS sub-element Master, or an exception is caught 
+            in command execution.
         """
         # PROTECTED REGION ID(CspMaster.pssAdminMode_write) ENABLED START #
         try:
@@ -1388,11 +1404,15 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         except KeyError as key_err:
             err_msg = "No proxy for device" + str(key_err)
             self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
-            tango.Except.throw_exception("Command failed", err_msg,
-                                         "Set pss admin mode", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Command failed", 
+                                         err_msg,
+                                         "Set pss admin mode",
+                                         tango.ErrSeverity.ERR)
         except tango.DevFailed as df: 
-            tango.Except.throw_exception("Command failed", str(df.args[0].desc),
-                                         "Set pss admin mode", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Command failed",
+                                         str(df.args[0].desc),
+                                         "Set pss admin mode",
+                                         tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.pssAdminMode_write
 
     def read_pstAdminMode(self):
@@ -1403,7 +1423,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             The PST sub-element *adminMode* attribute value.
         """
         # PROTECTED REGION ID(CspMaster.pstAdminMode_read) ENABLED START #
-        return self._pst_admin_mode
+        return self._se_adminmode[self.CspMidPst]
         # PROTECTED REGION END #    //  CspMaster.pstAdminMode_read
 
     def write_pstAdminMode(self, value):
@@ -1418,7 +1438,8 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         Returns: 
             None
         Raises:
-            tango.DevFailed: raised when there is no DeviceProxy providing interface to the PST sub-element\
+            tango.DevFailed: raised when there is no DeviceProxy providing
+            interface to the PST sub-element\
             Master, or an exception is caught in command execution.
         """
         # PROTECTED REGION ID(CspMaster.pstAdminMode_write) ENABLED START #
@@ -1428,11 +1449,15 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         except KeyError as key_err:
             err_msg = "No proxy for device" + str(key_err)
             self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
-            tango.Except.throw_exception("Command failed", err_msg,
-                                         "Set pst admin mode", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Command failed",
+                                          err_msg,
+                                          "Set pst admin mode",
+                                          tango.ErrSeverity.ERR)
         except tango.DevFailed as df: 
-            tango.Except.throw_exception("Command failed", str(df.args[0].desc),
-                                         "Set pst admin mode", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Command failed",
+                                         str(df.args[0].desc),
+                                         "Set pst admin mode",
+                                         tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.pstAdminMode_write
         
     def read_availableCapabilities(self):
@@ -1450,26 +1475,31 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # PROTECTED REGION ID(CspMaster.availableCapabilities_read) ENABLED START #
         self._available_capabilities = {}
         try:
-            proxy = tango.DeviceProxy(self.get_name())
-            available_receptors = proxy.availableReceptorIDs
-            #oss: if there is no available receptor, this call returns an array
+            #proxy = tango.DeviceProxy(self.get_name())
+            available_receptors = self.read_availableReceptorIDs()
+            #NOTE: if there is no available receptor, this call returns an array
             # [0] whose length is 1 (not 0)
             if len(available_receptors) >= 1:
                 if available_receptors[0] == 0:
                     self._available_capabilities["Receptors"] = 0
                 else:    
                     self._available_capabilities["Receptors"] = len(available_receptors)
-            #TODO: update when also PSS and PST will be available
-            self._available_capabilities["SearchBeam"] = const.NUM_OF_SEARCH_BEAMS
-            self._available_capabilities["TimingBeam"] = const.NUM_OF_TIMING_BEAMS
-            self._available_capabilities["VlbiBeam"] = const.NUM_OF_VLBI_BEAMS
+            #TODO:update when also PSS and PST will be available
+            self._available_capabilities["SearchBeam"] = 0
+            self._available_capabilities["TimingBeam"] = 0
+            self._available_capabilities["VlbiBeam"] = 0 
         except tango.DevFailed as df:
-            #TODO: add message logging
-            tango.Except.throw_exception("Attribute reading failure", df.args[0].desc,
-                                         "read_availableCapabilities", tango.ErrSeverity.ERR)
+            msg = "Attribute reading failure: {}".format(df.args[0].desc)
+            self.dev_loggig(msg, tango.LogLevel.LOG_ERROR)
+            tango.Except.throw_exception("Attribute reading failure", 
+                                         df.args[0].desc,
+                                         "read_availableCapabilities", 
+                                         tango.ErrSeverity.ERR)
         except AttributeError as attr_err: 
-            msg = "Error in reading {}: {} ".format(str(attr_err.args[0]), attr_err.__doc__)
-            tango.Except.throw_exception("Attribute reading failure", msg,
+            msg = "Error in reading {}: {} ".format(str(attr_err.args[0]), 
+                                                    attr_err.__doc__)
+            tango.Except.throw_exception("Attribute reading failure", 
+                                         msg,
                                          "read_availableCapabilities", 
                                          tango.ErrSeverity.ERR)
         return utils.convert_dict_to_list(self._available_capabilities)
@@ -1600,8 +1630,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         else:
             log_msg = "CspSubarrays device property not defined"
             self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-            tango.Except.throw_exception("Attribute reading failure", log_msg,
-                                     "read_cspSubarrayAddress", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Attribute reading failure", 
+                                         log_msg,
+                                         "read_cspSubarrayAddress",
+                                         tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.cspSubarrayAddress_read
 
     def read_searchBeamCapAddress(self):
@@ -1621,8 +1653,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         else :
             log_msg = "SearchBeams device property not assigned"
             self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-            tango.Except.throw_exception("Attribute reading failure", log_msg,
-                                         "read_searchBeamCapAddress", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Attribute reading failure",
+                                         log_msg,
+                                         "read_searchBeamCapAddress",
+                                         tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.searchBeamCapAddress_read
 
     def read_timingBeamCapAddress(self):
@@ -1632,8 +1666,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         else :
             log_msg = "TimingBeams device property not assigned"
             self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-            tango.Except.throw_exception("Attribute reading failure", log_msg,
-                                         "read_timingBeamCapAddress", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Attribute reading failure",
+                                         log_msg,
+                                         "read_timingBeamCapAddress",
+                                         tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.timingBeamCapAddress_read
 
     def read_vlbiCapAddress(self):
@@ -1647,8 +1683,10 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         else :
             log_msg = "VlbiBeams device property not assigned" 
             self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-            tango.Except.throw_exception("Attribute reading failure", log_msg,
-                                         "read_vlbiBeamCapAddress", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Attribute reading failure",
+                                         log_msg,
+                                         "read_vlbiBeamCapAddress",
+                                         tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.vlbiCapAddress_read
 
     def read_receptorMembership(self):
@@ -1664,9 +1702,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 proxy = self._se_proxies[self.CspMidCbf]
                 proxy.ping()
                 vcc_membership = proxy.reportVccSubarrayMembership
-                vcc_id_list = list(self._vcc_to_receptor_map.keys())
-                for vcc_id in vcc_id_list:
-                    receptorID = self._vcc_to_receptor_map[vcc_id]
+                for vcc_id, receptorID in self._vcc_to_receptor_map.items():
                     self._receptorsMembership[receptorID - 1] = vcc_membership[vcc_id - 1]
             except tango.DevFailed as df: 
                 tango.Except.re_throw_exception(df, "CommandFailed",
@@ -1675,11 +1711,14 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             except KeyError as key_err: 
                 msg = "Can't retrieve the information of key {}".format(key_err)
                 self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
-                tango.Except.throw_exception("Attribute reading failure", msg,
-                                             "read_receptorMembership", tango.ErrSeverity.ERR)
+                tango.Except.throw_exception("Attribute reading failure",
+                                             msg,
+                                             "read_receptorMembership",
+                                             tango.ErrSeverity.ERR)
             except AttributeError as attr_err: 
-                msg = "Error in reading {}: {} ".format(str(attr_err.args[0]), attr_err.__doc__)
-                tango.Except.throw_exception("Attribute reading failure", msg,
+                msg = "Error in reading {}: {} ".format(str(attr_err.args[0]),attr_err.__doc__)
+                tango.Except.throw_exception("Attribute reading failure",
+                                             msg,
                                              "read_receptorMembership", 
                                              tango.ErrSeverity.ERR)
         return self._receptorsMembership
@@ -1743,7 +1782,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
             vcc_state = proxy.reportVCCState
             vcc_membership = proxy.reportVccSubarrayMembership
             # get the list with the IDs of the available VCC
-            for vcc_id in list(self._vcc_to_receptor_map.keys()):
+            for vcc_id, receptorID in self._vcc_to_receptor_map.items():
                 try:
                     if vcc_state[vcc_id - 1] not in [tango.DevState.UNKNOWN]:
                         # skip the vcc already assigned to a sub-array
@@ -1752,31 +1791,37 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                         # OSS: valid receptorIDs are in [1,197] range
                         # receptorID = 0 means the link connection between 
                         # the receptor and the VCC is off
-                        receptorID = self._vcc_to_receptor_map[vcc_id]
                         if receptorID > 0:
                             self._available_receptorIDs.append(receptorID)
                         else:
-                            log_msg = "Link problem with receptor connected\
-                                    to Vcc {}".format(vcc_id + 1)
+                            log_msg = "Link problem with receptor connected to Vcc {}".format(vcc_id + 1)
                             self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
                 except KeyError as key_err:
-                    log_msg = "No key {} found while accessing VCC {}".format(str(key_err), vcc_id)
+                    log_msg = ("No key {} found while accessing VCC {}".format(str(key_err), vcc_id))
                     self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
                 except IndexError as idx_error:
-                    log_msg = "Error accessing VCC element {}: {}".format(vcc_id, str(idx_error))
+                    log_msg = ("Error accessing VCC"
+                               " element {}: {}".format(vcc_id, 
+                                                        str(idx_error)))
                     self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
         except KeyError as key_err:
             log_msg = "Can't retrieve the information of key {}".format(key_err)
-            tango.Except.throw_exception("Attribute reading failure", log_msg,
-                                         "read_availableReceptorIDs", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Attribute reading failure",
+                                         log_msg,
+                                         "read_availableReceptorIDs",
+                                         tango.ErrSeverity.ERR)
         except tango.DevFailed as df:
-            log_msg = "Error in read_availableReceptorIDs: " + df.args[0].reason
+            log_msg = "Error in read_availableReceptorIDs: {}".format(df.args[0].reason)
             self.dev_logging(log_msg, int(tango.LogLevel.LOG_ERROR))
-            tango.Except.throw_exception("Attribute reading failure", log_msg,
-                                         "read_availableReceptorIDs", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Attribute reading failure",
+                                         log_msg,
+                                         "read_availableReceptorIDs",
+                                         tango.ErrSeverity.ERR)
         except AttributeError as attr_err: 
-            msg = "Error in reading {}: {} ".format(str(attr_err.args[0]), attr_err.__doc__)
-            tango.Except.throw_exception("Attribute reading failure", msg,
+            msg = "Error in reading {}: {} ".format(str(attr_err.args[0]),
+                                                    attr_err.__doc__)
+            tango.Except.throw_exception("Attribute reading failure",
+                                         msg,
                                          "read_availableReceptorIDs", 
                                          tango.ErrSeverity.ERR)
         # !!!
@@ -1802,21 +1847,17 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
         Command *On* is allowed when:\n
         * state is STANDBY and adminMode = MAINTENACE or ONLINE (end state = ON)\n
-        * state is STANDBY and adminMode = OFFLINE, NOTFITTED   (end state = DISABLE)\n
         * state is DISABLE and adminMode = MAINTENACE or ONLINE (end state = ON)
 
         Returns:
             True if the method is allowed, otherwise False.
         """
         # PROTECTED REGION ID(CspMaster.is_On_allowed) ENABLED START #
-        if self.get_state() not in [tango.DevState.STANDBY, tango.DevState.DISABLE]:
+        if self.get_state() not in [tango.DevState.STANDBY, 
+                                    tango.DevState.DISABLE]:
             return False
-        if self._admin_mode in [AdminMode.OFFLINE.value, AdminMode.NOTFITTED.value]:
-            if self.get_state() == tango.DevState.DISABLE: 
-                return False
-            if self.get_state() == tango.DevState.STANDBY: 
-                return True
         return True
+
         # PROTECTED REGION END #    //  CspMaster.is_On_allowed
     @command(
         dtype_in=('str',), 
@@ -1844,20 +1885,44 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                     to the CSP sub-elements.
         """
         # PROTECTED REGION ID(CspMaster.On) ENABLED START #
+
+        # Check the AdminMode value: only if it's ONLINE or MAINTENACE
+        # the command is callable.
+        if self._admin_mode in [AdminMode.OFFLINE, 
+                                AdminMode.NOTFITTED,
+                                AdminMode.RESERVED]:
+            # NOTE: when adminMode is NOT_FITTED, OFFLINE or RESERVED device itself
+            # sets the TANGO state to DISABLE 
+            # Add only a check on State value to log a warning message if it 
+            # is different from DISABLE
+            msg_args = (self.get_state(), self._admin_mode)
+            if self.get_state() != tango.DevState.DISABLE: 
+                self.dev_logging("is_On_allowed: incoherent device State {} "
+                                 " with adminMode {}".format(*msg_args),
+                                 tango.LogLevel.LOG_WARN)  
+            err_msg = ("On() command can't be issued when State is {} and"    
+                       " adminMode is {} ".format(*msg_args))
+            tango.Except.throw_exception("Command not executable", 
+                                         err_msg,
+                                         "On command execution", 
+                                         tango.ErrSeverity.ERR)
         device_list = []    
         num_of_devices = len(argin) 
-        if num_of_devices == 0:      # no input argument -> switch on all sub-elements
+        if num_of_devices == 0:      
+            # no input argument -> switch on all sub-elements
             num_of_devices = len(self._se_fqdn)
             device_list = self._se_fqdn
         else:
             if num_of_devices > len(self._se_fqdn):
                 # too many devices specified-> log the warning but go on
                 # with command execution
-                self.dev_logging("Too many input parameters", int(tango.LogLevel.LOG_WARN))
+                self.dev_logging("Too many input parameters", tango.LogLevel.LOG_WARN)
             device_list = argin
         nkey_err = 0            
         for device_name in device_list:
             try:
+                self.dev_logging("device_name:{}".format(device_name), tango.LogLevel.LOG_WARN)
+                self.dev_logging("device_list:{}".format(device_list), tango.LogLevel.LOG_WARN)
                 device_proxy = self._se_proxies[device_name]
                 device_proxy.command_inout("On")
             except KeyError as error:
@@ -1865,7 +1930,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 # - no proxy found for the only specified input device
                 # - or no proxy found for CBF.
                 # In all other cases log the error message
-                err_msg = "No proxy for device: " + str(error)
+                err_msg = "No proxy for device: {}".format(str(error))
                 self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
                 nkey_err += 1
             except tango.DevFailed as df:
@@ -1873,19 +1938,25 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
                 # - cbf command fails
                 # - or the only specified device fails executing the command.
                 # In all other cases the error messages are logged.
+                self.dev_logging("df:{}".format(df.args[0].desc), tango.LogLevel.LOG_WARN)
                 if ("cbf" in device_name) or num_of_devices == 1: 
-                    tango.Except.throw_exception("Command failed", str(df.args[0].desc),
-                                         "On command execution", tango.ErrSeverity.ERR)
+                    tango.Except.throw_exception("Command failed", 
+                                                 str(df.args[0].desc),
+                                                 "On command execution",
+                                                 tango.ErrSeverity.ERR)
                 else:
-                    self.dev_logging(str(df.args[0].desc), int(tango.LogLevel.LOG_ERROR))
+                    self.dev_logging(str(df.args[0].desc), tango.LogLevel.LOG_ERROR)
 
-        # throw an exception if ALL the specified devices have no associated proxy
+        # throw an exception if ALL the specified devices have no 
+        # associated proxy
         if nkey_err == num_of_devices:
             err_msg = 'No proxy found for devices:'
             for item in device_list:
                 err_msg += item + ' '
-            tango.Except.throw_exception("Command failed", err_msg,
-                                         "On command execution", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Command failed", 
+                                         err_msg,
+                                         "On command execution", 
+                                         tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.On
 
     def is_Off_allowed(self):
@@ -1912,8 +1983,9 @@ If the array length is > 1, each array element specifies the FQDN of the\
     @DebugIt()
     def Off(self, argin):
         """
-        Switch-off the CSP sub-elements specified by the input argument. If no argument is\
-                specified, the command is issued to all the CSP sub-elements.
+        Switch-off the CSP sub-elements specified by the input argument. \
+        If no argument is specified, the command is issued to all the CSP \
+        sub-elements.
 
         Args:
             The list of sub-elements to switch-off. If the array\
@@ -1928,14 +2000,15 @@ If the array length is > 1, each array element specifies the FQDN of the\
         # PROTECTED REGION ID(CspMaster.Off) ENABLED START #
         device_list = []    
         num_of_devices = len(argin) 
-        if num_of_devices == 0:      # no input argument -> switch on all sub-elements
+        if num_of_devices == 0:      
+            # no input argument -> switch on all sub-elements
             num_of_devices = len(self._se_fqdn)
             device_list = self._se_fqdn
         else:
             if num_of_devices > len(self._se_fqdn):
                 # too many devices specified-> log the warning but go on
                 # with command execution
-                self.dev_logging("Too many input parameters", int(tango.LogLevel.LOG_WARN))
+                self.dev_logging("Too many input parameters", tango.LogLevel.LOG_WARN)
             device_list = argin
         for device_name in device_list:
             try:
@@ -1943,10 +2016,10 @@ If the array length is > 1, each array element specifies the FQDN of the\
                 device_proxy.command_inout("Off")
                 self._se_to_switch_off[device_name] = True
             except KeyError as error:
-                err_msg = "No proxy for device" + str(error)
+                err_msg = "No proxy for device {}".format(str(error))
                 self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
             except tango.DevFailed as df:
-                self.dev_logging(str(df.args[0].desc), int(tango.LogLevel.LOG_ERROR))
+                self.dev_logging(str(df.args[0].desc), tango.LogLevel.LOG_ERROR)
 
         # PROTECTED REGION END #    //  CspMaster.Off
 
@@ -1960,8 +2033,7 @@ If the array length is > 1, each array element specifies the FQDN of the\
             True if the method is allowed, otherwise False.
         """
         # PROTECTED REGION ID(CspMaster.is_On_allowed) ENABLED START #
-        if self.get_state() not in [tango.DevState.ON, tango.DevState.DISABLE, 
-                                    tango.DevState.ALARM]:
+        if self.get_state() not in [tango.DevState.ON, tango.DevState.DISABLE, tango.DevState.ALARM]:
             return False
         return True
 
@@ -1975,8 +2047,8 @@ If the array length is > 1, each array element specifies the FQDN of the\
     def Standby(self,argin):
         # PROTECTED REGION ID(CspMaster.Standby) ENABLED START #
         """
-        Transit to STANDBY the CSP sub-elements specified by the input argument. If no argument is\
-                specified, the command is issued to all the CSP sub-elements.
+        Transit to STANDBY the CSP sub-elements specified by the input argument. \
+        If no argument is specified, the command is issued to all the CSP sub-elements.
 
         Args: 
             argin: The list of the Sub-element devices FQDNs 
@@ -1988,14 +2060,15 @@ If the array length is > 1, each array element specifies the FQDN of the\
         """
         device_list = []    
         num_of_devices = len(argin) 
-        if num_of_devices == 0:      # no input argument -> switch on all sub-elements
+        if num_of_devices == 0:      
+            # no input argument -> switch on all sub-elements
             num_of_devices = len(self._se_fqdn)
             device_list = self._se_fqdn
         else:
             if num_of_devices > len(self._se_fqdn):
                 # too many devices specified-> log the warning but go on
                 # with command execution
-                self.dev_logging("Too many input parameters", int(tango.LogLevel.LOG_WARN))
+                self.dev_logging("Too many input parameters", tango.LogLevel.LOG_WARN)
             device_list = argin
         nkey_err = 0            
         for device_name in device_list:
@@ -2007,8 +2080,8 @@ If the array length is > 1, each array element specifies the FQDN of the\
                 # - no proxy found for the only specified input device
                 # - or no proxy found for CBF.
                 # In all other cases log the error message
-                err_msg = "No proxy for device" + str(error)
-                self.dev_logging(err_msg, int(tango.LogLevel.LOG_ERROR))
+                err_msg = "No proxy for device {}".format(str(error))
+                self.dev_logging(err_msg, tango.LogLevel.LOG_ERROR)
                 nkey_err += 1
             except tango.DevFailed as df:
                 # the command fails if:
@@ -2016,18 +2089,23 @@ If the array length is > 1, each array element specifies the FQDN of the\
                 # - or the only specified device fails executing the command.
                 # In all other cases the error messages are logged.
                 if ("cbf" in device_name) or num_of_devices == 1: 
-                    tango.Except.throw_exception("Command failed", str(df.args[0].desc),
-                                    "Standby command execution", tango.ErrSeverity.ERR)
+                    tango.Except.throw_exception("Command failed", 
+                                                 str(df.args[0].desc),
+                                                 "Standby command execution",
+                                                 tango.ErrSeverity.ERR)
                 else:
-                    self.dev_logging(str(df.args[0].desc), int(tango.LogLevel.LOG_ERROR))
+                    self.dev_logging(str(df.args[0].desc), tango.LogLevel.LOG_ERROR
+                                    )
 
         # throw an exception if ALL the specified devices have no associated proxy
         if nkey_err == num_of_devices:
             err_msg = 'No proxy found for devices:'
             for item in device_list:
                 err_msg += item + ' '
-            tango.Except.throw_exception("Command failed", err_msg,
-                                         "Standby command execution", tango.ErrSeverity.ERR)
+            tango.Except.throw_exception("Command failed", 
+                                         err_msg,
+                                         "Standby command execution",
+                                         tango.ErrSeverity.ERR)
         # PROTECTED REGION END #    //  CspMaster.Standby
 
 # ----------
