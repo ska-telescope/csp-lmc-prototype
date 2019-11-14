@@ -1,17 +1,20 @@
 # This script is used only by the start_prototype script.
 # Docker containers rely on dsconfig device to configure the TANGO DB
 #!/usr/bin/env python
+import json
+import tango
 from tango import Database, DbDevInfo
 from time import sleep
-import json
+
 
 timeSleep = 30
 for x in range(10):
     try:
         # Connecting to the databaseds
         db = Database()
-    except:
+    except tango.DevFailed as df:
         # Could not connect to the databaseds. Retry after: str(timeSleep) seconds.
+        print("Connection to Database failure: {}".format(str(df.args[0].desc)))
         sleep(timeSleep)
 
 # Connected to the databaseds
@@ -38,10 +41,9 @@ for device in json_devices:
     for classProperty in device["classProperties"]:
         # Adding class property: classProperty["classPropValue"]
         # with value: classProperty["classPropValue"]
-        if (classProperty["classPropName"]) != "" and (classProperty["classPropValue"] != ""):
+        if (classProperty["classPropName"]) != "" and (classProperty["classPropValue"] != ""): 
             db.put_class_property(dev_info._class,
-                                   {classProperty["classPropName"]:
-                                        classProperty["classPropValue"]})
+                                  {classProperty["classPropName"]:classProperty["classPropValue"]})
 
     # Adding device properties
     for deviceProperty in device["deviceProperties"]:
@@ -57,8 +59,8 @@ for device in json_devices:
         # Adding attribute property: attributeProperty["attrPropName"]
         # for attribute: attributeProperty["attributeName"]
         # with value: " + attributeProperty["attrPropValue"]
-        if(attributeProperty["attrPropName"])!="" and (attributeProperty["attrPropValue"]!=""):
-            db.put_device_attribute_property(dev_info.name,
+        if(attributeProperty["attrPropName"]) != "" and (attributeProperty["attrPropValue"] != ""):
+            db.put_device_attribute_property(dev_info.name, 
                                              {attributeProperty["attributeName"]:
-                                                  {attributeProperty["attrPropName"]:
-                                                       attributeProperty["attrPropValue"]}})
+                                                 {attributeProperty["attrPropName"]:
+                                                     attributeProperty["attrPropValue"]}})

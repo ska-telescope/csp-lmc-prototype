@@ -2,8 +2,8 @@
 # the start_prototype script.
 # Docker containers rely on dsconfig device to configure the TANGO Attribute properties.
 #!/usr/bin/env python
-from tango import AttributeProxy, ChangeEventInfo, AttributeInfoEx
 import json
+from tango import AttributeProxy, ChangeEventInfo
 
 # Update file path to devices.json in order to test locally
 
@@ -17,13 +17,12 @@ for device in json_devices:
     deviceName = device["devName"]
 
     for attributeProperty in device["attributeProperties"]:
-            if attributeProperty["attrPropName"] == "__root_att":
-                continue
-            attributeProxy = AttributeProxy(deviceName + "/" + attributeProperty["attributeName"])
-            if(attributeProperty["pollingPeriod"] != ""):
-                attributeProxy.poll(attributeProperty["pollingPeriod"])
-
-            if(attributeProperty["changeEventAbs"] != ""):
+        if attributeProperty["attrPropName"] == "__root_att":
+            continue
+        attributeProxy = AttributeProxy(deviceName + "/" + attributeProperty["attributeName"])
+        if attributeProperty["pollingPeriod"] != "":
+            attributeProxy.poll(attributeProperty["pollingPeriod"])
+            if attributeProperty["changeEventAbs"] != "":
                 attrInfoEx = attributeProxy.get_config()
                 absChange = ChangeEventInfo()
                 absChange.abs_change = attributeProperty["changeEventAbs"]

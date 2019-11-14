@@ -28,22 +28,21 @@ from collections import defaultdict
 import tango
 from tango import DebugIt, EventType, DeviceProxy, AttrWriteType
 from tango.server import run, DeviceMeta, attribute, command, device_property, class_property
+# Additional import
+# PROTECTED REGION ID(CspMaster.additionnal_import) ENABLED START #
+#
+#import global_enum as const
+from skabase.SKASubarray import SKASubarray
+import json
+# PROTECTED REGION END #    //  CspMaster.additionnal_import
 
 # PROTECTED REGION ID (CspSubarray.add_path) ENABLED START #
 # add the path to import global_enum package.
 file_path = os.path.dirname(os.path.abspath(__file__))
 commons_pkg_path = os.path.abspath(os.path.join(file_path, "../../commons"))
 sys.path.insert(0, commons_pkg_path)
-# PROTECTED REGION END# //CspSubarray.add_path
-
-# Additional import
-# PROTECTED REGION ID(CspMaster.additionnal_import) ENABLED START #
-#
-#import global_enum as const
 from global_enum import HealthState, AdminMode, ObsState, ObsMode
-from skabase.SKASubarray import SKASubarray
-import json
-# PROTECTED REGION END #    //  CspMaster.additionnal_import
+# PROTECTED REGION END# //CspSubarray.add_path
 
 __all__ = ["CspSubarray", "main"]
 
@@ -195,7 +194,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         subarrays_fqdn = []
         subarrays_fqdn.append(self._cbf_subarray_fqdn)
         subarrays_fqdn.append(self._pss_subarray_fqdn)
-        subarrays_fqdn.append(self._pst_subarray_fqdn)
         for fqdn in subarrays_fqdn:
             # initialize the list for each dictionary key-name
             self._se_subarray_event_id[fqdn] = []
@@ -282,10 +280,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                                                  for pair in receptor_to_vcc)
                 # build the list of the installed receptors
                 self._receptor_id_list = list(self._receptor_to_vcc_map.keys())
-                for i in range(len(cbf_capabilities)):
-                    cap_type, cap_num = cbf_capabilities[i].split(':')
+                for _ , cap_string in enumerate(cbf_capabilities):
+                    cap_type, cap_num = cap_string.split(':')
                     self._cbf_capabilities[cap_type] = int(cap_num)
-
             # try connection to PssMaster
             # Do we need to connect to PssMaster?
             # All SearchBeams information should be available via the CspMaster
@@ -373,8 +370,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # NOTE: when ObsMode value is set, it should be considered to set the final
         # sub-array ObsState value
         cbf_sub_obstate = self._se_subarray_obsstate[self._cbf_subarray_fqdn]
-        pss_sub_obstate = self._se_subarray_obsstate[self._pss_subarray_fqdn]
-        pst_sub_obstate = self._se_subarray_obsstate[self._pst_subarray_fqdn]
+        # next line currently not used
+        # pss_sub_obstate = self._se_subarray_obsstate[self._pss_subarray_fqdn]
+        # TODO: how implement ObsState for PST?
+ 
         # Next lines are valid only for IMAGING mode!!
         self._obs_state = cbf_sub_obstate
         if cbf_sub_obstate == ObsState.IDLE:
@@ -446,20 +445,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
     Example:
         *mid_csp_pss/sub_elt/subarray_*
-    """
-
-    PstSubarrayPrefix = class_property(
-        dtype='str', default_value="mid_csp_pst/sub_elt/subarray_"
-    )
-    """
-    *Class property*
-
-    The PST sub-element subarray FQDN prefix.
-
-    *Type*: DevString
-
-    Example:
-        *mid_csp_pst/sub_elt/subarray_*
     """
 
     # -----------------
@@ -939,7 +924,6 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # build the sub-element sub-array FQDNs
         self._cbf_subarray_fqdn = '{}{:02d}'.format(self.CbfSubarrayPrefix, self._subarray_id)
         self._pss_subarray_fqdn = '{}{:02d}'.format(self.PssSubarrayPrefix, self._subarray_id)
-        self._pst_subarray_fqdn = '{}{:02d}'.format(self.PstSubarrayPrefix, self._subarray_id)
         try:
             self.__connect_to_master()
             self.__connect_to_subarrays()
@@ -975,12 +959,12 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                     except tango.DevFailed as df:
                         msg = ("Unsubscribe event failure.Reason: {}. "
                                "Desc: {}".format(df.args[0].reason, df.args[0].desc))
-                        self.dev_logging(msg, tango.LogLevl.LOG_ERROR)
+                        self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
                     except KeyError as key_err:
                         # NOTE: in PyTango unsubscription of a not-existing event id raises a
                         # KeyError exception not a DevFailed!!
                         msg = "Unsubscribe event failure. Reason: {}".format(str(key_err))
-                        self.dev_logging(msg, tango.LogLevl.LOG_ERROR)
+                        self.dev_logging(msg, tango.LogLevel.LOG_ERROR)
                 # remove the events from the list
                 for k in event_to_remove:
                     self._se_subarray_event_id[fqdn].remove(k)
@@ -1031,6 +1015,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             The scan configuration ID.
         """
         # PROTECTED REGION ID(CspSubarray.scanID_write) ENABLED START #
+        self._scan_ID = value
         return
         # PROTECTED REGION END #    //  CspSubarray.scanID_write
 
@@ -1096,7 +1081,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             *Type*: DevState
         """
         # PROTECTED REGION ID(CspSubarray.cbfSubarrayState_read) ENABLED START #
-        return self._cbf_subarray_state
+        return self._se_subarray_state[self._cbf_subarray_fqdn]
         # PROTECTED REGION END #    //  CspSubarray.cbfSubarrayState_read
 
     def read_pssSubarrayState(self):
@@ -1109,7 +1094,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             *Type*: DevState
         """
         # PROTECTED REGION ID(CspSubarray.pssSubarrayState_read) ENABLED START #
-        return self._pss_subarray_state
+        return self._se_subarray_state[self._pss_subarray_fqdn]
         # PROTECTED REGION END #    //  CspSubarray.pssSubarrayState_read
 
     def read_cbfSubarrayHealthState(self):
@@ -1122,7 +1107,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             *Type*: DevUShort
         """
         # PROTECTED REGION ID(CspSubarray.cbfSubarrayHealthState_read) ENABLED START #
-        return self._cbf_subarray_health_state
+        return self._se_subarray_healthstate[self._cbf_subarray_fqdn]
         # PROTECTED REGION END #    //  CspSubarray.cbfSubarrayHealthState_read
 
     def read_pssSubarrayHealthState(self):
@@ -1135,7 +1120,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             *Type*: DevUShort
         """
         # PROTECTED REGION ID(CspSubarray.pssSubarrayHealthState_read) ENABLED START #
-        return self._pss_subarray_health_state
+        return self._se_subarray_healthstate[self._pss_subarray_fqdn]
         # PROTECTED REGION END #    //  CspSubarray.pssSubarrayHealthState_read
 
     def read_cbfSubarrayObsState(self):
@@ -1148,7 +1133,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             *Type*: DevUShort
         """
         # PROTECTED REGION ID(CspSubarray.cbfSubarrayObsState_read) ENABLED START #
-        return self._cbf_subarray_obs_state
+        return self._se_subarray_obsstate[self._cbf_subarray_fqdn]
         # PROTECTED REGION END #    //  CspSubarray.cbfSubarrayObsState_read
 
     def read_pssSubarrayObsState(self):
@@ -1161,7 +1146,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             *Type*: DevUShort
         """
         # PROTECTED REGION ID(CspSubarray.pssSubarrayObsState_read) ENABLED START #
-        return self._pss_subarray_obs_state
+        return self._se_subarray_obsstate[self._pss_subarray_fqdn]
         # PROTECTED REGION END #    //  CspSubarray.pssSubarrayObsState_read
 
     def read_pssSubarrayAddr(self):
@@ -1565,7 +1550,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # only when its obsState is IDLE.
         if self._obs_state != ObsState.IDLE:
             log_msg = ("AddReceptors not allowed when subarray"
-                       " ObsState is {}".format(Obstate(self._obs_state).name))
+                       " ObsState is {}".format(ObsState(self._obs_state).name))
             tango.Except.throw_exception("Command failed",
                                          log_msg,
                                          "AddReceptors",
@@ -1767,7 +1752,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                                                 "Command()",
                                                 tango.ErrSeverity.ERR)
         else:
-            log_msg = "Subarray not registered!".format(str(self._cbf_subarray_fqdn))
+            log_msg = "Subarray {} not registered!".format(str(self._cbf_subarray_fqdn))
             self.dev_logging(log_msg, tango.LogLevel.LOG_ERROR)
             tango.Except.throw_exception("Command failed",
                                          log_msg,
@@ -2137,7 +2122,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         Returns:
             None
         """
-        
+
         # PROTECTED REGION ID(CspSubarray.RemoveSearchBeams) ENABLED START #
         return
         # PROTECTED REGION END #    //  CspSubarray.RemoveSearchBeams
@@ -2177,7 +2162,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         *Class method*
 
         Add the specified Vlbi Beams Capability IDs to the subarray.
-   
+
         Args:
             argin: The list of Vlbi Beams Capability IDs to assign to the subarray.
             Type: array of DevUShort
@@ -2229,7 +2214,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         *Class method*
 
         Remove the specified Search Beam Capability IDs from the subarray.
-        
+
         Args:
             argin: The list of Timing Beams Capability IDs to remove from the subarray.
             Type: Array of unsigned short
@@ -2237,7 +2222,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             None
         """
         # PROTECTED REGION ID(CspSubarray.RemoveSearchBeamsID) ENABLED START #
-        return 
+        return
         # PROTECTED REGION END #    //  CspSubarray.RemoveSearchBeamsID
 
     @command(

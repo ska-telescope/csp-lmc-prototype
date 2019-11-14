@@ -3,14 +3,12 @@ A module defining a list of fixture functions that are shared across all the ska
 tests.
 """
 #from __future__ import absolute_import
-import mock
+#import mock
 import pytest
-import importlib
-import sys
 
 import tango
 from tango import DeviceProxy
-from tango.test_context import DeviceTestContext
+#from tango.test_context import DeviceTestContext
 
 #import global_enum 
 

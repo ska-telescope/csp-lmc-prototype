@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# This file is part of the CentralNode project
-#
-#
+# This file is part of the CSP.LMC project
 #
 # Distributed under the terms of the BSD-3-Clause license.
 # See LICENSE.txt for more info.
@@ -56,5 +54,4 @@ setup(name=name,
       ],
       extras_require={
           'dev':  ['prospector[with_pyroma]', 'yapf', 'isort']
-      }
-)
+      })
