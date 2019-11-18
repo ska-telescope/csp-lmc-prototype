@@ -130,9 +130,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         try:
             dev_name = evt.device.dev_name()
             if not evt.err:
-                # control if the device name is in the list of the
-                # subarray fqdn and that is found in the attribute's FQDN
-                if (dev_name in self._se_subarrays_fqdn and evt.attr_name.find(dev_name) > 0):
+                # check if the device name is in the list of the subarray fqdn
+                if dev_name in self._se_subarrays_fqdn:
                     if evt.attr_value.name.lower() == "healthstate":
                         self._se_subarray_healthstate[dev_name] = evt.attr_value.value
                     elif evt.attr_value.name.lower() == "state":
@@ -280,7 +279,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
                                                  for pair in receptor_to_vcc)
                 # build the list of the installed receptors
                 self._receptor_id_list = list(self._receptor_to_vcc_map.keys())
-                for _ , cap_string in enumerate(cbf_capabilities):
+                for _, cap_string in enumerate(cbf_capabilities):
                     cap_type, cap_num = cap_string.split(':')
                     self._cbf_capabilities[cap_type] = int(cap_num)
             # try connection to PssMaster
@@ -315,7 +314,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
         Check if the sub-element subarray is exported in the TANGO DB.
         If the subarray device is not present in the list of the connected
-        subarrays, the connection with the0 device is performed.
+        subarrays, the connection with the device is performed.
 
         Args:
             subarray_name : the FQDN of the subarray
@@ -1373,7 +1372,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         *TANGO is_allowed method*: filter the external request depending on the \
         current device state.\n
         Check if the Scan method can be issued on the subarray.\n
-        The Scan() method can be issue on a subarray if its *State* is ON.
+        The Scan() method can be issue on a subarray if its *State* is *ON*.
 
         Returns:
             True if the command can be executed, otherwise False
@@ -1389,17 +1388,22 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
     def EndScan(self):
         """
         *Class method*
-        End the execution of a running scan.
+        End the execution of a running scan. After successful execution, the CspSubarray \
+        *ObsState* is  IDLE.
 
         Raises:
             tango.DevFailed: if the subarray *obsState* is not SCANNING or if an exception
             is caught during the command execution.
+        Note:
+            Still to implement the check on AdminMode values: the command can be processed \
+            only when the CspSubarray is *ONLINE* or *MAINTENANCE*
         """
         # PROTECTED REGION ID(CspSubarray.EndScan) ENABLED START #
         # Check if the EndScan command can be executed. This command is allowed when the
         # Subarray State is SCANNING.
         if self._obs_state != ObsState.SCANNING:
-            log_msg = "Subarray obs_state is {}, not SCANNING".format(ObsState(self._obs_state).name)
+            log_msg = ("Subarray obs_state is {}"
+                       ", not SCANNING".format(ObsState(self._obs_state).name))
             tango.Except.throw_exception("Command failed",
                                          log_msg,
                                          "EndScan",
@@ -1468,8 +1472,15 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         Raises:
             tango.DevFailed: if the subarray *obsState* is not READY or if an exception is caught\
                     during the command execution.
+        Note:
+            Still to implement the check on AdminMode values: the command can be processed \
+            only when the CspSubarray is *ONLINE* or *MAINTENANCE*
+
         """
         # PROTECTED REGION ID(CspSubarray.Scan) ENABLED START #
+        # TODO: add check for adminMode.  The subarray is able to perform configuration only
+        # if its adminMode is ONLINE/MAINTENANCE.
+        #
         # Check if the Scan command can be executed. This command is allowed when the
         # Subarray State is READY.
         if self._obs_state != ObsState.READY.value:
@@ -1509,7 +1520,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         *TANGO is_allowed method*: filter the external request depending on the current \
         device state.\n
         Check if the AddReceptors method can be issued on the subarray.\n
-        Receptors can be added to a Subarray when its *State* is OFF or ON.
+        Receptors can be added to a Subarray when its *State* is *OFF* or *ON*.
 
         Returns:
             True if the command can be executed, otherwise False
@@ -1527,6 +1538,8 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
 
         Add the specified receptor IDs to the subarray.
 
+        The command can be executed only if the CspSubarray *ObsState* is *IDLE*.
+
         Args:
             argin: the list of receptor IDs
             Type: array of DevUShort
@@ -1534,7 +1547,10 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
             None
         Raises:
             tango.DevFailed: if the CbfSubarray is not available or if an exception\
-                    is caught during command execution.
+            is caught during command execution.
+        Note:
+            Still to implement the check on AdminMode values: the command can be processed \
+            only when the CspSubarray is *ONLINE* or *MAINTENANCE*
         """
         # PROTECTED REGION ID(CspSubarray.AddReceptors) ENABLED START #
         # Each vcc_id map to a vcc_fqdn inside CbfMaster, for example:
@@ -1546,6 +1562,9 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         # is built by CbfMaster and exported as attribute.
         # The max number of VCC allocated is defined by the VCC property of the CBF Master.
 
+        # TODO: add check for adminMode.  The subarray is able to perform configuration only
+        # if its adminMode is ONLINE/MAINTENANCE,
+        #
         # Check if the AddReceptors command can be executed. Receptors can be assigned to a subarray
         # only when its obsState is IDLE.
         if self._obs_state != ObsState.IDLE:
@@ -1854,7 +1873,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         Returns:
             True if the command can be executed, otherwise False
         """
-        #TODO:checks other states?
+        # TODO:checks other states?
         if self.get_state() == tango.DevState.ON:
             return True
         return False
@@ -1868,31 +1887,41 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         """
         Note:
             Part of this code (the input string parsing) comes from the CBF project\
-                    developed by J.Jjang (NRC-Canada)
+            developed by J.Jjang (NRC-Canada)
 
         *Class method.*
 
-        Configure a scan for the subarray.
+        Configure a scan for the subarray.\n
+        The command can be execuced when the CspSubarray State is *ON* and the \
+        ObsState is *IDLE* or *READY*.\n
+        If the configuration for the scan is not correct (invalid parameters or invalid JSON)\
+        the configuration is not applied and the ObsState of the CspSubarray remains IDLE.
 
         Args:
             argin: a JSON-encoded string with the parameters to configure a scan.
         Returns:
             None
         Raises:
-            tango.DevFailed exception if the configuration is not valid or if an exception\
-                    is caught during command execution.
+            tango.DevFailed exception if the CspSubarray ObsState is not valid or if an exception\
+            is caught during command execution.
+        Note:
+            Still to implement the check on AdminMode values: the command can be processed \
+            only when the CspSubarray is *ONLINE* or *MAINTENANCE*
         """
         # PROTECTED REGION ID(CspSubarray.ConfigureScan) ENABLED START #
 
+        # TODO: add check for adminMode.  The subarray is able to perform configuration only
+        # if its adminMode is ONLINE/MAINTENANCE,
+        #
         # check obs_state: the subarray can be configured only when the obs_state is
         # IDLE or READY (re-configuration)
 
-        if self._obs_state not in [ObsState.IDLE.value, ObsState.READY.value]:
+        if self._obs_state not in [ObsState.IDLE, ObsState.READY]:
             log_msg = ("Subarray is in {} state, not IDLE or"
                        " READY".format(ObsState(self._obs_state).name))
             tango.Except.throw_exception("Command failed",
                                          log_msg,
-                                         "Scan",
+                                         "ConfgureScan",
                                          tango.ErrSeverity.ERR)
         # check connection with CbfSubarray
         if not self.__is_subarray_available(self._cbf_subarray_fqdn):
@@ -2262,7 +2291,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         *Class method*
 
         Remove the specified Vlbi Beam Capability IDs from the subarray.
-        
+
         Args:
             argin: The list of Timing Beams Capability IDs to remove from the subarray.
             Type: Array of DevUShort
@@ -2278,7 +2307,7 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         *TANGO is_allowed method*: filter the external request depending on the \
         current device state.\n
         Check if the EndSB method can be issued on the subarray.\
-        The EndSB method can be issued on a subarrays when its *State* is ON-
+        The EndSB method can be issued on a subarrays when its *State* is *ON*.
 
         Returns:
             True if the command can be executed, otherwise False
@@ -2294,12 +2323,20 @@ class CspSubarray(with_metaclass(DeviceMeta, SKASubarray)):
         """
         *Class method*
 
-        Set the subarray ObsState to IDLE.\n
-        Raises
-            tango.DevFailed exception if the configuration is not valid or if an exception\
+        Set the subarray *ObsState* to *IDLE*.\n
+        The command is executed only when the CspSubarray *State* is *ON* and *ObsState* \
+        is *READY* or *IDLE*.
+
+        Raises:
+            tango.DevFailed exception if the CspSubarray ObsState is not valid or if an exception\
             is caught during command execution.
+        Note:
+            Still to implement the check on AdminMode values: the command can be processed \
+            only when the CspSubarray is *ONLINE* or *MAINTENANCE*
         """
         # PROTECTED REGION ID(CspSubarray.EndSB) ENABLED START #
+        # TODO: add check for adminMode.  The subarray is able to perform configuration only
+        # if its adminMode is ONLINE/MAINTENANCE,
         if self._obs_state not in [ObsState.IDLE, ObsState.READY]:
             log_msg = ("Subarray is in {} state, not IDLE or"
                        " READY".format(ObsState(self._obs_state).name))

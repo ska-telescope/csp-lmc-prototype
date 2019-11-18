@@ -14,10 +14,15 @@ import sys
 import os
 import time
 import numpy as np
+# Tango imports
+import tango
+from tango import DevState
+#from tango.test_context import DeviceTestContext
+import pytest
 
 # Path
 file_path = os.path.dirname(os.path.abspath(__file__))
-# insert base package directory to import global_enum 
+# insert base package directory to import global_enum
 # module in commons folder
 commons_pkg_path = os.path.abspath(os.path.join(file_path, "../../commons"))
 sys.path.insert(0, commons_pkg_path)
@@ -25,14 +30,8 @@ sys.path.insert(0, commons_pkg_path)
 path = os.path.join(os.path.dirname(__file__), os.pardir)
 sys.path.insert(0, os.path.abspath(path))
 
-# Tango imports
-import tango
-from tango import DevState
-#from tango.test_context import DeviceTestContext
-import pytest
-
 #Local imports
-#from CspMaster.CspMaster import CspMaster
+from CspMaster import CspMaster
 #from global_enum import HealthState, AdminMode
 from global_enum import AdminMode
 
@@ -45,35 +44,37 @@ class TestCspMaster(object):
         """Test for State after initialization """
         # reinitalize Csp Master and CbfMaster devices
         cbf_master.Init()
-        time.sleep(3)
+        time.sleep(2)
+        csp_master.Init()
+        time.sleep(2)
         csp_state = csp_master.state()
         assert csp_state in [DevState.STANDBY, DevState.INIT, DevState.DISABLE]
 
     def test_adminMode(self, csp_master):
         """ Test the adminMode attribute w/r"""
-        csp_master.adminMode = AdminMode.OFFLINE.value
+        csp_master.adminMode = AdminMode.OFFLINE
         time.sleep(3)
-        assert csp_master.adminMode.value == AdminMode.OFFLINE.value
+        assert csp_master.adminMode.value == AdminMode.OFFLINE
 
     def test_cbfAdminMode(self, csp_master):
         """ Test the CBF adminMode attribute w/r"""
-        csp_master.cbfAdminMode = AdminMode.ONLINE.value
+        csp_master.cbfAdminMode = AdminMode.ONLINE
         time.sleep(3)
-        assert csp_master.cbfAdminMode.value == AdminMode.ONLINE.value
+        assert csp_master.cbfAdminMode.value == AdminMode.ONLINE
 
     def test_pssAdminMode(self, csp_master):
         """ Test the PSS adminMode attribute w/r"""
         try:
-            csp_master.pssAdminMode = AdminMode.ONLINE.value
-            assert csp_master.pssAdminMode.value == AdminMode.ONLINE.value
+            csp_master.pssAdminMode = AdminMode.ONLINE
+            assert csp_master.pssAdminMode.value == AdminMode.ONLINE
         except tango.DevFailed as df:
             assert "No proxy for device" in df.args[0].desc
 
     def test_pstAdminMode(self, csp_master):
         """ Test the PST adminMode attribute w/r"""
         try:
-            csp_master.pstAdminMode = AdminMode.ONLINE.value
-            assert csp_master.pstAdminMode.value == AdminMode.ONLINE.value
+            csp_master.pstAdminMode = AdminMode.ONLINE
+            assert csp_master.pstAdminMode.value == AdminMode.ONLINE
         except tango.DevFailed as df:
             assert "No proxy for device" in df.args[0].desc
 
@@ -90,88 +91,91 @@ class TestCspMaster(object):
         assert pst_addr == pst_addr_property
 
     def test_properties(self, csp_master):
-        capability_list = ['SearchBeam:1500', 'TimingBeam:16', 'VlbiBeam:20','Subarray:16']
+        """ Test the device property MaxCapability"""
+        capability_list = ['SearchBeam:1500', 'TimingBeam:16', 'VlbiBeam:20', 'Subarray:16']
         capability_list.sort()
         #Oss: maxCapability returns a tuple
         assert csp_master.maxCapabilities == tuple(capability_list)
 
     def test_forwarded_attributes(self, csp_master, cbf_master):
+        """ Test the  reportVCCState forwarded attribute"""
         vcc_state = csp_master.reportVCCState
         vcc_state_cbf = cbf_master.reportVCCState
         assert np.array_equal(vcc_state, vcc_state_cbf)
 
     def test_search_beams_states_at_init(self, csp_master):
-        """ 
+        """
         Test for the SearchBeam Capabilities State after initialization
         """
         num_of_search_beam = 0
         max_capabilities = csp_master.maxCapabilities
-        for max_capability in max_capabilities: 
+        for max_capability in max_capabilities:
             capability_type, max_capability_instances = max_capability.split(":")
             if capability_type == 'SearchBeam':
                 num_of_search_beam = int(max_capability_instances)
                 break
-        search_beam_state = csp_master.reportSearchBeamState 
+        search_beam_state = csp_master.reportSearchBeamState
         assert  num_of_search_beam == len(search_beam_state)
         expected_search_beam = [tango.DevState.UNKNOWN for i in range(num_of_search_beam)]
         assert np.array_equal(expected_search_beam, search_beam_state)
 
     def test_timing_beams_states_at_init(self, csp_master):
-        """ 
+        """
         Test for the TimingBeam Capabilities State after initialization
         """
         num_of_beam = 0
         max_capabilities = csp_master.maxCapabilities
-        for max_capability in max_capabilities: 
+        for max_capability in max_capabilities:
             capability_type, max_capability_instances = max_capability.split(":")
             if capability_type == 'TimingBeam':
                 num_of_beam = int(max_capability_instances)
                 break
-        timing_beam_state = csp_master.reportTimingBeamState 
+        timing_beam_state = csp_master.reportTimingBeamState
         assert  num_of_beam == len(timing_beam_state)
         expected_search_beam = [tango.DevState.UNKNOWN for i in range(num_of_beam)]
         assert np.array_equal(expected_search_beam, timing_beam_state)
 
     def test_vlbi_beams_states_at_init(self, csp_master):
-        """ 
+        """
         Test for the VlbiBeam Capabilities State after initialization
         """
         num_of_beam = 0
         max_capabilities = csp_master.maxCapabilities
-        for max_capability in max_capabilities: 
+        for max_capability in max_capabilities:
             capability_type, max_capability_instances = max_capability.split(":")
             if capability_type == 'VlbiBeam':
                 num_of_beam = int(max_capability_instances)
                 break
-        vlbi_beam_state = csp_master.reportVlbiBeamState 
+        vlbi_beam_state = csp_master.reportVlbiBeamState
         assert  num_of_beam == len(vlbi_beam_state)
         expected_search_beam = [tango.DevState.UNKNOWN for i in range(num_of_beam)]
         assert np.array_equal(expected_search_beam, vlbi_beam_state)
 
     def test_receptors_available_ids(self, csp_master):
+        """ Test the reading of availableReceptorIDs attribute """
         max_capabilities = csp_master.availableCapabilities
         num_of_receptors = 0
         list_of_receptors = csp_master.availableReceptorIDs
-        for max_capability in max_capabilities: 
+        for max_capability in max_capabilities:
             capability_type, max_capability_instances = max_capability.split(":")
             if capability_type == 'Receptors':
                 num_of_receptors = int(max_capability_instances)
                 break
-        
         if num_of_receptors > 0:
-            assert len(list_of_receptors) > 0 
+            assert list_of_receptors
         else:
             assert np.array_equal(list_of_receptors, [0])
 
     def test_available_capabilities(self, csp_master):
+        """ Test the reading of availableCapabilities attribute """
         available_cap = csp_master.availableCapabilities
-        assert len(available_cap) > 0 
+        assert available_cap
 
     def test_On_invalid_argument(self, csp_master):
         """Test for the execution of the On command with a wrong input argument"""
-        #NOTE: here adminMode is OFFLINE for  the previous test. To
+        # NOTE: here adminMode is OFFLINE for  the previous test. To
         # execute command on the device It has to be set to ONLINE
-        csp_master.adminMode = AdminMode.ONLINE.value
+        csp_master.adminMode = AdminMode.ONLINE
         time.sleep(3)
         assert csp_master.adminMode.value == AdminMode.ONLINE
         with pytest.raises(tango.DevFailed) as df:
@@ -181,7 +185,7 @@ class TestCspMaster(object):
 
     def test_On_valid_state(self, csp_master, cbf_master):
         """
-        Test for execution of On command when the CbfTestMaster is in the right state
+        Test for execution of On command when the CbfMaster is in the right state
         """
         #reinit CSP and CBF master devices
         cbf_master.Init()
@@ -198,7 +202,7 @@ class TestCspMaster(object):
 
     def test_On_invalid_state(self, csp_master, cbf_master):
         """
-        Test for the execution of the On command when the CbfMaster 
+        Test for the execution of the On command when the CbfMaster
         is in an invalid state
         """
         #reinit CSP and CBF master devices
@@ -234,7 +238,7 @@ class TestCspMaster(object):
             csp_master.Standby(argin)
         assert "No proxy found for device" in str(df.value)
 
-    def test_Standby_valid_state(self, csp_master, cbf_master):
+    def test_Standby_valid_state(self, csp_master):
         """
         Test for execution of On command when the CbfTestMaster is in the right state
         """
@@ -255,11 +259,11 @@ class TestCspMaster(object):
 
     def test_Off_invalid_state(self, csp_master, cbf_master):
         """
-        Test for the execution of the Off command when the CbfMaster 
+        Test for the execution of the Off command when the CbfMaster
         is in an invalid state
         """
         cbf_master.Init()
-        #csp_master.Init()
+        # csp_master.Init()
         # sleep for a while to wait for state transitions
         time.sleep(3)
         assert csp_master.State() == DevState.STANDBY
@@ -273,7 +277,7 @@ class TestCspMaster(object):
 
     def test_Off_valid_state(self, csp_master, cbf_master):
         """
-        Test for execution of On command when the CbfTestMaster is in the right state
+        Test for execution of On command when the CbfMaster is in the right state
         """
         #reinit CSP and CBFTest master devices
         cbf_master.Init()
@@ -284,12 +288,12 @@ class TestCspMaster(object):
         csp_master.Off("")
         time.sleep(3)
         assert csp_master.state() == DevState.OFF
-    
+ 
     def test_reinit_csp_master(self, csp_master, cbf_master):
+        """ Test CspMaster reinitialization """
         #reinit CSP and CBFTest master devices
         cbf_master.Init()
-        #csp_master.Init()
         time.sleep(2)
-        assert csp_master.State() == DevState.STANDBY 
-
-
+        csp_master.Init()
+        time.sleep(2)
+        assert csp_master.State() == DevState.STANDBY

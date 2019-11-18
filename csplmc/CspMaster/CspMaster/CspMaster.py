@@ -73,7 +73,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         if not evt.err:
             dev_name = evt.device.dev_name()
             try:
-                if ((dev_name in self._se_fqdn) and (evt.attr_name.find(dev_name) > 0)):
+                if dev_name in self._se_fqdn:
                     if evt.attr_value.name.lower() == "state":
                         self._se_state[dev_name] = evt.attr_value.value
                     elif evt.attr_value.name.lower() == "healthstate":
@@ -976,7 +976,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
     Note:
         If the *__root_att* attribute property is not  specified in the \
         TANGO DB or the value doesn't correspond to a valid attribute FQDN, the \
-        CspMaster *State* transits to ALARM.
+        CspMaster *State* goes in ALARM.
     """
 
     reportVCCHealthState = attribute(name="reportVCCHealthState", label="reportVCCHealthState",
@@ -1209,7 +1209,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
         Args:
             value: one of the administration mode value (ON-LINE,\
-            OFF-LINE, MAINTENANCE, NOT-FITTED).
+            OFF-LINE, MAINTENANCE, NOT-FITTED, RESERVED).
         Returns:
             None
         """
@@ -1360,7 +1360,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
         Args:
             value: one of the administration mode value (ON-LINE,\
-            OFF-LINE, MAINTENANCE, NOT-FITTED).
+            OFF-LINE, MAINTENANCE, NOT-FITTED, RESERVED).
         Returns:
             None
         Raises:
@@ -1402,7 +1402,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
         Args:
             value: one of the administration mode value (ON-LINE, \
-            OFF-LINE, MAINTENANCE, NOT-FITTED).
+            OFF-LINE, MAINTENANCE, NOT-FITTED, RESERVED).
         Returns:
             None
         Raises:
@@ -1447,7 +1447,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
         Args:
             value: one of the administration mode value (ON-LINE,\
-            OFF-LINE, MAINTENANCE, NOT-FITTED).
+            OFF-LINE, MAINTENANCE, NOT-FITTED, RESERVED).
         Returns:
             None
         Raises:
@@ -1483,7 +1483,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         Example:
             ["Receptors:95", "SearchBeam:1000", "TimingBeam:16", "VlbiBeam:20"]
         Raises:
-            tango.DevFailed: raised when information can't be retrieved
+            tango.DevFailed
         """
         # PROTECTED REGION ID(CspMaster.availableCapabilities_read) ENABLED START #
         self._available_capabilities = {}
@@ -1520,7 +1520,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportSearchBeamState(self):
         """
-        Read attribute method.
+        Class attribute method.
 
         Returns:
             The *State* value of the CSP SearchBeam Capabilities.\n
@@ -1532,7 +1532,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportSearchBeamHealthState(self):
         """
-        Read atttribute method.
+        Class attribute method.
 
         Returns:
             The *healthState* attribute value of the CSP SearchBeam Capabilities.\n
@@ -1544,7 +1544,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportSearchBeamAdminMode(self):
         """
-        Read attribute method.
+        Class attribute method.
 
         Returns:
             The *adminMode* of the CSP SearchBeam Capabilities.\n
@@ -1556,7 +1556,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportTimingBeamState(self):
         """
-        Read attribute method.
+        Class attribute method.
 
         Returns:
             The *State* value of the CSP TimingBeam Capabilities.\n
@@ -1568,7 +1568,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportTimingBeamHealthState(self):
         """
-        Read attribute method.
+        Class attribute method.
 
         Returns:
             The *healthState* value of the CSP TimingBeam Capabilities.\n
@@ -1580,7 +1580,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportTimingBeamAdminMode(self):
         """
-        Read attribute method.
+        Class attribute method.
 
         Returns:
             The *adminMode* value of the CSP TimingBeam Capabilities.\n
@@ -1592,7 +1592,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportVlbiBeamState(self):
         """
-        Read attribute method.
+        Class attribute method.
 
         Returns:
             The *State* value of the CSP VlbiBeam Capabilities.\n
@@ -1604,7 +1604,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_reportVlbiBeamHealthState(self):
         """
-        Read attribute method.
+        Class attribute method.
 
         Returns:
             The *healthState* value of the CSP VlbiBeam Capabilities.\n
@@ -1628,78 +1628,63 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_cspSubarrayAddress(self):
         """
-        Read attribute method.
+        Class attribute method.
 
         Returns:
-            The CSP Subarrays FQDNs.\n
+            The CSP Subarrays FQDNs if the associated Device Property
+            is defined, otherwise None.\n
             *Type*: array of DevString
-        Raises:
-            tango.DevFailed: raised if the CspSubarray Device Property is \
-            not defined into the TANGO DB or no default value is assigned.
         """
         # PROTECTED REGION ID(CspMaster.cspSubarrayAddress_read) ENABLED START #
-        if self.CspSubarrays:
-            return self.CspSubarrays
-        else:
-            log_msg = "CspSubarrays device property not defined"
-            self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-            tango.Except.throw_exception("Attribute reading failure",
-                                         log_msg,
-                                         "read_cspSubarrayAddress",
-                                         tango.ErrSeverity.ERR)
+        if not self.CspSubarrays:
+            self.CspSubarrays = []
+        return self.CspSubarrays
         # PROTECTED REGION END #    //  CspMaster.cspSubarrayAddress_read
 
     def read_searchBeamCapAddress(self):
         """
-        Read attribute method.
+        Class attribute method.
 
         Returns:
-            The CSP SearchBeam Capabilities FQDNs.\n
+            The CSP SearchBeam Capabilities FQDNs if the associated
+            Device Property is defined, otherwise None.\n
             *Type*: array of DevString
-        Raises:
-            tango.DevFailed: raised if the SearchBeams Device Property is not \
-            defined into the TANGO DB or no default value is assigned.
         """
         # PROTECTED REGION ID(CspMaster.searchBeamCapAddress_read) ENABLED START #
-        if self.SearchBeams:
-            return self.SearchBeams
-        else:
-            log_msg = "SearchBeams device property not assigned"
-            self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-            tango.Except.throw_exception("Attribute reading failure",
-                                         log_msg,
-                                         "read_searchBeamCapAddress",
-                                         tango.ErrSeverity.ERR)
+        if not self.SearchBeams:
+            self.SearchBeams = []
+        return self.SearchBeams
         # PROTECTED REGION END #    //  CspMaster.searchBeamCapAddress_read
 
     def read_timingBeamCapAddress(self):
+        """
+        Class attribute method.
+
+        Returns:
+            The CSP TimingBeam Capabilities FQDNs if the associated 
+            Device Property is defined, otherwise None.\n
+            *Type*: array of DevString
+        """
         # PROTECTED REGION ID(CspMaster.timingBeamCapAddress_read) ENABLED START #
-        if self.TimingBeams:
-            return self.TimingBeams
-        else:
-            log_msg = "TimingBeams device property not assigned"
-            self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-            tango.Except.throw_exception("Attribute reading failure",
-                                         log_msg,
-                                         "read_timingBeamCapAddress",
-                                         tango.ErrSeverity.ERR)
+        if not self.TimingBeams:
+            self.TimingBeams = []
+        return self.TimingBeams
         # PROTECTED REGION END #    //  CspMaster.timingBeamCapAddress_read
 
     def read_vlbiCapAddress(self):
         """
         Class attribute method.
+
+        Returns:
+            The CSP VlbiBeam Capabilities FQDNs if the associated
+            Device Property is defined, otherwise None.\n
+            *Type*: array of DevString
         """
 
         # PROTECTED REGION ID(CspMaster.vlbiCapAddress_read) ENABLED START #
-        if self.VlbiBeams:
-            return self.VlbiBeams
-        else:
-            log_msg = "VlbiBeams device property not assigned"
-            self.dev_logging(log_msg, tango.LogLevel.LOG_WARN)
-            tango.Except.throw_exception("Attribute reading failure",
-                                         log_msg,
-                                         "read_vlbiBeamCapAddress",
-                                         tango.ErrSeverity.ERR)
+        if not self.VlbiBeams:
+            self.VlbiBeams = []
+        return self.VlbiBeams
         # PROTECTED REGION END #    //  CspMaster.vlbiCapAddress_read
 
     def read_receptorMembership(self):
@@ -1707,7 +1692,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         Class attribute method.
 
         Returns:
-           The subarray affilitiaion of the receptors.
+           The subarray affiliation of the receptors.
         """
         # PROTECTED REGION ID(CspMaster.receptorMembership_read) ENABLED START #
         if self.__is_subelement_available(self.CspMidCbf):
@@ -1773,7 +1758,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
 
     def read_availableReceptorIDs(self):
         """
-        Read attribute method.
+        Class attribute method.
 
         Returns:
             The list of the available receptors IDs.
@@ -1846,7 +1831,7 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         # the issue of "DeviceAttribute object has no attribute 'value'" has been resolved. Now
         # a TANGO RO attribute initializaed to an empty list (see self._available_receptorIDs),
         # returns a NoneType object, as happed before with PyTango 9.2.5, TANGO 9.2.5 images.
-        # The beaviour now is coherent, but I don't revert to the old code: this methods
+        # The beavior now is coherent, but I don't revert to the old code: this methods
         # keep returning an array with one element = 0 when no receptors are available.
         if len(self._available_receptorIDs) == 0:
             return [0]
@@ -1887,7 +1872,9 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         *Class method*
 
         Switch-on the CSP sub-elements specified by the input argument. If no argument is\
-                specified, the command is issued to all the CSP sub-elements.
+        specified, the command is issued on all the CSP sub-elements.\n
+        The command is executed if the *AdminMode* is ONLINE or *MAINTENANCE*.\n
+        If the AdminMode is *OFFLINE*, *NOT-FITTED* or *RESERVED*, the method throws an exception.
 
         Args:
             argin: the list of sub-element FQDNs to switch-on or an empty list to switch-on\
@@ -1896,9 +1883,9 @@ class CspMaster(with_metaclass(DeviceMeta, SKAMaster)):
         Returns:
             None
         Raises:
-            tango.DevFailed: if an exception is caught processing the On command for\
+            tango.DevFailed: an exception is caught processing the On command for\
                     the CBF sub-element or there are no DeviceProxy providing interface\
-                    to the CSP sub-elements.
+                    to the CSP sub-elements or the AdminMode is not correct.
         """
         # PROTECTED REGION ID(CspMaster.On) ENABLED START #
 
@@ -2002,10 +1989,11 @@ If the array length is > 1, each array element specifies the FQDN of the\
         sub-elements.
 
         Args:
-            The list of sub-elements to switch-off. If the array\
-            length is 0, the command applies to the whole CSP Element.\
-            If the array length is > 1, each array element specifies the FQDN of the\
-            CSP SubElement to switch OFF \n
+            argin: The list of sub-elements to switch-off. If the array\
+                   length is 0, the command applies to the whole CSP Element.\
+                   If the array length is > 1, each array element specifies the FQDN of the\
+                   CSP SubElement to switch OFF 
+            Type: DevVarStringArray
 
         Returns:
             None
