@@ -7,9 +7,6 @@
 	        ],
 	        "PssSubarrayPrefix": [
 	            "mid_csp_pss/sub_elt/subarray_"
-	        ],
-	        "PstSubarrayPrefix": [
-	            "mid_csp_pst/sub_elt/subarray_"
 	        ]
              }
     	}
