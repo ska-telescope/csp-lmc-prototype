@@ -26,6 +26,7 @@ before_script:
 
 stages:
   - test        
+  - linting
   - publish
   - pages
 
@@ -44,10 +45,21 @@ test:
   script:
     - make build
     - make test
-    - make lint
   artifacts:
     paths:
       - build
+
+linting:
+  stage: linting
+  tags:
+    - docker-executor
+  script:
+    - apt-get -y update
+    - apt-get install -y python3-pip python3-setuptools python3-wheel --no-install-recommends
+    - make lint
+  artifacts:
+    paths:
+      - ./build
 
 publish image:
   tags:
