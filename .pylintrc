@@ -16,7 +16,17 @@ profile=no
 
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
-ignore=CVS, CbfTestMaster, CspTelState
+ignore=CVS, 
+       CbfTestMaster, 
+       CspTelState, 
+       setup.py,
+       CspSubarray_test.py,
+       CspMaster_test.py,
+       CspSubarray_two_devices_test.py,
+       configureDevices.py,
+       global_enum.py,
+       conftest.py,
+       configureAttrProperties.py
 
 # Pickle collected data for later comparisons.
 persistent=yes
@@ -52,6 +62,7 @@ disable= R,
         fixme,
         broad-except,
         redefined-builtin
+	
 
 [REPORTS]
 
