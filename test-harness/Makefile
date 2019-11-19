@@ -20,27 +20,18 @@ test:
 	retry --max=10 -- tango_admin --ping-device mid_csp/elt/subarray_02
 	cd /app/csplmc/CspSubarray && python setup.py test | tee setup_py_test.stdout
 	cd /app/csplmc/CspMaster && python setup.py test | tee setup_py_test.stdout
-	if [ -d /build ]; then \
-		mv /app/csplmc/CspMaster/setup_py_test.stdout /build/csp_master_setup_test.stdout; \
-		mv /app/csplmc/CspMaster/htmlcov /build/csp_master_htmlcov; \
-		mv /app/csplmc/CspMaster/coverage.xml /build/csp_master_coverage.xml; \
-		mv /app/csplmc/CspSubarray/setup_py_test.stdout /build/csp_subarray_setup_test.stdout; \
-		mv /app/csplmc/CspSubarray/htmlcov /build/csp_subarray_htmlcov; \
-		mv /app/csplmc/CspSubarray/coverage.xml /build/csp_subarray_coverage.xml; \
-	fi;
+	mkdir -p /build/reports; \
+	mv /app/csplmc/CspMaster/setup_py_test.stdout /build/csp_master_setup_test.stdout; \
+	mv /app/csplmc/CspMaster/htmlcov /build/csp_master_htmlcov; \
+	mv /app/csplmc/CspMaster/coverage.xml /build/csp_master_coverage.xml; \
+	mv /app/csplmc/CspSubarray/setup_py_test.stdout /build/csp_subarray_setup_test.stdout; \
+	mv /app/csplmc/CspSubarray/htmlcov /build/csp_subarray_htmlcov; \
+	mv /app/csplmc/CspSubarray/coverage.xml /build/reports/code-coverage.xml; 
 lint:
-	retry --max=10 -- tango_admin --ping-device mid_csp_cbf/sub_elt/master
-	retry --max=10 -- tango_admin --ping-device mid_csp_cbf/sub_elt/subarray_01
-	retry --max=10 -- tango_admin --ping-device mid_csp_cbf/sub_elt/subarray_02
-	retry --max=10 -- tango_admin --ping-device mid_csp/elt/master
-	retry --max=10 -- tango_admin --ping-device mid_csp/elt/subarray_01
-	retry --max=10 -- tango_admin --ping-device mid_csp/elt/subarray_02
-	# pylint needs to run twice
-	cd /app && pylint -f colorized csplmc| tee code_analysis.stdout; \
-	cd /app && pylint csplmc > lint_output.xml; \
-	if [ -d /build ]; then \
-		mv /app/code_analysis.stdout /build/csplmc_code_analysis.stdout; \
-		mv /app/lint_output.xml /build/lint_output.xml; \
-	fi;
+	pip3 install pylint2junit; \
+        mkdir -p /build/reports; \
+        cd /app && pylint --output-format=parseable csplmc | tee /build/code_analysis.stdout; \
+	cd /app && pylint --output-format=pylint2junit.JunitReporter csplmc > /build/reports/linting.xml;
+
 
 .PHONY: all test lint

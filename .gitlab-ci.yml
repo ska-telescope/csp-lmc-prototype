@@ -29,6 +29,14 @@ stages:
   - publish
   - pages
 
+clean shell runner:
+  stage: .pre
+  tags:
+    - docker-executor
+  script:
+    # Gitlab CI badges creation
+    - rm -rf build/*
+
 test:
   tags:
     - docker-executor
@@ -54,17 +62,26 @@ pages:
   dependencies: 
      - test
   script:
-   - mkdir -p .public/reports  
-   - cp build/csp*.* .public
-   - cp -r build/csp_master_htmlcov/* .public
-   - cp -r build/csp_subarray_htmlcov/* .public
-   - cp temp/ci-metrics-mock.json ci-metrics.json
-   - cp build/lint_output.xml .public/reports
-   - cp build/csp_master_coverage.xml .public/reports
-   - cp build/csp_subarray_coverage.xml .public/reports
-   - mv .public public
-   - curl -s https://gitlab.com/ska-telescope/ci-metrics-utilities/raw/master/scripts/ci-badges-func.sh | sh
+   - cp -R build public
+   - mv build/csp_master_htmlcov/* public
+   - mv build/csp_subarray_htmlcov/* public
   artifacts:
     paths:
       - public
     expire_in: 30 days
+
+create ci metrics:
+  stage: .post
+  image: nexus.engageska-portugal.pt/ska-docker/ska-python-buildenv:latest
+  when: always
+  tags:
+    - docker-executor
+  script:
+    # Gitlab CI badges creation: START
+    - apt-get -y update
+    - apt-get install -y curl --no-install-recommends
+    - curl -s https://gitlab.com/ska-telescope/ci-metrics-utilities/raw/master/scripts/ci-badges-func.sh | sh
+    # Gitlab CI badges creation: END
+  artifacts:
+    paths:
+      - ./build
