@@ -9,10 +9,10 @@
 
 """Release information for Python Package"""
 
-name = """tangods-cspmaster"""
-version = "0.1.4"
+name = """tangods-csplmc"""
+version = "0.2.1"
 version_info = version.split(".")
-description = """SKA Csp Master TANGO Device Server"""
+description = """SKA Csp LMC TANGO Devices"""
 author = "E.G"
 author_email = "elisabetta.giani@inaf.it"
 license = """BSD-3-Clause"""
