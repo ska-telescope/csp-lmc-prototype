@@ -23,11 +23,12 @@ with open(readme_filename) as file:
     long_description = file.read()
 
 release_filename = os.path.join(setup_dir, '..', 'release.py')
-exec(open(release_filename).read())
+exec(open(release_filename).read(), INFO)
 
 pack = ['CspSubarray']
 
-setup(name=INFO['name'],
+setup(
+      name=INFO['name'],
       version=INFO['version'],
       description='CspSubarray.',
       packages=pack,
