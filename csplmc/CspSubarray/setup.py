@@ -17,6 +17,7 @@ setup_dir = os.path.dirname(os.path.abspath(__file__))
 # make sure we use latest info from local code
 sys.path.insert(0, setup_dir)
 
+INFO = {}
 readme_filename = os.path.join(setup_dir, 'README.rst')
 with open(readme_filename) as file:
     long_description = file.read()
@@ -26,8 +27,8 @@ exec(open(release_filename).read())
 
 pack = ['CspSubarray']
 
-setup(name=name,
-      version=version,
+setup(name=INFO['name'],
+      version=INFO['version'],
       description='CspSubarray.',
       packages=pack,
       include_package_data=True,
