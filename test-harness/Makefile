@@ -18,15 +18,11 @@ test:
 	retry --max=10 -- tango_admin --ping-device mid_csp/elt/master
 	retry --max=10 -- tango_admin --ping-device mid_csp/elt/subarray_01
 	retry --max=10 -- tango_admin --ping-device mid_csp/elt/subarray_02
-	cd /app/csplmc/CspSubarray && python setup.py test | tee setup_py_test.stdout
-	cd /app/csplmc/CspMaster && python setup.py test | tee setup_py_test.stdout
+	cd /app && python setup.py test | tee setup_py_test.stdout; \
 	mkdir -p /build/reports; \
-	mv /app/csplmc/CspMaster/setup_py_test.stdout /build/csp_master_setup_test.stdout; \
-	mv /app/csplmc/CspMaster/htmlcov /build/csp_master_htmlcov; \
-	mv /app/csplmc/CspMaster/coverage.xml /build/csp_master_coverage.xml; \
-	mv /app/csplmc/CspSubarray/setup_py_test.stdout /build/csp_subarray_setup_test.stdout; \
-	mv /app/csplmc/CspSubarray/htmlcov /build/csp_subarray_htmlcov; \
-	mv /app/csplmc/CspSubarray/coverage.xml /build/reports/coverage.xml; 
+	mv /app/setup_py_test.stdout /build/setup_py_test.stdout; \
+	mv /app/htmlcov /build/htmlcov; \
+	mv /app/coverage.xml /build/reports/coverage.xml; 
 lint:
 	pip3 install pylint2junit; \
         mkdir -p /build/reports; \

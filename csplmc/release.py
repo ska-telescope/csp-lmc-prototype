@@ -9,12 +9,12 @@
 
 """Release information for Python Package"""
 
-name = """tangods-csplmc"""
+name = """csplmc"""
 version = "0.2.1"
 version_info = version.split(".")
-description = """SKA Csp LMC TANGO Devices"""
-author = "E.G"
+description = """SKA CSP LMC TANGO Devices"""
+author = "INAF-OAA"
 author_email = "elisabetta.giani@inaf.it"
 license = """BSD-3-Clause"""
-url = """www.tango-controls.org"""
-copyright = """"""
+url = """https://gitlab.com/ska-telescope/csp-lmc-prototype.git"""
+copyright = """INAF"""
