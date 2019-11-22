@@ -22,7 +22,7 @@ test:
 	mkdir -p /build/reports; \
 	mv /app/setup_py_test.stdout /build/setup_py_test.stdout; \
 	mv /app/htmlcov /build/htmlcov; \
-	mv /app/coverage.xml /build/reports/coverage.xml; 
+	mv /app/coverage.xml /build/reports/code-coverage.xml; 
 lint:
 	pip3 install pylint2junit; \
         mkdir -p /build/reports; \
