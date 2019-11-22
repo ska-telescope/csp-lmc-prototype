@@ -26,7 +26,7 @@ test:
 	mv /app/csplmc/CspMaster/coverage.xml /build/csp_master_coverage.xml; \
 	mv /app/csplmc/CspSubarray/setup_py_test.stdout /build/csp_subarray_setup_test.stdout; \
 	mv /app/csplmc/CspSubarray/htmlcov /build/csp_subarray_htmlcov; \
-	mv /app/csplmc/CspSubarray/coverage.xml /build/reports/coverage.xml; 
+	mv /app/csplmc/CspSubarray/coverage.xml /build/reports/code-coverage.xml; 
 lint:
 	pip3 install pylint2junit; \
         mkdir -p /build/reports; \
