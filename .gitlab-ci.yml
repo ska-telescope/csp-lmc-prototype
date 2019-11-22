@@ -75,8 +75,7 @@ pages:
      - test
   script:
    - cp -R build public
-   - mv build/csp_master_htmlcov/* public
-   - mv build/csp_subarray_htmlcov/* public
+   - mv build/htmlcov/* public
   artifacts:
     paths:
       - public
